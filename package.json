@@ -1,0 +1,49 @@
+{
+  "name": "people",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "prepare": "prisma generate"
+  },
+  "dependencies": {
+    "@ark-ui/react": "^5.35.0",
+    "@auth/prisma-adapter": "^2.11.1",
+    "@hookform/resolvers": "^5.2.2",
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "@prisma/extension-accelerate": "^3.0.1",
+    "@tanstack/react-query": "^5.97.0",
+    "es-toolkit": "^1.45.1",
+    "lucide-react": "^1.8.0",
+    "next": "16.2.3",
+    "next-auth": "^4.24.13",
+    "next-navigation-guard": "^0.2.0",
+    "nuqs": "^2.8.9",
+    "pg": "^8.20.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "react-hook-form": "^7.72.1",
+    "sharp": "^0.34.5",
+    "tailwind-variants": "^3.2.2",
+    "tailwind-zag": "^1.1.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.11",
+    "@tailwindcss/postcss": "^4",
+    "@total-typescript/ts-reset": "^0.6.1",
+    "@types/node": "^25",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "prisma": "^7.7.0",
+    "tailwindcss": "^4",
+    "type-fest": "^5.5.0",
+    "typescript": "^6"
+  }
+}

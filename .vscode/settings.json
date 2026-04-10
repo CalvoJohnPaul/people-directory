@@ -1,0 +1,15 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.biome": "always",
+    "source.fixAll.biome": "always",
+    "source.organizeImports.biome": "always"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "files.associations": {
+    "**/*.css": "tailwindcss"
+  },
+  "tailwindCSS.classFunctions": ["tv", "cx", "twMerge", "twJoin"],
+  "tailwindCSS.experimental.configFile": "app/globals.css",
+  "biome.enabled": true,
+  "prettier.enable": false
+}
