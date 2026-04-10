@@ -7,7 +7,7 @@ import {Tooltip} from '~/components/ui/Tooltip';
 
 export function Toolbar() {
   return (
-    <div className="flex gap-3">
+    <section className="flex gap-3">
       <Field.Root className="relative grow" size="lg">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-gray-500" />
         <Field.Input placeholder="Search" className="pl-10" />
@@ -42,6 +42,6 @@ export function Toolbar() {
           </Tooltip.Content>
         </Tooltip.Positioner>
       </Tooltip.Root>
-    </div>
+    </section>
   );
 }

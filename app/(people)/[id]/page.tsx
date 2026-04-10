@@ -60,7 +60,7 @@ export default async function Page(props: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl lg:py-12">
+    <>
       <section className="gap-3 lg:flex">
         <div className="aspect-square w-56 shrink-0 bg-gray-50">
           <Image
@@ -68,6 +68,7 @@ export default async function Page(props: Props) {
             alt="Avatar"
             width={600}
             height={600}
+            priority
             draggable={false}
             className="size-full object-cover"
           />
@@ -92,6 +93,6 @@ export default async function Page(props: Props) {
           );
         })}
       </section>
-    </div>
+    </>
   );
 }

@@ -19,11 +19,11 @@
       }
     ],
     "paths": {
-      "~/prisma/*": ["./prisma/*"],
-      "~/config/*": ["./config/*"],
       "~/components/*": ["./components/*"],
+      "~/config/*": ["./config/*"],
       "~/emails/*": ["./emails/*"],
       "~/hooks/*": ["./hooks/*"],
+      "~/prisma/*": ["./prisma/*"],
       "~/types/*": ["./types/*"],
       "~/utils/*": ["./utils/*"]
     }

@@ -5,14 +5,17 @@ import Link from 'next/link';
 
 export function People() {
   return (
-    <div className="mt-8 md:mt-12 lg:mt-16">
-      <p className="mb-4 text-gray-500 text-sm">Showing 48 matches</p>
+    <section className="mt-8 lg:mt-12">
+      <p role="alert" aria-live="polite" className="mb-4 text-gray-500 text-sm">
+        Showing 48 matches
+      </p>
+
       <div className="grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-7">
         {Array.from({length: 10}).map((_, i) => (
           <Person key={i} id={i} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

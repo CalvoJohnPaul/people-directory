@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   return (
-    <main className="mx-auto max-w-md p-4 py-12 lg:py-16">
+    <>
       <h1 className="text-center font-bold text-2xl">Register</h1>
       <p className="mt-1 text-center text-gray-600">
         Fill out the form below to register your account.
@@ -15,6 +15,6 @@ export default async function Page() {
       <div className="mt-12">
         <RegisterForm />
       </div>
-    </main>
+    </>
   );
 }
