@@ -24,7 +24,7 @@
       "~/components/*": ["./components/*"],
       "~/emails/*": ["./emails/*"],
       "~/hooks/*": ["./hooks/*"],
-      "~/types/*": ["./utils/*"],
+      "~/types/*": ["./types/*"],
       "~/utils/*": ["./utils/*"]
     }
   },

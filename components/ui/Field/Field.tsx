@@ -1,7 +1,7 @@
 'use client';
 
 import {Field} from '@ark-ui/react';
-import {createRecipeContext} from '~/types/createRecipeContext';
+import {createRecipeContext} from '~/utils/createRecipeContext';
 import {fieldRecipe} from './Field.recipe';
 
 export const {withProvider, withContext} = createRecipeContext(fieldRecipe);

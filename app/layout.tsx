@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {Geist, Geist_Mono} from 'next/font/google';
+import {Fira_Code, Google_Sans} from 'next/font/google';
 import './globals.css';
 import {getServerSession} from 'next-auth';
 import type {PropsWithChildren} from 'react';
@@ -7,7 +7,7 @@ import {cx} from 'tailwind-variants';
 import {authOptions} from '~/config/auth';
 import {Providers} from './Providers';
 
-const sans = Geist({
+const sans = Google_Sans({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   subsets: ['latin'],
@@ -15,7 +15,7 @@ const sans = Geist({
   variable: '--font-sans',
 });
 
-const mono = Geist_Mono({
+const mono = Fira_Code({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   subsets: ['latin'],
@@ -25,8 +25,8 @@ const mono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'People',
-    template: '%s | People',
+    default: 'People Directory',
+    template: '%s | People Directory',
   },
 };
 

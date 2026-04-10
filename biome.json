@@ -30,7 +30,8 @@
       "suspicious": {
         "noUnknownAtRules": "off",
         "noExplicitAny": "off",
-        "noEmptyInterface": "off"
+        "noEmptyInterface": "off",
+        "noArrayIndexKey": "off"
       },
       "nursery": {
         "useSortedClasses": {
@@ -43,6 +44,9 @@
       },
       "complexity": {
         "noImportantStyles": "off"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
       }
     },
     "domains": {

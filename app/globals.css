@@ -2,6 +2,16 @@
 @plugin "tailwind-zag";
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-gray-200);
+  }
+
+  *::placeholder {
+    color: var(--color-gray-500);
+  }
+
   button,
   [type="button"],
   [role="button"] {
@@ -23,3 +33,8 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 }
+
+@custom-variant icon (& svg);
+@custom-variant scrollbar (&::-webkit-scrollbar);
+@custom-variant scrollbar-thumb (&::-webkit-scrollbar-thumb);
+@custom-variant scrollbar-track (&::-webkit-scrollbar-track);

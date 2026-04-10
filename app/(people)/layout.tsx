@@ -5,7 +5,7 @@ export default async function Layout({children}: PropsWithChildren) {
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main className="p-4 lg:p-6">{children}</main>
     </>
   );
 }

@@ -9,6 +9,7 @@ import * as z from 'zod';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {toaster} from '~/config/toaster';
+import {useCooldown} from '~/hooks/useCooldown';
 
 export function LoginForm() {
   const router = useRouter();
@@ -16,13 +17,15 @@ export function LoginForm() {
   const form = useForm({
     resolver: zodResolver(
       z.object({
-        email: z.email('Invalid email'),
+        email: z.email('Invalid email').trim().toLowerCase(),
       }),
     ),
     defaultValues: {
       email: '',
     },
   });
+
+  const cooldown = useCooldown();
 
   useEffect(() => {
     if (session.status === 'authenticated') {
@@ -39,12 +42,13 @@ export function LoginForm() {
         });
 
         if (!res?.error) {
+          form.reset();
+          cooldown.start();
           toaster.success({
             title: 'Email sent',
             description: `A magic link has been sent to ${email}. Please check your inbox.`,
           });
 
-          form.reset();
           return;
         }
 
@@ -53,17 +57,23 @@ export function LoginForm() {
           description: res?.error ?? 'An unexpected error occurred. Please try again.',
         });
       })}
+      className="mx-auto max-w-100"
     >
       <Field.Root invalid={!!form.formState.errors.email}>
         <Field.Label>Email</Field.Label>
-        <Field.Input type="email" {...form.register('email')} />
+        <Field.Input type="email" placeholder="Enter your email" {...form.register('email')} />
         <Field.ErrorText>{form.formState.errors.email?.message}</Field.ErrorText>
       </Field.Root>
+
       <Button
         type="submit"
-        disabled={form.formState.isSubmitting || session.status !== 'unauthenticated'}
+        fullWidth
+        className="mt-8"
+        disabled={
+          form.formState.isSubmitting || session.status !== 'unauthenticated' || cooldown.cooling
+        }
       >
-        Get link
+        Get link {cooldown.cooling && <>({cooldown.countdown}s)</>}
       </Button>
     </form>
   );
