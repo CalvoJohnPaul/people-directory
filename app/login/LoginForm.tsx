@@ -1,6 +1,5 @@
 'use client';
 
-import {Field} from '@ark-ui/react';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
 import {signIn, useSession} from 'next-auth/react';
@@ -8,6 +7,7 @@ import {useEffect} from 'react';
 import {useForm} from 'react-hook-form';
 import * as z from 'zod';
 import {Button} from '~/components/ui/Button';
+import {Field} from '~/components/ui/Field';
 import {toaster} from '~/config/toaster';
 
 export function LoginForm() {

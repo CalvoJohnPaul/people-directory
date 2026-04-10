@@ -33,6 +33,7 @@
     "react-dom": "19.2.5",
     "react-hook-form": "^7.72.1",
     "sharp": "^0.34.5",
+    "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2",
     "tailwind-zag": "^1.1.0",
     "zod": "^4.3.6"

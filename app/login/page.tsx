@@ -15,7 +15,12 @@ export default async function Page() {
 
   return (
     <main>
-      <LoginForm />
+      <h1>Sign In</h1>
+      <p>Enter your email to continue.</p>
+
+      <div>
+        <LoginForm />
+      </div>
     </main>
   );
 }
