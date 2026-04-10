@@ -1,3 +1,5 @@
+'use client';
+
 import {ark} from '@ark-ui/react/factory';
 import {Toast} from '@ark-ui/react/toast';
 import {createRecipeContext} from '~/utils/createRecipeContext';

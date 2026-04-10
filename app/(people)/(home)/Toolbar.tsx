@@ -16,7 +16,7 @@ export function Toolbar() {
       <div className="flex grow gap-2 lg:shrink-0">
         <Field.Root className="relative grow lg:w-80 lg:grow-0" size="lg">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-gray-500" />
-          <Field.Input placeholder="eg. john doe" className="pl-10" />
+          <Field.Input placeholder="Search" className="pl-10" />
         </Field.Root>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>

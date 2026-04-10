@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useId} from 'react';
 import {DotIcon} from '~/components/icons/DotIcon';
 
 export function People() {
@@ -11,18 +10,16 @@ export function People() {
       <p className="mb-4 text-gray-500 text-sm">Showing 48 matches</p>
       <div className="grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-7">
         {Array.from({length: 10}).map((_, i) => (
-          <Person key={i} />
+          <Person key={i} id={i} />
         ))}
       </div>
     </div>
   );
 }
 
-function Person() {
-  const id = useId();
-
+function Person({id}: {id: number}) {
   return (
-    <Link href="/1" className="block w-full">
+    <Link href={`/${id}`} className="block w-full">
       <div className="aspect-square w-full bg-gray-50">
         <Image
           src={`https://i.pravatar.cc/400?u=${id}`}

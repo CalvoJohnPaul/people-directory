@@ -1,7 +1,4 @@
 import type {Metadata} from 'next';
-import {redirect} from 'next/navigation';
-import {getServerSession} from 'next-auth';
-import {authOptions} from '~/config/auth';
 import {AddPersonForm} from './AddPersonForm';
 
 export const metadata: Metadata = {
@@ -9,10 +6,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  const session = await getServerSession(authOptions);
-
-  if (session == null) return redirect('/login');
-
   return (
     <main className="mx-auto max-w-md p-4 py-12 lg:py-16">
       <h1 className="text-center font-bold text-2xl">Add Person</h1>

@@ -72,7 +72,6 @@ export const datePickerRecipe = tv({
       'ui-today:after:left-1/2',
       'ui-today:after:size-1',
       'ui-today:after:-translate-x-1/2',
-      'ui-today:after:rounded-full',
       'ui-today:after:bg-gray-800',
 
       'ui-in-range:ui-not-disabled:font-medium',
@@ -94,6 +93,6 @@ export const datePickerRecipe = tv({
       'flex icon:size-5 size-9 items-center justify-center text-gray-600 hover:bg-gray-50',
     nextTrigger:
       'flex icon:size-5 size-9 items-center justify-center text-gray-600 hover:bg-gray-50',
-    rangeText: 'rounded-md px-1.5 py-0.5 font-semibold text-gray-600 text-sm hover:bg-gray-50',
+    rangeText: 'px-1.5 py-0.5 font-semibold text-gray-600 text-sm hover:bg-gray-50',
   }),
 });

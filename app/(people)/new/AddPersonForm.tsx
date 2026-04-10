@@ -3,13 +3,11 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {capitalize} from 'es-toolkit';
 import Link from 'next/link';
-import {useEffect} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {DateField} from '~/components/forms/DateField';
 import {SelectField} from '~/components/forms/SelectField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
-import {toaster} from '~/config/toaster';
 import {CreatePersonInputDefinition, GenderDefinition} from '~/types/Person';
 
 export function AddPersonForm() {
@@ -23,13 +21,6 @@ export function AddPersonForm() {
       gender: 'MALE',
       image: '',
     },
-  });
-
-  useEffect(() => {
-    toaster.success({
-      title: 'Success',
-      description: 'Person created successfully',
-    });
   });
 
   return (

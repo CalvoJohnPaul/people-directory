@@ -1,3 +1,5 @@
+'use client';
+
 import {ark} from '@ark-ui/react/factory';
 import {XIcon} from 'lucide-react';
 import {createRecipeContext} from '~/utils/createRecipeContext';
