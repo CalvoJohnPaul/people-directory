@@ -2,6 +2,7 @@ import {map} from 'es-toolkit/compat';
 import type {Metadata} from 'next';
 import Image from 'next/image';
 import {notFound} from 'next/navigation';
+import {twJoin} from 'tailwind-merge';
 import {prisma} from '~/config/prisma';
 import {CopyProfileLink} from './CopyProfileLink';
 import {EditProfile} from './EditProfile';
@@ -46,6 +47,18 @@ export default async function Page(props: Props) {
     return notFound();
   }
 
+  const details = {
+    'Last name': 'Doe',
+    'First name': 'John',
+    'Middle name': null,
+    Gender: 'Male',
+    'Date of birth': 'October 12, 1992',
+    Age: '31 years old',
+    Email: 'calvojp92@gmail.com',
+    'Mobile number': '+63 919 0000 000',
+    'Date registered': 'October 12, 1992 at 3:30 PM',
+  };
+
   return (
     <div className="mx-auto max-w-6xl lg:py-12">
       <section className="gap-3 lg:flex">
@@ -60,35 +73,25 @@ export default async function Page(props: Props) {
           />
         </div>
         <div className="hidden grow lg:block"></div>
-        <div className="mt-4 flex gap-2 self-start lg:mt-0">
+        <div className="mt-4 flex gap-3 self-start lg:mt-0">
           <ViewQrCode />
           <CopyProfileLink />
           <EditProfile />
         </div>
       </section>
 
-      <section className="mt-4 space-y-1 md:mt-6 lg:mt-8 lg:border lg:p-6">
-        {map(details, (value, key) => (
-          <div key={key} className="flex">
-            <div className="w-32">{key}</div>
-            <div className="text-gray-300">:</div>
-            <div className="ml-6">{value}</div>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-4 text-gray-500 text-sm md:mt-6 lg:mt-8">
-        Created by calvojp92@gmail.com — Oct 12, 1992, 3:30 PM
+      <section className="mt-4 grid grid-cols-1 gap-3 md:mt-6 lg:mt-8 lg:grid-cols-3">
+        {map(details, (value, key) => {
+          return (
+            <div key={key}>
+              <div className="text-gray-500 text-sm">{key}</div>
+              <div className={twJoin(value == null && 'font-mono text-gray-600')}>
+                {value || '[NA]'}
+              </div>
+            </div>
+          );
+        })}
       </section>
     </div>
   );
 }
-
-const details = {
-  'First name': 'John',
-  'Last name': 'Doe',
-  'Middle name': 'Smith',
-  'Date of birth': 'October 12, 1992',
-  Age: '31 years old',
-  Gender: 'Male',
-};

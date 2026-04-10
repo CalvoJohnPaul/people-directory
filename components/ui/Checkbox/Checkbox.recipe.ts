@@ -8,7 +8,7 @@ export const checkboxRecipe = tv({
     control:
       'flex shrink-0 cursor-pointer ui-disabled:cursor-not-allowed ui-readonly:cursor-default items-center justify-center border ui-checked:border-gray-900 bg-white ui-checked:bg-gray-900! ui-disabled:opacity-50',
     indicator: 'text-white',
-    label: 'font-medium text-gray-600 text-sm',
+    label: 'text-gray-600',
   }),
   variants: {
     size: {

@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {DotIcon} from '~/components/icons/DotIcon';
 
 export function People() {
   return (
@@ -30,12 +29,8 @@ function Person({id}: {id: number}) {
           className="size-full object-cover"
         />
       </div>
-      <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-none">John Doe</h2>
-      <div className="mt-1 items-center gap-1.5 text-gray-600 text-xs leading-none lg:flex">
-        <span className="block">Oct 12, 1992</span>
-        <DotIcon className="hidden size-1 text-gray-300 lg:block" />
-        <span className="hidden lg:block">Male</span>
-      </div>
+      <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">John Doe</h2>
+      <div className="line-clamp-1 text-gray-600 text-xs leading-tight">johndoe@gmail.com</div>
     </Link>
   );
 }

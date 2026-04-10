@@ -1,10 +1,8 @@
 import type {Metadata} from 'next';
 import {Fira_Code, Google_Sans} from 'next/font/google';
 import './globals.css';
-import {getServerSession} from 'next-auth';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
-import {authOptions} from '~/config/auth';
 import {Providers} from './Providers';
 
 const sans = Google_Sans({
@@ -30,8 +28,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Layout({children}: PropsWithChildren) {
-  const session = await getServerSession(authOptions);
-
   return (
     <html
       lang="en"
@@ -39,7 +35,7 @@ export default async function Layout({children}: PropsWithChildren) {
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh bg-white font-sans text-gray-800">
-        <Providers session={session}>{children}</Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

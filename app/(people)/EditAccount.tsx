@@ -1,3 +1,5 @@
+'use client';
+
 import {Portal} from '@ark-ui/react';
 import {noop} from 'es-toolkit';
 import {SquarePenIcon, XIcon} from 'lucide-react';
@@ -9,7 +11,7 @@ import {Menu} from '~/components/ui/Menu';
 
 export function EditAccount() {
   return (
-    <Dialog.Root open>
+    <Dialog.Root>
       <Dialog.Trigger asChild>
         <Menu.Item value="edit">
           <SquarePenIcon />
@@ -41,7 +43,8 @@ export function EditAccount() {
               <Field.Root className="mt-4">
                 <Field.Label>Email</Field.Label>
                 <Field.Input
-                  value="calvojp92@gmail.com"
+                  type="email"
+                  value="johndoe@example.com"
                   onChange={noop}
                   readOnly
                   placeholder="Enter your email"

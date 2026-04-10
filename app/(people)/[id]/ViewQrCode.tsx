@@ -1,25 +1,72 @@
 'use client';
 
-import {QrCodeIcon} from 'lucide-react';
+import {Portal} from '@ark-ui/react';
+import {QrCodeIcon, XIcon} from 'lucide-react';
+import {useParams} from 'next/navigation';
+import {Button} from '~/components/ui/Button';
+import {Dialog} from '~/components/ui/Dialog';
 import {IconButton} from '~/components/ui/IconButton';
+import {QrCode} from '~/components/ui/QrCode';
 import {Tooltip} from '~/components/ui/Tooltip';
 
 export function ViewQrCode() {
+  const params = useParams<{id: string}>();
+  const value = `http://localhost:3000/${params.id}`;
+
   return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <IconButton size="lg" variant="outline">
-          <QrCodeIcon />
-        </IconButton>
-      </Tooltip.Trigger>
-      <Tooltip.Positioner>
-        <Tooltip.Content>
-          <Tooltip.Arrow>
-            <Tooltip.ArrowTip />
-          </Tooltip.Arrow>
-          View QR code
-        </Tooltip.Content>
-      </Tooltip.Positioner>
-    </Tooltip.Root>
+    <Dialog.Root closeOnInteractOutside closeOnEscape>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <Dialog.Trigger asChild>
+            <IconButton size="lg" variant="outline">
+              <QrCodeIcon />
+            </IconButton>
+          </Dialog.Trigger>
+        </Tooltip.Trigger>
+        <Tooltip.Positioner>
+          <Tooltip.Content>
+            <Tooltip.Arrow>
+              <Tooltip.ArrowTip />
+            </Tooltip.Arrow>
+            View QR code
+          </Tooltip.Content>
+        </Tooltip.Positioner>
+      </Tooltip.Root>
+      <Portal>
+        <Dialog.Backdrop />
+        <Dialog.Positioner className="flex items-center justify-center">
+          <Dialog.Content className="h-auto! min-w-80! max-w-80! p-4">
+            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
+              <XIcon className="size-5" />
+            </Dialog.CloseTrigger>
+            <QrCode.Root value={value}>
+              <QrCode.Frame>
+                <QrCode.Pattern />
+              </QrCode.Frame>
+              <Dialog.Context>
+                {(api) => (
+                  <QrCode.DownloadTrigger
+                    fileName="qr-code.jpeg"
+                    mimeType="image/jpeg"
+                    asChild
+                    className="mt-3"
+                  >
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      onClick={() => {
+                        api.setOpen(false);
+                      }}
+                    >
+                      Download
+                    </Button>
+                  </QrCode.DownloadTrigger>
+                )}
+              </Dialog.Context>
+            </QrCode.Root>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Portal>
+    </Dialog.Root>
   );
 }

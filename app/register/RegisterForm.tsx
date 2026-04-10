@@ -2,7 +2,6 @@
 
 import {zodResolver} from '@hookform/resolvers/zod';
 import {capitalize} from 'es-toolkit';
-import Link from 'next/link';
 import {Controller, useForm} from 'react-hook-form';
 import {DateField} from '~/components/forms/DateField';
 import {SelectField} from '~/components/forms/SelectField';
@@ -10,7 +9,7 @@ import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {CreatePersonInputDefinition, GenderDefinition} from '~/types/Person';
 
-export function AddPersonForm() {
+export function RegisterForm() {
   const form = useForm({
     resolver: zodResolver(CreatePersonInputDefinition),
     defaultValues: {
@@ -20,6 +19,8 @@ export function AddPersonForm() {
       dateOfBirth: new Date(),
       gender: 'MALE',
       image: '',
+      email: '',
+      mobileNumber: '',
     },
   });
 
@@ -43,6 +44,16 @@ export function AddPersonForm() {
         <Field.Label>Middle name</Field.Label>
         <Field.Input placeholder="eg. Smith" {...form.register('middleName')} />
         <Field.ErrorText>{form.formState.errors.middleName?.message}</Field.ErrorText>
+      </Field.Root>
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.email}>
+        <Field.Label>Email</Field.Label>
+        <Field.Input placeholder="eg. john.doe@example.com" {...form.register('email')} />
+        <Field.ErrorText>{form.formState.errors.email?.message}</Field.ErrorText>
+      </Field.Root>
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.mobileNumber}>
+        <Field.Label>Mobile number</Field.Label>
+        <Field.Input placeholder="eg. 9190000000" {...form.register('mobileNumber')} />
+        <Field.ErrorText>{form.formState.errors.mobileNumber?.message}</Field.ErrorText>
       </Field.Root>
       <Controller
         control={form.control}
@@ -78,10 +89,7 @@ export function AddPersonForm() {
         )}
       />
 
-      <div className="mt-8 flex gap-3">
-        <Button variant="outline" fullWidth asChild>
-          <Link href="/">Cancel</Link>
-        </Button>
+      <div className="mt-8">
         <Button type="submit" fullWidth>
           Submit
         </Button>

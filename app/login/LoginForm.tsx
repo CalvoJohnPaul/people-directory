@@ -2,10 +2,9 @@
 
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
-import {signIn, useSession} from 'next-auth/react';
-import {useEffect} from 'react';
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import * as z from 'zod';
+import {CheckField} from '~/components/forms/CheckField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {toaster} from '~/config/toaster';
@@ -13,66 +12,55 @@ import {useCooldown} from '~/hooks/useCooldown';
 
 export function LoginForm() {
   const router = useRouter();
-  const session = useSession();
   const form = useForm({
     resolver: zodResolver(
       z.object({
         email: z.email('Invalid email').trim().toLowerCase(),
+        staySignedIn: z.boolean(),
       }),
     ),
     defaultValues: {
       email: '',
+      staySignedIn: true,
     },
   });
 
   const cooldown = useCooldown();
 
-  useEffect(() => {
-    if (session.status === 'authenticated') {
-      router.push('/');
-    }
-  }, [session.status, router]);
-
   return (
     <form
-      onSubmit={form.handleSubmit(async ({email}) => {
-        const res = await signIn('email', {
-          email,
-          redirect: false,
-        });
-
-        if (!res?.error) {
-          form.reset();
-          cooldown.start();
-          toaster.success({
-            title: 'Email sent',
-            description: `A magic link has been sent to ${email}. Please check your inbox.`,
-          });
-
-          return;
-        }
-
-        toaster.error({
-          title: 'Error',
-          description: res?.error ?? 'An unexpected error occurred. Please try again.',
+      onSubmit={form.handleSubmit(async ({email, staySignedIn}) => {
+        form.reset();
+        cooldown.start();
+        toaster.success({
+          title: 'Email sent',
+          description: `A magic link has been sent to ${email}. Please check your inbox.`,
         });
       })}
       noValidate
       className="mx-auto max-w-100"
     >
-      <Field.Root invalid={!!form.formState.errors.email}>
+      <Field.Root size="lg" invalid={!!form.formState.errors.email}>
         <Field.Label>Email</Field.Label>
         <Field.Input type="email" placeholder="Enter your email" {...form.register('email')} />
         <Field.ErrorText>{form.formState.errors.email?.message}</Field.ErrorText>
       </Field.Root>
 
+      <Controller
+        control={form.control}
+        name="staySignedIn"
+        render={({field}) => (
+          <CheckField className="mt-5" value={field.value} onChange={field.onChange}>
+            Keep me signed in
+          </CheckField>
+        )}
+      />
       <Button
         type="submit"
+        size="lg"
         fullWidth
-        className="mt-8"
-        disabled={
-          form.formState.isSubmitting || session.status !== 'unauthenticated' || cooldown.cooling
-        }
+        className="mt-6"
+        disabled={form.formState.isSubmitting || cooldown.cooling}
       >
         Get link {cooldown.cooling && <>({cooldown.countdown}s)</>}
       </Button>

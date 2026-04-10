@@ -7,15 +7,11 @@ export const PersonDefinition = z.object({
   firstName: z.string(),
   lastName: z.string(),
   middleName: z.string().optional().nullable(),
+  email: z.email(),
+  mobileNumber: z.string().optional().nullable(),
   gender: GenderDefinition,
   dateOfBirth: DateDefinition,
   image: z.url().optional().nullable(),
-  author: z.object({
-    id: z.number(),
-    name: z.string().optional().nullable(),
-    email: z.email(),
-    image: z.url().optional().nullable(),
-  }),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
 });
@@ -41,6 +37,8 @@ export const CreatePersonInputDefinition = z.object({
   gender: GenderDefinition,
   dateOfBirth: DateDefinition,
   image: z.url('Image must be a url').optional().or(z.literal('')),
+  email: z.email('Email address must be valid'),
+  mobileNumber: z.string().optional().or(z.literal('')),
 });
 
 export type Gender = z.infer<typeof GenderDefinition>;

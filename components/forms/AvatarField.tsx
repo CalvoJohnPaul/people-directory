@@ -86,10 +86,9 @@ export function AvatarField(props: AvatarFieldProps) {
             type="button"
             onClick={() => setValue(null)}
             tabIndex={-1}
-            className="absolute -top-6 -right-6 flex size-6 items-center justify-center bg-white/5 text-white"
-            aria-label="Remove avatar"
+            className="absolute top-0 -right-9 size-7 place-items-center self-end border"
           >
-            <XIcon className="size-4" />
+            <XIcon className="size-4.5 text-gray-700" />
           </button>
         </Presence>
       </div>
@@ -111,6 +110,9 @@ export function AvatarField(props: AvatarFieldProps) {
           }
 
           /* TODO: upload */
+
+          const img = URL.createObjectURL(file);
+          setValue(img);
         }}
         aria-hidden
       />
