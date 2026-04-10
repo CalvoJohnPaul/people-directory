@@ -22,6 +22,7 @@
       "~/prisma/*": ["./prisma/*"],
       "~/config/*": ["./config/*"],
       "~/components/*": ["./components/*"],
+      "~/emails/*": ["./emails/*"],
       "~/hooks/*": ["./hooks/*"],
       "~/types/*": ["./utils/*"],
       "~/utils/*": ["./utils/*"]

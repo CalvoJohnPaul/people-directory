@@ -4,6 +4,7 @@ import './globals.css';
 import {getServerSession} from 'next-auth';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
+import {authOptions} from '~/config/auth';
 import {Providers} from './Providers';
 
 const sans = Geist({
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Layout({children}: PropsWithChildren) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="en" className={cx(sans.variable, mono.variable, 'scheme-light scroll-smooth')}>
