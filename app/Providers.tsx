@@ -1,6 +1,6 @@
 'use client';
 
-import {Toast, Toaster} from '@ark-ui/react';
+import {Toaster} from '@ark-ui/react';
 import {QueryClientProvider} from '@tanstack/react-query';
 import {XIcon} from 'lucide-react';
 import type {Session} from 'next-auth';
@@ -8,6 +8,7 @@ import {SessionProvider} from 'next-auth/react';
 import {NavigationGuardProvider} from 'next-navigation-guard';
 import {NuqsAdapter} from 'nuqs/adapters/next';
 import type {ReactNode} from 'react';
+import {Toast} from '~/components/ui/Toast';
 import {client} from '~/config/client';
 import {toaster} from '~/config/toaster';
 
@@ -30,8 +31,10 @@ export function Providers({session, children}: ProvidersProps) {
       <Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root key={toast.id}>
-            <Toast.Title>{toast.title}</Toast.Title>
-            <Toast.Description>{toast.description}</Toast.Description>
+            <div>
+              <Toast.Title>{toast.title}</Toast.Title>
+              <Toast.Description>{toast.description}</Toast.Description>
+            </div>
             <Toast.CloseTrigger>
               <XIcon />
             </Toast.CloseTrigger>

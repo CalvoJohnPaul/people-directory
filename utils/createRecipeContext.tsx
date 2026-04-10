@@ -2,8 +2,8 @@ import type {Assign} from '@ark-ui/react';
 import {mergeProps} from '@ark-ui/react/utils';
 import {get, isNil, omit} from 'es-toolkit/compat';
 import * as React from 'react';
+import {twMerge} from 'tailwind-merge';
 import type {VariantProps} from 'tailwind-variants';
-import {cx} from 'tailwind-variants';
 import {splitProps} from './splitProps';
 
 type GenericProps = Record<string, any>;
@@ -88,7 +88,7 @@ export function createRecipeContext<
           <Component
             ref={ref}
             {...mergedProps}
-            className={cx(get(config?.defaultProps ?? {}, 'className'), className)}
+            className={twMerge(get(config?.defaultProps ?? {}, 'className'), className)}
           />
         </RecipeContext.Provider>
       );
@@ -140,7 +140,7 @@ export function createRecipeContext<
         <Component
           ref={ref}
           {...mergedProps}
-          className={cx(get(config?.defaultProps ?? {}, 'className'), className)}
+          className={twMerge(get(config?.defaultProps ?? {}, 'className'), className)}
         />
       );
     });

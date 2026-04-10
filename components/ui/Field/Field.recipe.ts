@@ -4,9 +4,10 @@ import {anatomyToRecipeSlots} from '~/utils/anatomyToRecipeSlots';
 
 export const fieldRecipe = tv({
   slots: anatomyToRecipeSlots(fieldAnatomy, {
-    label: 'mb-1.5 block font-semibold text-gray-600 text-sm',
+    label: 'mb-1.5 flex font-semibold text-gray-600 text-sm',
     input: 'block w-full outline-none',
     errorText: 'mt-1 block text-red-600 text-sm',
+    requiredIndicator: 'ml-0.5 text-red-400',
   }),
   variants: {
     size: {

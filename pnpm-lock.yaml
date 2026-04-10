@@ -29,12 +29,18 @@ importers:
       '@prisma/extension-accelerate':
         specifier: ^3.0.1
         version: 3.0.1(@prisma/client@7.7.0(prisma@7.7.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2))(typescript@6.0.2))
+      '@radix-ui/react-use-controllable-state':
+        specifier: ^1.2.2
+        version: 1.2.2(@types/react@19.2.14)(react@19.2.5)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@tanstack/react-query':
         specifier: ^5.97.0
         version: 5.97.0(react@19.2.5)
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       es-toolkit:
         specifier: ^1.45.1
         version: 1.45.1
@@ -1534,6 +1540,9 @@ packages:
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   debounce-fn@6.0.0:
     resolution: {integrity: sha512-rBMW+F2TXryBwB54Q0d8drNEI+TfoS9JpNTAoVpukbWEhjXQq4rySFYLaqXMFXwdv61Zb2OHtj5bviSoimqxRQ==}
@@ -4020,6 +4029,8 @@ snapshots:
       which: 2.0.2
 
   csstype@3.2.3: {}
+
+  date-fns@4.1.0: {}
 
   debounce-fn@6.0.0:
     dependencies:

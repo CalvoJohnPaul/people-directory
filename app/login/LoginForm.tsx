@@ -57,6 +57,7 @@ export function LoginForm() {
           description: res?.error ?? 'An unexpected error occurred. Please try again.',
         });
       })}
+      noValidate
       className="mx-auto max-w-100"
     >
       <Field.Root invalid={!!form.formState.errors.email}>

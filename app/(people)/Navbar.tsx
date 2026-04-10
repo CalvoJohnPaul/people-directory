@@ -1,11 +1,10 @@
 'use client';
 
-import {FolderOpenIcon, SettingsIcon} from 'lucide-react';
+import {FolderOpenIcon} from 'lucide-react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {signOut, useSession} from 'next-auth/react';
+import {useSession} from 'next-auth/react';
 import {Button} from '~/components/ui/Button';
-import {IconButton} from '~/components/ui/IconButton';
 
 export function Navbar() {
   const session = useSession();
@@ -24,17 +23,7 @@ export function Navbar() {
           </Button>
         )}
 
-        {session.status === 'authenticated' && (
-          <IconButton
-            variant="outline"
-            onClick={async () => {
-              signOut({redirect: false});
-              router.push('/');
-            }}
-          >
-            <SettingsIcon />
-          </IconButton>
-        )}
+        {session.status === 'authenticated' && <></>}
       </div>
     </header>
   );

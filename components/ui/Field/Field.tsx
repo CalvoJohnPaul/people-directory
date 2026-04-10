@@ -13,5 +13,9 @@ export const Select = withContext(Field.Select, 'select');
 export const Textarea = withContext(Field.Textarea, 'textarea');
 export const ErrorText = withContext(Field.ErrorText, 'errorText');
 export const HelperText = withContext(Field.HelperText, 'helperText');
-export const RequiredIndicator = withContext(Field.RequiredIndicator, 'requiredIndicator');
+export const RequiredIndicator = withContext(Field.RequiredIndicator, 'requiredIndicator', {
+  defaultProps: {
+    children: '*',
+  },
+});
 export const Context = Field.Context;
