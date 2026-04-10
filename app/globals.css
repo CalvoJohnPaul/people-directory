@@ -1,6 +1,23 @@
 @import "tailwindcss";
 @plugin "tailwind-zag";
 
+@layer base {
+  button,
+  [type="button"],
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [data-disabled] {
+    cursor: not-allowed;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
 @theme {
   --font-*: initial;
   --font-sans: var(--font-sans);

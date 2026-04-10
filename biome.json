@@ -40,6 +40,9 @@
             "functions": ["tv", "cx", "twJoin", "twMerge"]
           }
         }
+      },
+      "complexity": {
+        "noImportantStyles": "off"
       }
     },
     "domains": {

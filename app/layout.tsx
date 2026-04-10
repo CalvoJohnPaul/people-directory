@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
 import './globals.css';
+import {getServerSession} from 'next-auth';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
 import {Providers} from './Providers';
@@ -28,11 +29,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Layout({children}: PropsWithChildren) {
+export default async function Layout({children}: PropsWithChildren) {
+  const session = await getServerSession();
+
   return (
     <html lang="en" className={cx(sans.variable, mono.variable, 'scheme-light scroll-smooth')}>
       <body className="min-h-dvh bg-white font-sans text-gray-800">
-        <Providers>{children}</Providers>
+        <Providers session={session}>{children}</Providers>
       </body>
     </html>
   );
