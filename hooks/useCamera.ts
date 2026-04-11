@@ -45,7 +45,7 @@ export interface UseCameraReturn {
   videoProps: ComponentPropsWithRef<'video'>;
   opened: boolean;
   open: () => Promise<void>;
-  close: () => void;
+  close: () => Promise<void>;
   snap: (options?: CameraSnapOptions) => Promise<File>;
   snapping: boolean;
   subscribe: (fn: SubscribeFn) => UnsubscribeFn;
@@ -55,6 +55,9 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
   const position = options?.position ?? 'FRONT';
   const aspectRatio = options?.aspectRatio ?? 1;
   const mirrored = position === 'FRONT';
+
+  const [opened, setOpened] = useState(false);
+  const [snapping, setSnapping] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -77,9 +80,6 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
       transform: mirrored ? 'scaleX(-1)' : undefined,
     },
   };
-
-  const [opened, setOpened] = useState(false);
-  const [snapping, setSnapping] = useState(false);
 
   const subscribers = useRef<SubscribeFn[]>([]);
   const subscribe = (fn: SubscribeFn): UnsubscribeFn => {
@@ -158,7 +158,7 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
     }
   };
 
-  const close = () => {
+  const close = async (): Promise<void> => {
     if (streamRef.current) {
       for (const track of streamRef.current.getTracks()) {
         track.stop();
@@ -178,6 +178,8 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
     subscribers.current.forEach((subscriber) => {
       subscriber({type: 'CLOSED'});
     });
+
+    return Promise.resolve();
   };
 
   const snap = ({type = 'image/jpg', quality = 0.925}: CameraSnapOptions = {}): Promise<File> => {

@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {Fira_Code, Google_Sans} from 'next/font/google';
+import {Google_Sans, JetBrains_Mono} from 'next/font/google';
 import './globals.css';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
@@ -13,7 +13,7 @@ const sans = Google_Sans({
   variable: '--font-sans',
 });
 
-const mono = Fira_Code({
+const mono = JetBrains_Mono({
   weight: ['400', '500', '600', '700'],
   display: 'swap',
   subsets: ['latin'],

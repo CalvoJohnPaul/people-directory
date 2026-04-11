@@ -74,6 +74,28 @@
   --animate-collapse-out: collapse-out 200ms cubic-bezier(0.3, 0, 0.8, 0.15);
   --animate-collapse-x-in: collapse-x-in 400ms ease-in-out;
   --animate-collapse-x-out: collapse-x-out 200ms ease-in-out;
+  --animate-sway-right: sway-right 1s ease-in-out infinite;
+  --animate-sway-left: sway-left 1s ease-in-out infinite;
+
+  @keyframes sway-right {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(6px);
+    }
+  }
+
+  @keyframes sway-left {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(-6px);
+    }
+  }
 
   @keyframes fade-in {
     from {

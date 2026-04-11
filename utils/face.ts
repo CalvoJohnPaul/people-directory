@@ -2,13 +2,14 @@ import {
   FaceDetector,
   type FaceDetectorOptions,
   FaceLandmarker,
+  type FaceLandmarkerOptions,
   FilesetResolver,
 } from '@mediapipe/tasks-vision';
-import {invariant} from 'es-toolkit';
 
 let $faceDetector: FaceDetector | null = null;
+let $faceDetectorRunningMode: FaceDetectorOptions['runningMode'] | null = null;
 let $faceLandmarker: FaceLandmarker | null = null;
-let $runningMode: FaceDetectorOptions['runningMode'] | null = null;
+let $faceLandmarkerRunningMode: FaceLandmarkerOptions['runningMode'] | null = null;
 let $vision: Awaited<ReturnType<(typeof FilesetResolver)['forVisionTasks']>> | null = null;
 
 async function $getVision() {
@@ -23,9 +24,9 @@ async function $getVision() {
 
 async function $getFaceDetector(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
   if ($faceDetector) {
-    if ($runningMode !== runningMode) {
+    if ($faceDetectorRunningMode !== runningMode) {
       await $faceDetector.setOptions({runningMode});
-      $runningMode = runningMode;
+      $faceDetectorRunningMode = runningMode;
     }
 
     return $faceDetector;
@@ -43,16 +44,23 @@ async function $getFaceDetector(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
   });
 
   $faceDetector = detector;
-  $runningMode = runningMode;
+  $faceDetectorRunningMode = runningMode;
   return detector;
 }
 
-async function $getFaceLandmarker() {
-  if ($faceLandmarker) return $faceLandmarker;
+async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
+  if ($faceLandmarker) {
+    if ($faceLandmarkerRunningMode !== runningMode) {
+      await $faceLandmarker.setOptions({runningMode});
+      $faceLandmarkerRunningMode = runningMode;
+    }
+
+    return $faceLandmarker;
+  }
 
   const vision = await $getVision();
   const landmarker = await FaceLandmarker.createFromOptions(vision, {
-    runningMode: 'IMAGE',
+    runningMode,
     outputFaceBlendshapes: false,
     outputFacialTransformationMatrixes: true,
     numFaces: 1,
@@ -64,40 +72,41 @@ async function $getFaceLandmarker() {
   });
 
   $faceLandmarker = landmarker;
+  $faceLandmarkerRunningMode = runningMode;
   return landmarker;
 }
 
-export async function loadFaceModels() {
-  return await Promise.all([$getFaceDetector(), $getFaceLandmarker()]);
-}
-
-export async function validateFace(
+export async function detectFace(
   subject: HTMLImageElement | HTMLVideoElement | File,
-): Promise<boolean> {
+): Promise<number> {
   try {
     if (subject instanceof File) {
-      return $validateFaceFromFile(subject);
+      return $detectFaceFromFile(subject);
     } else if (subject instanceof HTMLImageElement) {
-      return $validateFaceFromImage(subject);
+      return $detectFaceFromImage(subject);
     } else if (subject instanceof HTMLVideoElement) {
-      return $validateFaceFromVideo(subject);
+      return $detectFaceFromVideo(subject);
     } else {
       const error = new Error();
       error.name = 'InvalidSubjectError';
       error.message = 'Subject must be an instance of HTMLImageElement, HTMLVideoElement or File.';
-      Error.captureStackTrace?.(error, validateFace);
+      Error.captureStackTrace?.(error, detectFace);
       throw error;
     }
   } catch (error) {
     console.error(error);
-    return false;
+    return 0;
   }
 }
 
-async function $validateFaceFromImage(image: HTMLImageElement): Promise<boolean> {
+async function $detectFaceFromImage(image: HTMLImageElement): Promise<number> {
   const detector = await $getFaceDetector('IMAGE');
   const result = detector.detect(image);
-  return result.detections.length > 0;
+  const detections = result.detections;
+  if (detections.length < 1 || detections.length > 1) return 0;
+  const detection = detections[0];
+  const score = detection.categories.at(0)?.score;
+  return score ?? 0;
 }
 
 async function $loadImage(file: File): Promise<HTMLImageElement> {
@@ -119,59 +128,34 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-async function $validateFaceFromFile(file: File): Promise<boolean> {
+async function $detectFaceFromFile(file: File): Promise<number> {
   const image = await $loadImage(file);
-  return $validateFaceFromImage(image);
+  return $detectFaceFromImage(image);
 }
 
-async function $validateFaceFromVideo(video: HTMLVideoElement): Promise<boolean> {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  invariant(context, 'Could not get canvas context.');
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const blob = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          const error = new Error();
-          error.name = 'FaceValidatorError';
-          error.message = 'Failed to create blob from canvas.';
-          reject(error);
-        } else {
-          resolve(blob);
-        }
-      },
-      'image/jpg',
-      0.9,
-    );
-  });
-
-  const file = new File([blob], `frame-${Date.now()}.jpg`, {
-    type: 'image/jpg',
-    endings: 'native',
-    lastModified: Date.now(),
-  });
-
-  return $validateFaceFromFile(file);
+async function $detectFaceFromVideo(video: HTMLVideoElement): Promise<number> {
+  const detector = await $getFaceDetector('VIDEO');
+  const result = detector.detectForVideo(video, performance.now());
+  const detections = result.detections;
+  if (detections.length < 1 || detections.length > 1) return 0;
+  const detection = detections[0];
+  const score = detection.categories.at(0)?.score;
+  return score ?? 0;
 }
 
 export type HeadTurn = 'LEFT' | 'RIGHT' | 'CENTER';
 
 export async function detectHeadTurn(
   subject: HTMLVideoElement | HTMLImageElement | File,
+  mirrored = false,
 ): Promise<HeadTurn | null> {
   try {
     if (subject instanceof File) {
-      return $detectHeadTurnFromFile(subject);
+      return $detectHeadTurnFromFile(subject, mirrored);
     } else if (subject instanceof HTMLImageElement) {
-      return $detectHeadTurnFromImage(subject);
+      return $detectHeadTurnFromImage(subject, mirrored);
     } else if (subject instanceof HTMLVideoElement) {
-      return $detectHeadTurnFromVideo(subject);
+      return $detectHeadTurnFromVideo(subject, mirrored);
     } else {
       const error = new Error();
       error.name = 'InvalidSubjectError';
@@ -185,38 +169,39 @@ export async function detectHeadTurn(
   }
 }
 
-async function $detectHeadTurnFromImage(image: HTMLImageElement): Promise<HeadTurn | null> {
-  try {
-    const landmarker = await $getFaceLandmarker();
-    const result = landmarker.detect(image);
+async function $detectHeadTurnFromImage(
+  image: HTMLImageElement,
+  mirrored?: boolean,
+): Promise<HeadTurn | null> {
+  const landmarker = await $getFaceLandmarker();
+  const result = landmarker.detect(image);
 
-    if (!result.faceLandmarks.length) return null;
+  if (!result.faceLandmarks.length) return null;
 
-    const matrix = result.facialTransformationMatrixes?.[0]?.data;
+  const matrix = result.facialTransformationMatrixes?.[0]?.data;
 
-    if (!matrix) return null;
+  if (!matrix) return null;
 
-    const yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
-    const invertedYaw = -yaw;
+  const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+  const yaw = mirrored ? -_yaw : _yaw;
 
-    if (invertedYaw > 15) return 'RIGHT';
-    if (invertedYaw < -15) return 'LEFT';
-    return 'CENTER';
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+  if (yaw > 15) return 'RIGHT';
+  if (yaw < -15) return 'LEFT';
+  return 'CENTER';
 }
 
-async function $detectHeadTurnFromFile(file: File): Promise<HeadTurn | null> {
+async function $detectHeadTurnFromFile(file: File, mirrored?: boolean): Promise<HeadTurn | null> {
   const image = await $loadImage(file);
-  return $detectHeadTurnFromImage(image);
+  return $detectHeadTurnFromImage(image, mirrored);
 }
 
-async function $detectHeadTurnFromVideo(video: HTMLVideoElement): Promise<HeadTurn | null> {
+async function $detectHeadTurnFromVideo(
+  video: HTMLVideoElement,
+  mirrored?: boolean,
+): Promise<HeadTurn | null> {
   if (video.readyState < 2) return null;
 
-  const landmarker = await $getFaceLandmarker();
+  const landmarker = await $getFaceLandmarker('VIDEO');
   const result = landmarker.detectForVideo(video, performance.now());
 
   if (!result.faceLandmarks.length) return null;
@@ -225,7 +210,8 @@ async function $detectHeadTurnFromVideo(video: HTMLVideoElement): Promise<HeadTu
 
   if (!matrix) return null;
 
-  const yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+  const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+  const yaw = mirrored ? -_yaw : _yaw;
 
   if (yaw > 15) return 'RIGHT';
   if (yaw < -15) return 'LEFT';
