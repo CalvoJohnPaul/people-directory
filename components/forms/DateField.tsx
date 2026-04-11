@@ -7,6 +7,7 @@ import {dataAttr} from '~/utils/dataAttr';
 import {DatePicker} from '../ui/DatePicker';
 
 export interface DateFieldProps {
+  size?: 'md' | 'lg';
   value?: string | Date | null;
   defaultValue?: string | Date | null;
   onChange?: (value: Date | null) => void;
@@ -132,6 +133,7 @@ export function DateField(props: DateFieldProps) {
 
   return (
     <DatePicker.Root
+      size="lg"
       value={value == null ? [] : [parseDate(value)]}
       onValueChange={(details) => {
         const newValue = details.value.at(0)?.toDate(tz);

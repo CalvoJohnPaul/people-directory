@@ -23,14 +23,16 @@ export function ViewQrCode() {
             </IconButton>
           </Dialog.Trigger>
         </Tooltip.Trigger>
-        <Tooltip.Positioner>
-          <Tooltip.Content>
-            <Tooltip.Arrow>
-              <Tooltip.ArrowTip />
-            </Tooltip.Arrow>
-            View QR code
-          </Tooltip.Content>
-        </Tooltip.Positioner>
+        <Portal>
+          <Tooltip.Positioner>
+            <Tooltip.Content>
+              <Tooltip.Arrow>
+                <Tooltip.ArrowTip />
+              </Tooltip.Arrow>
+              View QR code
+            </Tooltip.Content>
+          </Tooltip.Positioner>
+        </Portal>
       </Tooltip.Root>
       <Portal>
         <Dialog.Backdrop />

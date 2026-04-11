@@ -1,5 +1,6 @@
 'use client';
 
+import {Portal} from '@ark-ui/react';
 import {CheckIcon, LinkIcon} from 'lucide-react';
 import {useParams} from 'next/navigation';
 import {twJoin} from 'tailwind-merge';
@@ -24,14 +25,16 @@ export function CopyProfileLink() {
           {clipboard.copied ? <CheckIcon /> : <LinkIcon />}
         </IconButton>
       </Tooltip.Trigger>
-      <Tooltip.Positioner>
-        <Tooltip.Content>
-          <Tooltip.Arrow>
-            <Tooltip.ArrowTip />
-          </Tooltip.Arrow>
-          Copy profile link
-        </Tooltip.Content>
-      </Tooltip.Positioner>
+      <Portal>
+        <Tooltip.Positioner>
+          <Tooltip.Content>
+            <Tooltip.Arrow>
+              <Tooltip.ArrowTip />
+            </Tooltip.Arrow>
+            Copy profile link
+          </Tooltip.Content>
+        </Tooltip.Positioner>
+      </Portal>
     </Tooltip.Root>
   );
 }

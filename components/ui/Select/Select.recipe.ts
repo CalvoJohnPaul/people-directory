@@ -47,7 +47,7 @@ export const selectRecipe = tv({
       'ui-placement-right-start:ui-closed:animate-popover-out-right',
       'ui-placement-right-end:ui-closed:animate-popover-out-right',
     ],
-    item: 'flex icon:size-4 w-full cursor-pointer ui-disabled:cursor-not-allowed items-center gap-2 ui-highlighted:bg-gray-50 px-3 py-2 icon:text-gray-500 text-gray-700 text-sm ui-disabled:opacity-65 transition-colors duration-200',
+    item: 'flex icon:size-4 w-full cursor-pointer ui-disabled:cursor-not-allowed items-center gap-2 ui-highlighted:bg-gray-50 px-3 py-2 icon:text-gray-500 text-gray-700 ui-disabled:opacity-65 transition-colors duration-200',
     itemText: 'grow',
     itemIndicator: 'flex size-5 text-green-600!',
   }),
@@ -56,6 +56,10 @@ export const selectRecipe = tv({
       md: {
         trigger: 'h-11 px-4',
         indicator: 'size-5',
+      },
+      lg: {
+        trigger: 'h-12 px-4.5',
+        indicator: 'size-6',
       },
     },
   },

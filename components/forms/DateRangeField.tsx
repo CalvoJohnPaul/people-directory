@@ -7,6 +7,7 @@ import {dataAttr} from '~/utils/dataAttr';
 import {DatePicker} from '../ui/DatePicker';
 
 export interface DateRangeFieldProps {
+  size?: 'md' | 'lg';
   value?: DateRange | null;
   defaultValue?: DateRange | null;
   onChange?: (value: DateRange | null) => void;
@@ -138,6 +139,7 @@ export function DateRangeField(props: DateRangeFieldProps) {
 
   return (
     <DatePicker.Root
+      size={props.size}
       value={valueAsArray}
       onValueChange={(details) => {
         const l = details.value.map((d) => d.toDate(tz));

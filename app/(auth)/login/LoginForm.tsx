@@ -4,7 +4,6 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
 import {useMemo} from 'react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
-import {CheckField} from '~/components/forms/CheckField';
 import {OtpField} from '~/components/forms/OtpField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
@@ -15,6 +14,7 @@ import {CreateSessionInputDefinition} from '~/types/Session';
 export function LoginForm() {
   const router = useRouter();
   const form = useForm({
+    mode: 'all',
     resolver: zodResolver(CreateSessionInputDefinition),
     defaultValues: {
       emailAddress: '',
@@ -48,11 +48,11 @@ export function LoginForm() {
       className="mx-auto max-w-100"
     >
       <Field.Root size="lg" invalid={!!form.formState.errors.emailAddress}>
-        <Field.Label>Email</Field.Label>
+        <Field.Label>Email address</Field.Label>
         <div className="flex gap-3">
           <Field.Input
             type="email"
-            placeholder="Enter your email"
+            placeholder="eg. john.doe@example.com"
             {...form.register('emailAddress')}
             className="grow"
           />
@@ -87,20 +87,18 @@ export function LoginForm() {
         name="otpCode"
         render={(ctx) => (
           <Field.Root size="lg" invalid={ctx.fieldState.invalid} className="mt-4">
-            <Field.Label>OTP Code</Field.Label>
+            <Field.Label>OTP code</Field.Label>
             <OtpField value={ctx.field.value} onChange={ctx.field.onChange} />
             <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
           </Field.Root>
         )}
       />
 
-      <CheckField className="mt-6">Keep me logged in</CheckField>
-
       <Button
         type="submit"
         size="lg"
         fullWidth
-        className="mt-6"
+        className="mt-8"
         disabled={form.formState.isSubmitting}
       >
         Log in

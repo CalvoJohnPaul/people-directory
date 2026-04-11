@@ -10,13 +10,23 @@ const sans = Google_Sans({
   display: 'swap',
   subsets: ['latin'],
   preload: true,
+  fallback: ['ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
   variable: '--font-sans',
 });
 
 const mono = JetBrains_Mono({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400'],
   display: 'swap',
   subsets: ['latin'],
+  fallback: [
+    'ui-monospace',
+    'SF Mono',
+    'SF Mono-Regular',
+    'Menlo',
+    'Monaco',
+    'Consolas',
+    'monospace',
+  ],
   variable: '--font-mono',
 });
 

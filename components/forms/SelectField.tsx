@@ -5,6 +5,7 @@ import {Select} from '../ui/Select';
 import {Tags} from '../ui/Tags';
 
 export interface SelectField__singleProps {
+  size?: 'md' | 'lg';
   options: Option[];
   value?: string;
   defaultValue?: string;
@@ -20,6 +21,7 @@ export interface SelectField__singleProps {
 }
 
 export interface SelectField__multiProps {
+  size?: 'md' | 'lg';
   options: Option[];
   value?: string[];
   defaultValue?: string[];
@@ -70,6 +72,7 @@ function SelectField__single(props: SelectField__singleProps) {
 
   return (
     <Select.Root
+      size={props.size}
       value={value ? [value] : []}
       onValueChange={(details) => {
         setValue(details.value.at(0) ?? '');
@@ -124,6 +127,7 @@ function SelectField__multi(props: SelectField__multiProps) {
 
   return (
     <Select.Root
+      size={props.size}
       value={value}
       onValueChange={(details) => {
         setValue(details.value);

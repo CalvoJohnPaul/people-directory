@@ -58,6 +58,10 @@ export function usePeopleQuery(
         });
       }
 
+      if (args?.image) {
+        params.set('image', args.image);
+      }
+
       const res = await fetch(`/api/people?${params.toString()}`, {
         headers: {
           Accept: 'application/json',

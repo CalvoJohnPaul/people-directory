@@ -1,16 +1,17 @@
 'use client';
 
+import {Portal} from '@ark-ui/react';
 import {FolderOpenIcon, LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {Button} from '~/components/ui/Button';
 import {Menu} from '~/components/ui/Menu';
-
-const authenticated = true;
+import {useMeQuery} from '~/hooks/useMeQuery';
 
 export function Navbar() {
   const router = useRouter();
+  const query = useMeQuery();
 
   return (
     <header className="flex items-start p-4 lg:p-6">
@@ -19,7 +20,9 @@ export function Navbar() {
       </Link>
       <div className="grow"></div>
       <div className="flex gap-3">
-        {!authenticated ? (
+        {query.isLoading ? (
+          <div className="size-11 animate-pulse bg-gray-100" />
+        ) : query.data == null ? (
           <>
             <Button variant="outline" asChild>
               <Link href="/login">Log in</Link>
@@ -39,25 +42,27 @@ export function Navbar() {
                 className="size-11 object-cover"
               />
             </Menu.Trigger>
-            <Menu.Positioner>
-              <Menu.Content>
-                <Menu.Item value="profile" asChild>
-                  <Link href="/1">
-                    <UserIcon />
-                    My profile
-                  </Link>
-                </Menu.Item>
-                <Menu.Item
-                  value="logout"
-                  onSelect={async () => {
-                    router.push('/');
-                  }}
-                >
-                  <LogOutIcon />
-                  Log out
-                </Menu.Item>
-              </Menu.Content>
-            </Menu.Positioner>
+            <Portal>
+              <Menu.Positioner>
+                <Menu.Content>
+                  <Menu.Item value="profile" asChild>
+                    <Link href="/1">
+                      <UserIcon />
+                      My profile
+                    </Link>
+                  </Menu.Item>
+                  <Menu.Item
+                    value="logout"
+                    onSelect={async () => {
+                      router.push('/');
+                    }}
+                  >
+                    <LogOutIcon />
+                    Log out
+                  </Menu.Item>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Portal>
           </Menu.Root>
         )}
       </div>

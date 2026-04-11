@@ -5,6 +5,7 @@ import {
   type FaceLandmarkerOptions,
   FilesetResolver,
 } from '@mediapipe/tasks-vision';
+import {invariant} from 'es-toolkit';
 
 let $faceDetector: FaceDetector | null = null;
 let $faceDetectorRunningMode: FaceDetectorOptions['runningMode'] | null = null;
@@ -216,4 +217,31 @@ async function $detectHeadTurnFromVideo(
   if (yaw > 15) return 'RIGHT';
   if (yaw < -15) return 'LEFT';
   return 'CENTER';
+}
+
+export async function getFaceEmbedding(file: File) {
+  try {
+    const landmarker = await $getFaceLandmarker();
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    invariant(context, 'Could not get canvas context');
+
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    context.drawImage(bitmap, 0, 0);
+
+    const result = landmarker.detect(canvas);
+    const faceBlendshape = result.faceBlendshapes?.at(0);
+
+    if (!faceBlendshape) {
+      return null;
+    }
+
+    return faceBlendshape.categories.map((c) => c.score);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }

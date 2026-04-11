@@ -4,9 +4,8 @@ import {anatomyToRecipeSlots} from '~/utils/anatomyToRecipeSlots';
 
 export const datePickerRecipe = tv({
   slots: anatomyToRecipeSlots(datePickerAnatomy, {
-    control: 'flex gap-2',
     trigger:
-      'flex icon:size-5 h-11 w-full shrink-0 items-center justify-center border ui-invalid:border-red-400 ui-open:ui-invalid:border-red-400 bg-white px-4 text-left icon:text-gray-500 ui-placeholder-shown:text-gray-500',
+      'flex w-full shrink-0 items-center justify-center border ui-invalid:border-red-400 ui-open:ui-invalid:border-red-400 bg-white text-left icon:text-gray-500 ui-placeholder-shown:text-gray-500',
     positioner: 'z-dropdown',
     content: [
       'z-dropdown',
@@ -95,4 +94,17 @@ export const datePickerRecipe = tv({
       'flex icon:size-5 size-9 items-center justify-center text-gray-600 hover:bg-gray-50',
     rangeText: 'px-1.5 py-0.5 font-semibold text-gray-600 text-sm hover:bg-gray-50',
   }),
+  variants: {
+    size: {
+      md: {
+        trigger: 'icon:size-5 h-11 px-4',
+      },
+      lg: {
+        trigger: 'icon:size-6 h-12 px-4.5',
+      },
+    },
+  },
+  defaultVariants: {
+    size: 'md',
+  },
 });

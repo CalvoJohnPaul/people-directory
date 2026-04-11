@@ -20,9 +20,6 @@ importers:
       '@next/env':
         specifier: ^16.2.3
         version: 16.2.3
-      '@opencvjs/web':
-        specifier: 4.13.0-release.1
-        version: 4.13.0-release.1
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.7.0
@@ -44,6 +41,9 @@ importers:
       es-toolkit:
         specifier: ^1.45.1
         version: 1.45.1
+      jsqr:
+        specifier: ^1.4.0
+        version: 1.4.0
       lucide-react:
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.5)
@@ -102,6 +102,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.2.2
+      '@tanstack/react-query-devtools':
+        specifier: ^5.98.0
+        version: 5.98.0(@tanstack/react-query@5.97.0(react@19.2.5))(react@19.2.5)
       '@total-typescript/ts-reset':
         specifier: ^0.6.1
         version: 0.6.1
@@ -731,12 +734,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@opencvjs/types@4.13.0-release.1':
-    resolution: {integrity: sha512-HipuX/QrafzIjTPoTwnrgYkk3VUEpwLxmuekdwdnud0vvqyxUhMPmEX+a3dHglNkHhgkpKY22WFLHm0LItG6Mg==}
-
-  '@opencvjs/web@4.13.0-release.1':
-    resolution: {integrity: sha512-IGmJc54pMWk5cQmhcHSAfcCSEnS8oVEdL1gHRhZr4acztZr2tjpZSJHZ8XD2DRM0tOFnpZQ+WGRA4gkizm9khg==}
-
   '@prisma/adapter-pg@7.7.0':
     resolution: {integrity: sha512-q33Ta8sKbgzEpAy0lx45tAq//yMv0qcb+8nj+TCA3P4wiAY+OBFEFk/NDkZncAfHaNJeGo5WJpJdpbL+ijYx8g==}
 
@@ -1148,6 +1145,15 @@ packages:
 
   '@tanstack/query-core@5.97.0':
     resolution: {integrity: sha512-QdpLP5VzVMgo4VtaPppRA2W04UFjIqX+bxke/ZJhE5cfd5UPkRzqIAJQt9uXkQJjqE8LBOMbKv7f8HCsZltXlg==}
+
+  '@tanstack/query-devtools@5.98.0':
+    resolution: {integrity: sha512-6W2YE5L5Tj1VY0pgzdesvssh/50pdbPIC+5BVf9IXbcuwG+aAV/FRUVy45p7t+sxb8xUs4zSK3yEXbjx2b1QPQ==}
+
+  '@tanstack/react-query-devtools@5.98.0':
+    resolution: {integrity: sha512-VW0jv3lBfc57DM6x64JwkmV83ttMKK4kTt2rOP/EbsO9d31iTOYl/EvB3SvnmET06O02msn1gFQH69zqEawVZg==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.98.0
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.97.0':
     resolution: {integrity: sha512-y4So4eGcQoK2WVMAcDNZE9ofB/p5v1OlKvtc1F3uqHwrtifobT7q+ZnXk2mRkc8E84HKYSlAE9z6HXl2V0+ySQ==}
@@ -1736,6 +1742,9 @@ packages:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
     hasBin: true
+
+  jsqr@1.4.0:
+    resolution: {integrity: sha512-dxLob7q65Xg2DvstYkRpkYtmKm2sPJ9oFhrhmudT1dZvNFFTlroai3AWSpLey/w5vMcLBXRgOJsbXpdN9HzU/A==}
 
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
@@ -2852,12 +2861,6 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.2.3':
     optional: true
 
-  '@opencvjs/types@4.13.0-release.1': {}
-
-  '@opencvjs/web@4.13.0-release.1':
-    dependencies:
-      '@opencvjs/types': 4.13.0-release.1
-
   '@prisma/adapter-pg@7.7.0':
     dependencies:
       '@prisma/driver-adapter-utils': 7.7.0
@@ -3238,6 +3241,14 @@ snapshots:
       tailwindcss: 4.2.2
 
   '@tanstack/query-core@5.97.0': {}
+
+  '@tanstack/query-devtools@5.98.0': {}
+
+  '@tanstack/react-query-devtools@5.98.0(@tanstack/react-query@5.97.0(react@19.2.5))(react@19.2.5)':
+    dependencies:
+      '@tanstack/query-devtools': 5.98.0
+      '@tanstack/react-query': 5.97.0(react@19.2.5)
+      react: 19.2.5
 
   '@tanstack/react-query@5.97.0(react@19.2.5)':
     dependencies:
@@ -4151,6 +4162,8 @@ snapshots:
   json-schema-typed@8.0.2: {}
 
   json5@2.2.3: {}
+
+  jsqr@1.4.0: {}
 
   kleur@3.0.3: {}
 

@@ -75,34 +75,37 @@ export const UpdatePersonInputDefinition = z.object({
   data: UpdatePersonDataInputDefinition,
 });
 
-export const PeopleInputDefinition = z.object({
-  first: z.coerce
-    .number()
-    .optional()
-    .nullable()
-    .catch(null)
-    .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
-  after: z.coerce
-    .number()
-    .optional()
-    .nullable()
-    .catch(null)
-    .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
-  keyword: z.string().optional().nullable().catch(null),
-  id: z
-    .union([
-      z
-        .array(z.coerce.number().nullable().catch(null))
-        .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
-      z.coerce
-        .number()
-        .nullable()
-        .catch(null)
-        .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? [v] : null)),
-    ])
-    .optional()
-    .nullable(),
-});
+export const PeopleInputDefinition = z
+  .object({
+    first: z.coerce
+      .number()
+      .optional()
+      .nullable()
+      .catch(null)
+      .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
+    after: z.coerce
+      .number()
+      .optional()
+      .nullable()
+      .catch(null)
+      .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
+    keyword: z.string().optional().nullable().catch(null),
+    image: z.string().optional().nullable().catch(null),
+    id: z
+      .union([
+        z
+          .array(z.coerce.number().nullable().catch(null))
+          .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
+        z.coerce
+          .number()
+          .nullable()
+          .catch(null)
+          .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? [v] : null)),
+      ])
+      .optional()
+      .nullable(),
+  })
+  .partial();
 
 export type Gender = z.infer<typeof GenderDefinition>;
 export type Person = z.infer<typeof PersonDefinition>;
