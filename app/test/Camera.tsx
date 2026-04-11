@@ -26,7 +26,7 @@ export function Camera(props: CameraProps) {
   const [livenessRightVerifying, setLivenessRightVerifying] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = camera.subscribe((event) => {
+    const unsubscribe = camera.subscribe(async (event) => {
       if (event.type === 'SNAPSHOT') {
         setSnapshot(event.details.file);
       }
