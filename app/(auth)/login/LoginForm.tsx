@@ -4,14 +4,18 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
 import {useMemo} from 'react';
 import {Controller, useForm, useWatch} from 'react-hook-form';
+import {useTimeout} from 'usehooks-ts';
 import {OtpField} from '~/components/forms/OtpField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {toaster} from '~/config/toaster';
 import {useCooldown} from '~/hooks/useCooldown';
+import {useMeQuery} from '~/hooks/useMeQuery';
 import {CreateSessionInputDefinition} from '~/types/Session';
 
 export function LoginForm() {
+  const query = useMeQuery();
+
   const router = useRouter();
   const form = useForm({
     mode: 'all',
@@ -38,6 +42,8 @@ export function LoginForm() {
     () => CreateSessionInputDefinition.shape.emailAddress.safeParse(emailAddress).success,
     [emailAddress],
   );
+
+  useTimeout(() => router.push('/'), query.data != null ? 0 : null);
 
   return (
     <form
@@ -73,7 +79,9 @@ export function LoginForm() {
                 ),
               });
             }}
-            disabled={!emailAddressValid || cooldown.cooling}
+            disabled={
+              !emailAddressValid || cooldown.cooling || query.isLoading || query.data != null
+            }
           >
             Get OTP
             {cooldown.cooling && <span className="tabular-nums">({cooldown.countdown})</span>}
@@ -99,7 +107,7 @@ export function LoginForm() {
         size="lg"
         fullWidth
         className="mt-8"
-        disabled={form.formState.isSubmitting}
+        disabled={form.formState.isSubmitting || query.isLoading || query.data != null}
       >
         Log in
       </Button>

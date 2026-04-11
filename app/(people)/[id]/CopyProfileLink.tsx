@@ -10,13 +10,12 @@ import {useClipboard} from '~/hooks/useClipboard';
 
 export function CopyProfileLink() {
   const params = useParams<{id: string}>();
-  const clipboard = useClipboard(`http://localhost:3000/${params.id}`);
+  const clipboard = useClipboard(`${process.env.NEXT_PUBLIC_URL}/${params.id}`);
 
   return (
-    <Tooltip.Root>
+    <Tooltip.Root disabled={clipboard.copied}>
       <Tooltip.Trigger asChild>
         <IconButton
-          size="lg"
           variant="outline"
           disabled={clipboard.copied}
           onClick={() => clipboard.copy()}

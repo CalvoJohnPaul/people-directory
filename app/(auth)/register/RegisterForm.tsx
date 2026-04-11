@@ -2,16 +2,21 @@
 
 import {zodResolver} from '@hookform/resolvers/zod';
 import {capitalize} from 'es-toolkit';
+import {useRouter} from 'next/navigation';
 import {useNavigationGuard} from 'next-navigation-guard';
 import {Controller, useForm} from 'react-hook-form';
+import {useTimeout} from 'usehooks-ts';
 import {DateField} from '~/components/forms/DateField';
 import {MobileNumberField} from '~/components/forms/MobileNumberField';
 import {SelectField} from '~/components/forms/SelectField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
+import {useMeQuery} from '~/hooks/useMeQuery';
 import {CreatePersonInputDefinition, GenderDefinition} from '~/types/Person';
 
 export function RegisterForm() {
+  const query = useMeQuery();
+  const router = useRouter();
   const form = useForm({
     mode: 'all',
     resolver: zodResolver(CreatePersonInputDefinition),
@@ -26,6 +31,8 @@ export function RegisterForm() {
       mobileNumber: '',
     },
   });
+
+  useTimeout(() => router.push('/'), query.data != null ? 0 : null);
 
   useNavigationGuard({
     enabled: form.formState.isDirty,
@@ -53,16 +60,33 @@ export function RegisterForm() {
         <Field.Input placeholder="eg. Smith" {...form.register('middleName')} />
         <Field.ErrorText>{form.formState.errors.middleName?.message}</Field.ErrorText>
       </Field.Root>
-      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.emailAddress}>
-        <Field.Label>Email address</Field.Label>
+      <Field.Root
+        size="lg"
+        required
+        className="mt-4"
+        invalid={!!form.formState.errors.emailAddress}
+      >
+        <Field.Label>
+          Email address
+          <Field.RequiredIndicator />
+        </Field.Label>
         <Field.Input placeholder="eg. john.doe@example.com" {...form.register('emailAddress')} />
         <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
-      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.mobileNumber}>
-        <Field.Label>Mobile number</Field.Label>
-        <MobileNumberField size="lg" />
-        <Field.ErrorText>{form.formState.errors.mobileNumber?.message}</Field.ErrorText>
-      </Field.Root>
+      <Controller
+        control={form.control}
+        name="mobileNumber"
+        render={(ctx) => (
+          <Field.Root size="lg" required className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>
+              Mobile number
+              <Field.RequiredIndicator />
+            </Field.Label>
+            <MobileNumberField size="lg" value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
       <Controller
         control={form.control}
         name="dateOfBirth"
@@ -99,7 +123,12 @@ export function RegisterForm() {
       />
 
       <div className="mt-8">
-        <Button size="lg" type="submit" fullWidth>
+        <Button
+          size="lg"
+          type="submit"
+          fullWidth
+          disabled={form.formState.isSubmitting || query.isLoading || query.data != null}
+        >
           Submit
         </Button>
       </div>

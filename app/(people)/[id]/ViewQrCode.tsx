@@ -11,14 +11,14 @@ import {Tooltip} from '~/components/ui/Tooltip';
 
 export function ViewQrCode() {
   const params = useParams<{id: string}>();
-  const value = `http://localhost:3000/${params.id}`;
+  const value = `${process.env.NEXT_PUBLIC_URL}/${params.id}`;
 
   return (
     <Dialog.Root closeOnInteractOutside closeOnEscape>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <Dialog.Trigger asChild>
-            <IconButton size="lg" variant="outline">
+            <IconButton variant="outline">
               <QrCodeIcon />
             </IconButton>
           </Dialog.Trigger>
