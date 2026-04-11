@@ -7,7 +7,7 @@ export const PersonDefinition = z.object({
   firstName: z.string(),
   lastName: z.string(),
   middleName: z.string().optional().nullable(),
-  email: z.email(),
+  emailAddress: z.email(),
   mobileNumber: z.string().optional().nullable(),
   gender: GenderDefinition,
   dateOfBirth: DateDefinition,
@@ -37,7 +37,7 @@ export const CreatePersonInputDefinition = z.object({
   gender: GenderDefinition,
   dateOfBirth: DateDefinition,
   image: z.url('Image must be a url').optional().or(z.literal('')),
-  email: z.email('Email address must be valid'),
+  emailAddress: z.email('Invalid email address'),
   mobileNumber: z.string().optional().or(z.literal('')),
 });
 

@@ -1,14 +1,13 @@
 'use client';
 
-import {FolderOpenIcon, LogOutIcon} from 'lucide-react';
+import {FolderOpenIcon, LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {Button} from '~/components/ui/Button';
 import {Menu} from '~/components/ui/Menu';
-import {EditAccount} from './EditAccount';
 
-const authenticated = false;
+const authenticated = true;
 
 export function Navbar() {
   const router = useRouter();
@@ -23,7 +22,7 @@ export function Navbar() {
         {!authenticated ? (
           <>
             <Button variant="outline" asChild>
-              <Link href="/login">Login</Link>
+              <Link href="/login">Log in</Link>
             </Button>
             <Button asChild>
               <Link href="/register">Register</Link>
@@ -42,7 +41,12 @@ export function Navbar() {
             </Menu.Trigger>
             <Menu.Positioner>
               <Menu.Content>
-                <EditAccount />
+                <Menu.Item value="profile" asChild>
+                  <Link href="/1">
+                    <UserIcon />
+                    My profile
+                  </Link>
+                </Menu.Item>
                 <Menu.Item
                   value="logout"
                   onSelect={async () => {
@@ -50,7 +54,7 @@ export function Navbar() {
                   }}
                 >
                   <LogOutIcon />
-                  Sign out
+                  Log out
                 </Menu.Item>
               </Menu.Content>
             </Menu.Positioner>

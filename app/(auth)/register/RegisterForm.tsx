@@ -19,7 +19,7 @@ export function RegisterForm() {
       dateOfBirth: new Date(),
       gender: 'MALE',
       image: '',
-      email: '',
+      emailAddress: '',
       mobileNumber: '',
     },
   });
@@ -45,10 +45,10 @@ export function RegisterForm() {
         <Field.Input placeholder="eg. Smith" {...form.register('middleName')} />
         <Field.ErrorText>{form.formState.errors.middleName?.message}</Field.ErrorText>
       </Field.Root>
-      <Field.Root className="mt-4" invalid={!!form.formState.errors.email}>
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.emailAddress}>
         <Field.Label>Email</Field.Label>
-        <Field.Input placeholder="eg. john.doe@example.com" {...form.register('email')} />
-        <Field.ErrorText>{form.formState.errors.email?.message}</Field.ErrorText>
+        <Field.Input placeholder="eg. john.doe@example.com" {...form.register('emailAddress')} />
+        <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
       <Field.Root className="mt-4" invalid={!!form.formState.errors.mobileNumber}>
         <Field.Label>Mobile number</Field.Label>

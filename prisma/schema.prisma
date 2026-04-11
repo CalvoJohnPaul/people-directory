@@ -21,10 +21,19 @@ model Person {
   gender       Gender
   dateOfBirth  DateTime @map("date_of_birth")
   image        String?
-  email        String   @unique
+  emailAddress String   @unique @map("email_address")
   mobileNumber String?  @unique @map("mobile_number")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("people")
+}
+
+model Otp {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  emailAddress String   @unique @map("email_address")
+  expiresAt    DateTime @map("expires_at")
+
+  @@map("otps")
 }

@@ -15,12 +15,12 @@ export function LoginForm() {
   const form = useForm({
     resolver: zodResolver(
       z.object({
-        email: z.email('Invalid email').trim().toLowerCase(),
+        emailAddress: z.email('Invalid email').trim().toLowerCase(),
         staySignedIn: z.boolean(),
       }),
     ),
     defaultValues: {
-      email: '',
+      emailAddress: '',
       staySignedIn: true,
     },
   });
@@ -29,21 +29,25 @@ export function LoginForm() {
 
   return (
     <form
-      onSubmit={form.handleSubmit(async ({email, staySignedIn}) => {
+      onSubmit={form.handleSubmit(async ({emailAddress, staySignedIn}) => {
         form.reset();
         cooldown.start();
         toaster.success({
           title: 'Email sent',
-          description: `A magic link has been sent to ${email}. Please check your inbox.`,
+          description: `A magic link has been sent to ${emailAddress}. Please check your inbox.`,
         });
       })}
       noValidate
       className="mx-auto max-w-100"
     >
-      <Field.Root size="lg" invalid={!!form.formState.errors.email}>
+      <Field.Root size="lg" invalid={!!form.formState.errors.emailAddress}>
         <Field.Label>Email</Field.Label>
-        <Field.Input type="email" placeholder="Enter your email" {...form.register('email')} />
-        <Field.ErrorText>{form.formState.errors.email?.message}</Field.ErrorText>
+        <Field.Input
+          type="email"
+          placeholder="Enter your email"
+          {...form.register('emailAddress')}
+        />
+        <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
 
       <Controller
