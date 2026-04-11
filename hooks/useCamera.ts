@@ -212,7 +212,7 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
         (blob) => {
           if (blob) {
             const ext = type.split(/\\/g).at(-1) || 'jpg';
-            const name = `screenshot-${crypto.randomUUID()}.${ext}`;
+            const name = `screenshot-${Date.now()}.${ext}`;
             const file = new File([blob], name, {
               type,
               endings: 'native',

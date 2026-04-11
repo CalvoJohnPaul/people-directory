@@ -14,7 +14,9 @@
   "dependencies": {
     "@ark-ui/react": "^5.35.0",
     "@hookform/resolvers": "^5.2.2",
+    "@mediapipe/tasks-vision": "^0.10.34",
     "@next/env": "^16.2.3",
+    "@opencvjs/web": "4.13.0-release.1",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@radix-ui/react-use-controllable-state": "^1.2.2",

@@ -14,9 +14,15 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@19.2.5))
+      '@mediapipe/tasks-vision':
+        specifier: ^0.10.34
+        version: 0.10.34
       '@next/env':
         specifier: ^16.2.3
         version: 16.2.3
+      '@opencvjs/web':
+        specifier: 4.13.0-release.1
+        version: 4.13.0-release.1
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.7.0
@@ -605,6 +611,9 @@ packages:
   '@kurkle/color@0.3.4':
     resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
+  '@mediapipe/tasks-vision@0.10.34':
+    resolution: {integrity: sha512-KFGyhDsjJ+9WUMcMfjTOpcEp3LJNS3KwC7BfvKrCYELn/7G/5kmwnU7z6Spps+iWQoTGL8xW8i68r65OTa3DwA==}
+
   '@next/env@16.1.7':
     resolution: {integrity: sha512-rJJbIdJB/RQr2F1nylZr/PJzamvNNhfr3brdKP6s/GW850jbtR70QlSfFselvIBbcPUOlQwBakexjFzqLzF6pg==}
 
@@ -714,6 +723,12 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
+
+  '@opencvjs/types@4.13.0-release.1':
+    resolution: {integrity: sha512-HipuX/QrafzIjTPoTwnrgYkk3VUEpwLxmuekdwdnud0vvqyxUhMPmEX+a3dHglNkHhgkpKY22WFLHm0LItG6Mg==}
+
+  '@opencvjs/web@4.13.0-release.1':
+    resolution: {integrity: sha512-IGmJc54pMWk5cQmhcHSAfcCSEnS8oVEdL1gHRhZr4acztZr2tjpZSJHZ8XD2DRM0tOFnpZQ+WGRA4gkizm9khg==}
 
   '@prisma/adapter-pg@7.7.0':
     resolution: {integrity: sha512-q33Ta8sKbgzEpAy0lx45tAq//yMv0qcb+8nj+TCA3P4wiAY+OBFEFk/NDkZncAfHaNJeGo5WJpJdpbL+ijYx8g==}
@@ -2770,6 +2785,8 @@ snapshots:
 
   '@kurkle/color@0.3.4': {}
 
+  '@mediapipe/tasks-vision@0.10.34': {}
+
   '@next/env@16.1.7': {}
 
   '@next/env@16.2.3': {}
@@ -2821,6 +2838,12 @@ snapshots:
 
   '@next/swc-win32-x64-msvc@16.2.3':
     optional: true
+
+  '@opencvjs/types@4.13.0-release.1': {}
+
+  '@opencvjs/web@4.13.0-release.1':
+    dependencies:
+      '@opencvjs/types': 4.13.0-release.1
 
   '@prisma/adapter-pg@7.7.0':
     dependencies:
