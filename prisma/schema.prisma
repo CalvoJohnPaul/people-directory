@@ -20,7 +20,7 @@ model Person {
   middleName   String?  @map("middle_name")
   gender       Gender
   dateOfBirth  DateTime @map("date_of_birth")
-  image        String?
+  image        String
   emailAddress String   @unique @map("email_address")
   mobileNumber String?  @unique @map("mobile_number")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -36,4 +36,15 @@ model Otp {
   expiresAt    DateTime @map("expires_at")
 
   @@map("otps")
+}
+
+model UploadedFile {
+  id        Int      @id @default(autoincrement())
+  url       String   @unique
+  name      String
+  type      String
+  size      Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("uploaded_files")
 }

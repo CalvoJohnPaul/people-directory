@@ -2,71 +2,108 @@
 
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
-import {Controller, useForm} from 'react-hook-form';
-import * as z from 'zod';
+import {useMemo} from 'react';
+import {Controller, useForm, useWatch} from 'react-hook-form';
 import {CheckField} from '~/components/forms/CheckField';
+import {OtpField} from '~/components/forms/OtpField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {toaster} from '~/config/toaster';
 import {useCooldown} from '~/hooks/useCooldown';
+import {CreateSessionInputDefinition} from '~/types/Session';
 
 export function LoginForm() {
   const router = useRouter();
   const form = useForm({
-    resolver: zodResolver(
-      z.object({
-        emailAddress: z.email('Invalid email').trim().toLowerCase(),
-        staySignedIn: z.boolean(),
-      }),
-    ),
+    resolver: zodResolver(CreateSessionInputDefinition),
     defaultValues: {
       emailAddress: '',
-      staySignedIn: true,
+      otpCode: '',
     },
   });
 
-  const cooldown = useCooldown();
+  const cooldown = useCooldown({
+    min: 0,
+    max: 60,
+    duration: 60 * 1000,
+  });
+
+  const emailAddress = useWatch({
+    control: form.control,
+    name: 'emailAddress',
+    defaultValue: '',
+  });
+
+  const emailAddressValid = useMemo(
+    () => CreateSessionInputDefinition.shape.emailAddress.safeParse(emailAddress).success,
+    [emailAddress],
+  );
 
   return (
     <form
-      onSubmit={form.handleSubmit(async ({emailAddress, staySignedIn}) => {
-        form.reset();
-        cooldown.start();
-        toaster.success({
-          title: 'Email sent',
-          description: `A magic link has been sent to ${emailAddress}. Please check your inbox.`,
-        });
+      onSubmit={form.handleSubmit(async (data) => {
+        router.push('/');
       })}
       noValidate
       className="mx-auto max-w-100"
     >
       <Field.Root size="lg" invalid={!!form.formState.errors.emailAddress}>
         <Field.Label>Email</Field.Label>
-        <Field.Input
-          type="email"
-          placeholder="Enter your email"
-          {...form.register('emailAddress')}
-        />
+        <div className="flex gap-3">
+          <Field.Input
+            type="email"
+            placeholder="Enter your email"
+            {...form.register('emailAddress')}
+            className="grow"
+          />
+          <Button
+            size="lg"
+            variant="outline"
+            className="shrink-0"
+            onClick={async () => {
+              cooldown.start();
+
+              toaster.success({
+                title: 'OTP sent!',
+                description: (
+                  <>
+                    An OTP has been sent to {emailAddress}.<br />
+                    Please check your inbox.
+                  </>
+                ),
+              });
+            }}
+            disabled={!emailAddressValid || cooldown.cooling}
+          >
+            Get OTP
+            {cooldown.cooling && <span className="tabular-nums">({cooldown.countdown})</span>}
+          </Button>
+        </div>
         <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
 
       <Controller
         control={form.control}
-        name="staySignedIn"
-        render={({field}) => (
-          <CheckField className="mt-5" value={field.value} onChange={field.onChange}>
-            Keep me signed in
-          </CheckField>
+        name="otpCode"
+        render={(ctx) => (
+          <Field.Root size="lg" invalid={ctx.fieldState.invalid} className="mt-4">
+            <Field.Label>OTP Code</Field.Label>
+            <OtpField value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
         )}
       />
+
+      <CheckField className="mt-6">Keep me logged in</CheckField>
+
       <Button
         type="submit"
         size="lg"
         fullWidth
         className="mt-6"
-        disabled={form.formState.isSubmitting || cooldown.cooling}
+        disabled={form.formState.isSubmitting}
       >
-        Get link {cooldown.cooling && <>({cooldown.countdown}s)</>}
+        Log in
       </Button>
     </form>
   );

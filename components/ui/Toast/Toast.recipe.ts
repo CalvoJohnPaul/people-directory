@@ -10,6 +10,7 @@ export const toastRecipe = tv({
       'flex',
       'h-(--height)',
       'w-[calc(100dvw-(var(--gap)*2))]',
+      'lg:w-100',
       'scale-(--scale)',
       'items-center',
       'gap-2',
