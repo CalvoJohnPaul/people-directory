@@ -97,7 +97,7 @@ export const PeopleInputDefinition = z
       .array(z.coerce.number().nullable().catch(null))
       .optional()
       .nullable()
-      .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
+      .transform((l) => l?.filter((v): v is number => v != null && Number.isFinite(v))),
     id: z
       .union([
         z

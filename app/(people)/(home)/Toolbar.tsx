@@ -4,7 +4,13 @@ import {Portal, Swap} from '@ark-ui/react';
 import {uniq} from 'es-toolkit';
 import {ImageIcon, QrCodeIcon, SearchIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
-import {parseAsInteger, parseAsNativeArrayOf, parseAsString, useQueryState} from 'nuqs';
+import {
+  parseAsFloat,
+  parseAsInteger,
+  parseAsNativeArrayOf,
+  parseAsString,
+  useQueryState,
+} from 'nuqs';
 import {useRef, useState} from 'react';
 import {useInterval} from 'usehooks-ts';
 import {ImagePlaceholderIcon} from '~/components/icons/ImagePlaceholderIcon';
@@ -231,7 +237,10 @@ function SearchByQrCode() {
 }
 
 function SearchByPhoto() {
-  const [value, setValue] = useQueryState('image', parseAsNativeArrayOf(parseAsInteger));
+  const [value, setValue] = useQueryState(
+    'image',
+    parseAsNativeArrayOf(parseAsFloat).withDefault([]),
+  );
 
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -281,7 +290,7 @@ function SearchByPhoto() {
                 size="lg"
                 className="shrink-0"
                 onClick={() => {
-                  setValue(null);
+                  setValue([]);
                 }}
               >
                 <XIcon />
