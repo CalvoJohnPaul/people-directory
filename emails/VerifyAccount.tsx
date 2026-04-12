@@ -15,14 +15,14 @@ import {
 
 interface VerifyAccountProps {
   url: string;
-  email: string;
+  emailAddress: string;
 }
 
 export default function VerifyAccount(props: VerifyAccountProps) {
-  const {url, email} = Object.assign(
+  const {url, emailAddress} = Object.assign(
     {
       url: 'https://dummy.com/verify?token=abc123',
-      email: 'johndoe@dummy.org',
+      emailAddress: 'johndoe@dummy.org',
     },
     props,
   );
@@ -41,7 +41,7 @@ export default function VerifyAccount(props: VerifyAccountProps) {
             <Section className="px-2 text-center">
               <Text className="m-0 font-semibold text-gray-900 text-xl">Verify your account</Text>
               <Text className="mt-1 mb-0 text-gray-600">
-                We received a request to verify the account for <strong>{email}</strong>.
+                We received a request to verify the account for <strong>{emailAddress}</strong>.
               </Text>
             </Section>
 

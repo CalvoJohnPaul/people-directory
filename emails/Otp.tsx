@@ -13,14 +13,14 @@ import {
 
 interface OtpProps {
   code: string;
-  email: string;
+  emailAddress: string;
 }
 
 export default function Otp(props: OtpProps) {
-  const {code, email} = Object.assign(
+  const {code, emailAddress} = Object.assign(
     {
       code: '000000',
-      email: 'johndoe@dummy.org',
+      emailAddress: 'johndoe@dummy.org',
     },
     props,
   );
@@ -39,7 +39,7 @@ export default function Otp(props: OtpProps) {
             <Section className="px-2 text-center">
               <Text className="m-0 font-semibold text-gray-900 text-xl">Verify your sign-in</Text>
               <Text className="mt-1 mb-0 text-gray-600">
-                We received a request to sign in as <strong>{email}</strong>.
+                We received a request to sign in as <strong>{emailAddress}</strong>.
               </Text>
             </Section>
             <Section className="mt-8 px-2 text-center">

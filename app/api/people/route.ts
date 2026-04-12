@@ -1,11 +1,34 @@
 import {clamp} from 'es-toolkit';
+import {type NextRequest, NextResponse} from 'next/server';
 import {prisma} from '~/config/prisma';
 import type {Prisma} from '~/prisma/generated/prisma/client';
-import type {PaginatedResponse} from '~/types/common';
-import type {CreatePersonInput, PeopleInput, Person, UpdatePersonDataInput} from '~/types/Person';
+import type {HttpResponse, PaginatedResponse} from '~/types/common';
+import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
 
-export async function getPeople(args?: PeopleInput): Promise<PaginatedResponse<Person>> {
-  const where: Prisma.PersonWhereInput = {};
+export async function GET(
+  req: NextRequest,
+): Promise<NextResponse<HttpResponse<PaginatedResponse<Person>>>> {
+  const args = PeopleInputDefinition.parse({
+    first: req.nextUrl.searchParams.get('first'),
+    after: req.nextUrl.searchParams.get('after'),
+    keyword: req.nextUrl.searchParams.get('keyword'),
+    image: req.nextUrl.searchParams.get('image'),
+    id: req.nextUrl.searchParams.getAll('id'),
+  });
+
+  const where: Prisma.PersonWhereInput = {
+    ...(args.id?.length && {id: {in: args.id}}),
+    ...(args.keyword && {
+      OR: [
+        {firstName: {contains: args.keyword, mode: 'insensitive'}},
+        {lastName: {contains: args.keyword, mode: 'insensitive'}},
+        {middleName: {contains: args.keyword, mode: 'insensitive'}},
+        {emailAddress: {contains: args.keyword, mode: 'insensitive'}},
+        {mobileNumber: {contains: args.keyword, mode: 'insensitive'}},
+      ],
+    }),
+  };
+
   const take = clamp(args?.first ?? 100, 1, 100);
   const cursor: Prisma.PersonWhereUniqueInput | undefined = args?.after
     ? {id: args.after}
@@ -39,19 +62,38 @@ export async function getPeople(args?: PeopleInput): Promise<PaginatedResponse<P
   const hasNextPage = totalCount > take;
   const endCursor = data.at(-1)?.id ?? null;
 
-  return {
-    data,
-    totalCount,
-    pageInfo: {
-      hasNextPage,
-      endCursor,
+  return NextResponse.json({
+    ok: true,
+    data: {
+      data,
+      totalCount,
+      pageInfo: {
+        hasNextPage,
+        endCursor,
+      },
     },
-  };
+  });
 }
 
-export function getPerson(id: number): Promise<Person | null> {
-  return prisma.person.findUnique({
-    where: {id},
+export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<Person>>> {
+  const body = await req.json();
+  const result = CreatePersonInputDefinition.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'BadRequest',
+          message: result.error.issues[0].message,
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  const person = await prisma.person.create({
+    data: result.data,
     select: {
       id: true,
       firstName: true,
@@ -66,11 +108,12 @@ export function getPerson(id: number): Promise<Person | null> {
       updatedAt: true,
     },
   });
+
+  return NextResponse.json(
+    {
+      ok: true,
+      data: person,
+    },
+    {status: 201},
+  );
 }
-
-export async function createPerson(data: CreatePersonInput): Promise<Person> {}
-
-export async function updatePerson(
-  id: number,
-  data: Partial<UpdatePersonDataInput>,
-): Promise<Person> {}

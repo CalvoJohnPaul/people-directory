@@ -67,7 +67,7 @@ export const UpdatePersonDataInputDefinition = z.object({
     .or(z.literal('')),
   gender: GenderDefinition.optional().nullable(),
   dateOfBirth: DateDefinition.optional().nullable(),
-  image: z.url('Image must be a url').optional().nullable(),
+  image: z.url('Image must be a url').optional().or(z.literal('')),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
   mobileNumber: z.string().optional().or(z.literal('')),
 });
