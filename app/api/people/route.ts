@@ -1,4 +1,7 @@
+import {hash} from 'bcrypt';
+import {addDays} from 'date-fns';
 import {clamp} from 'es-toolkit';
+import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
 import {prisma} from '~/config/prisma';
 import type {Prisma} from '~/prisma/generated/prisma/client';
@@ -56,6 +59,9 @@ export async function GET(
         createdAt: true,
         updatedAt: true,
       },
+      orderBy: {
+        id: 'asc',
+      },
     }),
   ]);
 
@@ -93,7 +99,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
   }
 
   const person = await prisma.person.create({
-    data: result.data,
+    data: {
+      ...result.data,
+      password: await hash(result.data.password, 8),
+    },
     select: {
       id: true,
       firstName: true,
@@ -107,6 +116,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  const Cookies = await cookies();
+
+  Cookies.set('user', person.id.toString(), {
+    httpOnly: true,
+    expires: addDays(new Date(), 30),
+    sameSite: true,
+    secure: process.env.NODE_ENV === 'production',
   });
 
   return NextResponse.json(

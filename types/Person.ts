@@ -11,7 +11,7 @@ export const PersonDefinition = z.object({
   mobileNumber: z.string().optional().nullable(),
   gender: GenderDefinition.optional().nullable(),
   dateOfBirth: DateDefinition.optional().nullable(),
-  image: z.url().optional().nullable(),
+  image: z.url(),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
 });
@@ -41,6 +41,12 @@ export const CreatePersonInputDefinition = z.object({
   image: z.url('Invalid image'),
   emailAddress: z.email('Invalid email address'),
   mobileNumber: z.string().optional().or(z.literal('')),
+  password: z
+    .string()
+    .trim()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be at most 100 characters'),
 });
 
 export const UpdatePersonDataInputDefinition = z.object({
@@ -70,6 +76,13 @@ export const UpdatePersonDataInputDefinition = z.object({
   image: z.url('Image must be a url').optional().or(z.literal('')),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
   mobileNumber: z.string().optional().or(z.literal('')),
+  password: z
+    .string()
+    .trim()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be at most 100 characters')
+    .optional()
+    .or(z.literal('')),
 });
 
 export const UpdatePersonInputDefinition = z.object({

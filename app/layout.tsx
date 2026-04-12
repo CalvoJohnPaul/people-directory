@@ -1,8 +1,13 @@
 import type {Metadata} from 'next';
 import {Google_Sans, JetBrains_Mono} from 'next/font/google';
 import './globals.css';
+import {dehydrate, HydrationBoundary} from '@tanstack/react-query';
+import {cookies} from 'next/dist/server/request/cookies';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
+import {getClient} from '~/config/client';
+import {prisma} from '~/config/prisma';
+import {useMeQuery} from '~/hooks/useMeQuery';
 import {Providers} from './Providers';
 
 const sans = Google_Sans({
@@ -38,14 +43,48 @@ export const metadata: Metadata = {
 };
 
 export default async function Layout({children}: PropsWithChildren) {
+  const client = getClient();
+  await client.prefetchQuery({
+    queryKey: useMeQuery.getQueryKey(),
+    queryFn: async () => {
+      const Cookies = await cookies();
+      const id = parseInt(Cookies.get('user')?.value ?? '', 10);
+
+      if (Number.isNaN(id)) return null;
+
+      return await prisma.person.findUnique({
+        where: {id},
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          gender: true,
+          dateOfBirth: true,
+          emailAddress: true,
+          mobileNumber: true,
+          image: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    },
+  });
+
   return (
     <html
       lang="en"
-      className={cx(sans.variable, mono.variable, 'scheme-light scroll-smooth')}
+      className={cx(
+        sans.variable,
+        mono.variable,
+        'scheme-light scroll-smooth lg:[scrollbar-gutter:stable]',
+      )}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh bg-white font-sans text-gray-800">
-        <Providers>{children}</Providers>
+        <Providers>
+          <HydrationBoundary state={dehydrate(client)}>{children}</HydrationBoundary>
+        </Providers>
       </body>
     </html>
   );

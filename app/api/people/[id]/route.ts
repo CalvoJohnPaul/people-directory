@@ -1,3 +1,4 @@
+import {hash} from 'bcrypt';
 import {isNil, omitBy} from 'es-toolkit';
 import {type NextRequest, NextResponse} from 'next/server';
 import {prisma} from '~/config/prisma';
@@ -99,7 +100,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const result = await UpdatePersonDataInputDefinition.safeParse(body);
+  const result = UpdatePersonDataInputDefinition.safeParse(body);
 
   if (!result.success) {
     return NextResponse.json(
@@ -114,9 +115,13 @@ export async function PATCH(
     );
   }
 
+  const copy = {...result.data};
+
+  if (copy.password) copy.password = await hash(copy.password, 10);
+
   const data = await prisma.person.update({
     where: {id},
-    data: omitBy(result.data, (v) => isNil(v) || v === ''),
+    data: omitBy(copy, (v) => isNil(v) || v === ''),
     select: {
       id: true,
       firstName: true,

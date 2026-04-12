@@ -23,6 +23,7 @@ model Person {
   image          String
   emailAddress   String          @unique @map("email_address")
   mobileNumber   String?         @unique @map("mobile_number")
+  password       String
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
   faceEmbeddings FaceEmbedding[]
@@ -36,7 +37,7 @@ model FaceEmbedding {
   embedding Unsupported("vector")
   personId  Int
 
-  @@map("person_face_embeddings")
+  @@map("face_embeddings")
 }
 
 model Otp {

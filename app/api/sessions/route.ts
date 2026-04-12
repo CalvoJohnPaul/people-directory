@@ -1,3 +1,4 @@
+import {compare} from 'bcrypt';
 import {addDays, isAfter} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
@@ -22,67 +23,105 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
     );
   }
 
-  const {emailAddress, otpCode} = result.data;
-  const now = new Date();
-  const otp = await prisma.otp.findUnique({
-    where: {
-      emailAddress,
-    },
-    select: {
-      code: true,
-      expiresAt: true,
-    },
-  });
+  /* OTP LOGIN */
+  if ('otpCode' in result.data) {
+    const {emailAddress, otpCode} = result.data;
 
-  if (!otp || isAfter(now, otp.expiresAt) || otpCode !== otp.code) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          name: 'Unauthorized',
-          message: 'Invalid OTP code',
-        },
+    const now = new Date();
+    const otp = await prisma.otp.findUnique({
+      where: {
+        emailAddress,
       },
-      {status: 401},
-    );
-  }
-
-  await prisma.otp.deleteMany({
-    where: {
-      emailAddress,
-    },
-  });
-
-  const person = await prisma.person.findUnique({
-    where: {
-      emailAddress,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (person == null) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          name: 'Unauthorized',
-          message: 'Unauthorized',
-        },
+      select: {
+        code: true,
+        expiresAt: true,
       },
-      {status: 401},
-    );
+    });
+
+    if (!otp || isAfter(now, otp.expiresAt) || otpCode !== otp.code) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            name: 'Unauthorized',
+            message: 'Invalid OTP code',
+          },
+        },
+        {status: 401},
+      );
+    }
+
+    await prisma.otp.deleteMany({
+      where: {
+        emailAddress,
+      },
+    });
+
+    const person = await prisma.person.findUnique({
+      where: {
+        emailAddress,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (person == null) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            name: 'Unauthorized',
+            message: 'Unauthorized',
+          },
+        },
+        {status: 401},
+      );
+    }
+
+    const Cookies = await cookies();
+
+    Cookies.set('user', person.id.toString(), {
+      httpOnly: true,
+      expires: addDays(new Date(), 30),
+      sameSite: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+  } else {
+    const {emailAddress, password} = result.data;
+
+    const person = await prisma.person.findUnique({
+      where: {
+        emailAddress,
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (person == null || !(await compare(password, person.password))) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            name: 'Unauthorized',
+            message: 'Invalid email address or password',
+          },
+        },
+        {status: 401},
+      );
+    }
+
+    const Cookies = await cookies();
+
+    Cookies.set('user', person.id.toString(), {
+      httpOnly: true,
+      expires: addDays(new Date(), 30),
+      sameSite: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
   }
-
-  const Cookies = await cookies();
-
-  Cookies.set('user', person.id.toString(), {
-    httpOnly: true,
-    expires: addDays(new Date(), 1),
-    sameSite: true,
-    secure: process.env.NODE_ENV === 'production',
-  });
 
   return NextResponse.json({ok: true}, {status: 201});
 }

@@ -5,16 +5,40 @@ import {useRouter} from 'next/navigation';
 import {useNavigationGuard} from 'next-navigation-guard';
 import {Controller, useForm} from 'react-hook-form';
 import {useTimeout} from 'usehooks-ts';
+import {PasswordField} from '~/components/forms/PasswordField';
 import {PhotoField} from '~/components/forms/PhotoField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
+import {getClient} from '~/config/client';
+import {toaster} from '~/config/toaster';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
 import {CreatePersonInputDefinition} from '~/types/Person';
 
 export function RegisterForm() {
-  const mutation = useCreatePersonMutation();
+  const client = getClient();
   const query = useMeQuery();
+  const mutation = useCreatePersonMutation({
+    onError(error) {
+      toaster.error({
+        title: 'Error',
+        description: error.message,
+      });
+    },
+    onSuccess() {
+      toaster.success({
+        title: 'Success',
+        description: 'Account created. Good luck!',
+      });
+
+      client.invalidateQueries({
+        queryKey: useMeQuery.getQueryKey(),
+        refetchType: 'all',
+        exact: true,
+      });
+    },
+  });
+
   const router = useRouter();
   const form = useForm({
     mode: 'all',
@@ -25,34 +49,34 @@ export function RegisterForm() {
       middleName: '',
       emailAddress: '',
       image: '',
+      password: '',
     },
   });
 
   useTimeout(() => router.push('/'), query.data != null ? 0 : null);
 
   useNavigationGuard({
-    enabled: form.formState.isDirty,
+    enabled: form.formState.isDirty && !mutation.isSuccess,
     confirm: () => window.confirm('You have unsaved changes. Are you sure you want to leave?'),
   });
 
   return (
-    <form className="mx-auto max-w-100" noValidate onSubmit={form.handleSubmit(async () => {})}>
-      <div className="flex gap-3">
-        <Field.Root size="lg" invalid={!!form.formState.errors.firstName}>
-          <Field.Label>First name</Field.Label>
-          <Field.Input placeholder="Enter first name" {...form.register('firstName')} />
-          <Field.ErrorText>{form.formState.errors.firstName?.message}</Field.ErrorText>
-        </Field.Root>
-        <Field.Root size="lg" invalid={!!form.formState.errors.lastName}>
-          <Field.Label>Last name</Field.Label>
-          <Field.Input placeholder="Enter last name" {...form.register('lastName')} />
-          <Field.ErrorText>{form.formState.errors.lastName?.message}</Field.ErrorText>
-        </Field.Root>
-      </div>
-      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.emailAddress}>
-        <Field.Label>Email address</Field.Label>
-        <Field.Input placeholder="Enter email address" {...form.register('emailAddress')} />
-        <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
+    <form
+      className="mx-auto max-w-100"
+      noValidate
+      onSubmit={form.handleSubmit((data) => {
+        mutation.mutate(data);
+      })}
+    >
+      <Field.Root size="lg" invalid={!!form.formState.errors.firstName}>
+        <Field.Label>First name</Field.Label>
+        <Field.Input placeholder="Enter first name" {...form.register('firstName')} />
+        <Field.ErrorText>{form.formState.errors.firstName?.message}</Field.ErrorText>
+      </Field.Root>
+      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.lastName}>
+        <Field.Label>Last name</Field.Label>
+        <Field.Input placeholder="Enter last name" {...form.register('lastName')} />
+        <Field.ErrorText>{form.formState.errors.lastName?.message}</Field.ErrorText>
       </Field.Root>
       <Controller
         control={form.control}
@@ -69,12 +93,35 @@ export function RegisterForm() {
         )}
       />
 
+      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.emailAddress}>
+        <Field.Label>Email address</Field.Label>
+        <Field.Input placeholder="Enter email address" {...form.register('emailAddress')} />
+        <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
+      </Field.Root>
+
+      <Controller
+        control={form.control}
+        name="password"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Password</Field.Label>
+            <PasswordField value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+
       <div className="mt-8">
         <Button
           size="lg"
           type="submit"
           fullWidth
-          disabled={form.formState.isSubmitting || query.isLoading || query.data != null}
+          disabled={
+            form.formState.isSubmitting ||
+            query.isLoading ||
+            query.data != null ||
+            mutation.isPending
+          }
         >
           Submit
         </Button>

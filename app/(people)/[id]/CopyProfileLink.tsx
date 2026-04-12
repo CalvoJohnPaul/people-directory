@@ -2,15 +2,15 @@
 
 import {Portal} from '@ark-ui/react';
 import {CheckIcon, LinkIcon} from 'lucide-react';
-import {useParams} from 'next/navigation';
 import {twJoin} from 'tailwind-merge';
 import {IconButton} from '~/components/ui/IconButton';
 import {Tooltip} from '~/components/ui/Tooltip';
 import {useClipboard} from '~/hooks/useClipboard';
+import {usePersonContext} from './ProfileContext';
 
 export function CopyProfileLink() {
-  const params = useParams<{id: string}>();
-  const clipboard = useClipboard(`${process.env.NEXT_PUBLIC_URL}/${params.id}`);
+  const person = usePersonContext();
+  const clipboard = useClipboard(`${process.env.NEXT_PUBLIC_URL}/${person.id}`);
 
   return (
     <Tooltip.Root disabled={clipboard.copied}>

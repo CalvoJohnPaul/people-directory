@@ -2,16 +2,16 @@
 
 import {Portal} from '@ark-ui/react';
 import {QrCodeIcon, XIcon} from 'lucide-react';
-import {useParams} from 'next/navigation';
 import {Button} from '~/components/ui/Button';
 import {Dialog} from '~/components/ui/Dialog';
 import {IconButton} from '~/components/ui/IconButton';
 import {QrCode} from '~/components/ui/QrCode';
 import {Tooltip} from '~/components/ui/Tooltip';
+import {usePersonContext} from './ProfileContext';
 
 export function ViewQrCode() {
-  const params = useParams<{id: string}>();
-  const value = `${process.env.NEXT_PUBLIC_URL}/${params.id}`;
+  const person = usePersonContext();
+  const value = `${process.env.NEXT_PUBLIC_URL}/${person.id}`;
 
   return (
     <Dialog.Root closeOnInteractOutside closeOnEscape>

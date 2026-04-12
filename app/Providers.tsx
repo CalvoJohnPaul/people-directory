@@ -8,7 +8,7 @@ import {NavigationGuardProvider} from 'next-navigation-guard';
 import {NuqsAdapter} from 'nuqs/adapters/next';
 import type {ReactNode} from 'react';
 import {Toast} from '~/components/ui/Toast';
-import {client} from '~/config/client';
+import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 
 export interface ProvidersProps {
@@ -16,6 +16,8 @@ export interface ProvidersProps {
 }
 
 export function Providers({children}: ProvidersProps) {
+  const client = getClient();
+
   return (
     <>
       <QueryClientProvider client={client}>

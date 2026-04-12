@@ -7,10 +7,11 @@ import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {Button} from '~/components/ui/Button';
 import {Menu} from '~/components/ui/Menu';
+import {getClient} from '~/config/client';
+import {useDestroySessionMutation} from '~/hooks/useDestroySessionMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
 
 export function Navbar() {
-  const router = useRouter();
   const query = useMeQuery();
 
   return (
@@ -35,10 +36,11 @@ export function Navbar() {
           <Menu.Root>
             <Menu.Trigger>
               <Image
-                src="https://i.pravatar.cc/300"
+                src={query.data.image}
                 alt=""
                 width={250}
                 height={250}
+                unoptimized
                 className="size-11 object-cover"
               />
             </Menu.Trigger>
@@ -51,15 +53,7 @@ export function Navbar() {
                       My profile
                     </Link>
                   </Menu.Item>
-                  <Menu.Item
-                    value="logout"
-                    onSelect={async () => {
-                      router.push('/');
-                    }}
-                  >
-                    <LogOutIcon />
-                    Log out
-                  </Menu.Item>
+                  <Logout />
                 </Menu.Content>
               </Menu.Positioner>
             </Portal>
@@ -67,5 +61,33 @@ export function Navbar() {
         )}
       </div>
     </header>
+  );
+}
+
+function Logout() {
+  const client = getClient();
+  const router = useRouter();
+  const mutation = useDestroySessionMutation({
+    onSuccess() {
+      router.push('/');
+      client.invalidateQueries({
+        queryKey: useMeQuery.getQueryKey(),
+        refetchType: 'all',
+        exact: true,
+      });
+    },
+  });
+
+  return (
+    <Menu.Item
+      value="logout"
+      onSelect={() => {
+        mutation.mutate();
+      }}
+      disabled={mutation.isPending}
+    >
+      <LogOutIcon />
+      Log out
+    </Menu.Item>
   );
 }

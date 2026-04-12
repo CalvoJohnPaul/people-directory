@@ -6,11 +6,13 @@ import {Dialog} from '~/components/ui/Dialog';
 import {IconButton} from '~/components/ui/IconButton';
 import {Tooltip} from '~/components/ui/Tooltip';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {usePersonContext} from './ProfileContext';
 
 export function EditProfile() {
   const query = useMeQuery();
+  const person = usePersonContext();
 
-  if (query.data == null) return null;
+  if (query.data?.id !== person.id) return null;
 
   return (
     <Dialog.Root>
