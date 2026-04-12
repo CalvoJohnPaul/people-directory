@@ -58,8 +58,10 @@ export function usePeopleQuery(
         });
       }
 
-      if (args?.image) {
-        params.set('image', args.image);
+      if (args?.image?.length) {
+        args.image.forEach((id) => {
+          params.append('image', id.toString());
+        });
       }
 
       const res = await fetch(`/api/people?${params.toString()}`, {

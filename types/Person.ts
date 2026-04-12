@@ -105,7 +105,11 @@ export const PeopleInputDefinition = z
       .catch(null)
       .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
     keyword: z.string().optional().nullable().catch(null),
-    image: z.string().optional().nullable().catch(null),
+    image: z
+      .array(z.coerce.number().nullable().catch(null))
+      .optional()
+      .nullable()
+      .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
     id: z
       .union([
         z

@@ -16,6 +16,7 @@ export function CopyProfileLink() {
     <Tooltip.Root disabled={clipboard.copied}>
       <Tooltip.Trigger asChild>
         <IconButton
+          size="lg"
           variant="outline"
           disabled={clipboard.copied}
           onClick={() => clipboard.copy()}

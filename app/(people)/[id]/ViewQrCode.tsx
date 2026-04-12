@@ -18,7 +18,7 @@ export function ViewQrCode() {
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <Dialog.Trigger asChild>
-            <IconButton variant="outline">
+            <IconButton size="lg" variant="outline">
               <QrCodeIcon />
             </IconButton>
           </Dialog.Trigger>

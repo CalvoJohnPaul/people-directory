@@ -19,7 +19,7 @@ export function EditProfile() {
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <Dialog.Trigger asChild>
-            <IconButton variant="outline">
+            <IconButton size="lg" variant="outline">
               <SquarePenIcon />
             </IconButton>
           </Dialog.Trigger>

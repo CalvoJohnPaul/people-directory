@@ -10,7 +10,7 @@ import {usePeopleQuery} from '~/hooks/usePeopleQuery';
 export function People() {
   const [state] = useQueryStates({
     keyword: parseAsString,
-    image: parseAsString,
+    image: parseAsNativeArrayOf(parseAsInteger),
     id: parseAsNativeArrayOf(parseAsInteger),
   });
 

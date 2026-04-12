@@ -13,6 +13,7 @@ import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {usePeopleQuery} from '~/hooks/usePeopleQuery';
 import {CreatePersonInputDefinition} from '~/types/Person';
 
 export function RegisterForm() {
@@ -35,6 +36,12 @@ export function RegisterForm() {
         queryKey: useMeQuery.getQueryKey(),
         refetchType: 'all',
         exact: true,
+      });
+
+      client.invalidateQueries({
+        queryKey: usePeopleQuery.getQueryKey(),
+        refetchType: 'all',
+        exact: false,
       });
     },
   });
