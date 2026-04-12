@@ -19,7 +19,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
   }
 
   const maxCosineDistance = 0.45;
-  const vector = args.image?.length ? args.image.map(Number) : null;
+  const vector = args.image?.length ? args.image : null;
 
   if (vector) {
     const rows = await prisma.$queryRaw<Array<{personId: number; distance: number}>>`

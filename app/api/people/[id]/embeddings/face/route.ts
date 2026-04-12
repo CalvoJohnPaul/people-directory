@@ -4,8 +4,13 @@ import {prisma} from '~/config/prisma';
 import type {HttpVoidResponse} from '~/types/common';
 
 const def = z.object({
-  embedding: z.string(),
+  embedding: z.array(z.number()),
 });
+
+function normalize(vec: number[]): number[] {
+  const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
+  return vec.map((v) => v / norm);
+}
 
 export async function PUT(
   req: NextRequest,
@@ -37,7 +42,10 @@ export async function PUT(
     );
   }
 
-  const person = await prisma.person.findUnique({where: {id}, select: {id: true}});
+  const person = await prisma.person.findUnique({
+    where: {id},
+    select: {id: true},
+  });
 
   if (!person) {
     return NextResponse.json(
@@ -46,11 +54,12 @@ export async function PUT(
     );
   }
 
-  const {embedding} = result.data;
+  const normalized = normalize(result.data.embedding);
+  const vectorLiteral = `[${normalized.join(',')}]`;
 
   await prisma.$executeRaw`
-    INSERT INTO face_embeddings (person_id, embedding)
-    VALUES (${id}, ${embedding}::vector)
+    INSERT INTO face_embeddings ("personId", embedding)
+    VALUES (${id}, ${vectorLiteral}::vector)
   `;
 
   return NextResponse.json({ok: true});

@@ -23,7 +23,7 @@ export function useUpdateFaceEmbedding(
     mutationKey: ['updateFaceEmbedding'],
     mutationFn: async (input) => {
       const res = await fetch(`/api/people/${input.id}/embeddings/face`, {
-        body: JSON.stringify(input),
+        body: JSON.stringify({embedding: input.embedding}),
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
