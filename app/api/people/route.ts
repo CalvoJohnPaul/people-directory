@@ -20,7 +20,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
   if (args.image?.length) {
     const vectorLiteral = `[${args.image.join(',')}]`;
     const MAX_COSINE_DISTANCE = 0.45;
-
     const rows = await prisma.$queryRaw<Array<{personId: number}>>`
       SELECT "personId"
       FROM "face_embeddings"
@@ -31,9 +30,6 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
 
     if (rows.length) {
       ids.push(...rows.map((r) => r.personId));
-    } else {
-      // Ensure image-only search does not accidentally return every person.
-      ids.push(-1);
     }
   }
 

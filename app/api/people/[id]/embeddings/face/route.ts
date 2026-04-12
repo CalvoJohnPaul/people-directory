@@ -7,27 +7,22 @@ const def = z.object({
   embedding: z.array(z.number()),
 });
 
-function normalize(vec: number[]): number[] {
-  if (vec.length === 0) {
-    throw new Error('Embedding array cannot be empty');
-  }
-  const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
-  if (norm === 0) {
-    throw new Error('Cannot normalize zero vector');
-  }
-  return vec.map((v) => v / norm);
-}
-
 export async function PUT(
   req: NextRequest,
-  {params}: {params: Promise<{id: string}>},
+  ctx: RouteContext<'/api/people/[id]/embeddings/face'>,
 ): Promise<NextResponse<HttpVoidResponse>> {
-  const {id: idParam} = await params;
-  const id = Number.parseInt(idParam, 10);
+  const params = await ctx.params;
+  const id = Number.parseInt(params.id, 10);
 
   if (Number.isNaN(id) || id < 0) {
     return NextResponse.json(
-      {ok: false, error: {name: 'BadRequest', message: 'Bad Request'}},
+      {
+        ok: false,
+        error: {
+          name: 'BadRequest',
+          message: 'Bad Request',
+        },
+      },
       {status: 400},
     );
   }
@@ -55,7 +50,13 @@ export async function PUT(
 
   if (!person) {
     return NextResponse.json(
-      {ok: false, error: {name: 'NotFound', message: 'Person not found'}},
+      {
+        ok: false,
+        error: {
+          name: 'NotFound',
+          message: 'Not found',
+        },
+      },
       {status: 404},
     );
   }
@@ -69,7 +70,6 @@ export async function PUT(
       VALUES (${id}, ${vectorLiteral}::vector)
     `;
   } catch (error) {
-    console.error('Failed to save face embedding:', error);
     return NextResponse.json(
       {
         ok: false,
@@ -83,4 +83,18 @@ export async function PUT(
   }
 
   return NextResponse.json({ok: true});
+}
+
+function normalize(vector: number[]): number[] {
+  if (vector.length === 0) {
+    throw new Error('Embedding array cannot be empty');
+  }
+
+  const result = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+
+  if (result === 0) {
+    throw new Error('Cannot normalize zero vector');
+  }
+
+  return vector.map((v) => v / result);
 }

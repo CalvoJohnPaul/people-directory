@@ -1,7 +1,7 @@
 'use client';
 
 import {Portal, Swap} from '@ark-ui/react';
-import {uniq} from 'es-toolkit';
+import {invariant, uniq} from 'es-toolkit';
 import {ImageIcon, QrCodeIcon, SearchIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
 import {
@@ -349,24 +349,19 @@ function SearchByPhoto() {
                   <Button
                     fullWidth
                     onClick={async () => {
+                      setParsing(true);
+
                       try {
-                        setParsing(true);
                         const embedding = await getFaceEmbedding(photo);
-                        if (!embedding) {
-                          toaster.error({
-                            title: 'Failed to extract face embedding',
-                            description: 'Could not process the face in the image.',
-                          });
-                          setParsing(false);
-                          return;
-                        }
+                        invariant(embedding, 'No face embedding found');
                         setValue(embedding);
                         disclosure.setOpen(false);
                       } catch (error) {
+                        console.log(error);
                         toaster.error({
-                          title: 'Error',
+                          title: 'Face extraction failed',
                           description:
-                            error instanceof Error ? error.message : 'Failed to extract embedding',
+                            'Unable to process the uploaded photo. Please try again with a different photo.',
                         });
                       } finally {
                         setParsing(false);
