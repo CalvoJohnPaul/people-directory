@@ -55,6 +55,18 @@ export const OptionDefinition = z.object({
   disabled: z.boolean().optional(),
 });
 
+export const PageInfoDefinition = z.object({
+  hasNextPage: z.boolean(),
+  endCursor: z.number().nullable(),
+});
+
+export const PaginatedResponseDefinition = <T extends z.ZodTypeAny>(def: T) =>
+  z.object({
+    data: z.array(def),
+    totalCount: z.number(),
+    pageInfo: PageInfoDefinition,
+  });
+
 /*
  *------------------------------------------------
  *  TYPES
@@ -71,3 +83,7 @@ export type HttpVoidResponse = z.infer<typeof HttpVoidResponseDefinition>;
 export type HttpResponse<T> = z.infer<ReturnType<typeof HttpResponseDefinition<z.ZodType<T>>>>;
 export type DateRange = z.infer<typeof DateRangeDefinition>;
 export type Option = z.infer<typeof OptionDefinition>;
+export type PageInfo = z.infer<typeof PageInfoDefinition>;
+export type PaginatedResponse<T> = z.infer<
+  ReturnType<typeof PaginatedResponseDefinition<z.ZodType<T>>>
+>;

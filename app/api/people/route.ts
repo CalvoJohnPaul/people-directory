@@ -1,9 +1,12 @@
+import {hash} from 'bcrypt';
+import {addDays} from 'date-fns';
 import {uniq} from 'es-toolkit';
+import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
 import {prisma} from '~/config/prisma';
 import type {Prisma} from '~/prisma/generated/prisma/client';
 import type {HttpResponse} from '~/types/common';
-import {PeopleInputDefinition, type Person} from '~/types/Person';
+import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
 
 export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<Person[]>>> {
   const args = PeopleInputDefinition.parse({
@@ -14,26 +17,28 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
 
   const ids: number[] = [];
 
-  if (args.id?.length) {
-    ids.push(...args.id);
-  }
+  if (args.image?.length) {
+    const vectorLiteral = `[${args.image.join(',')}]`;
+    const MAX_COSINE_DISTANCE = 0.45;
 
-  const maxCosineDistance = 0.45;
-  const vector = args.image?.length ? args.image : null;
-
-  if (vector) {
-    const rows = await prisma.$queryRaw<Array<{personId: number; distance: number}>>`
-      SELECT
-        f."personId",
-        MIN(f.embedding <=> ${vector}::vector) AS distance
-      FROM face_embeddings f
-      GROUP BY f."personId"
-      HAVING MIN(f.embedding <=> ${vector}::vector) <= ${maxCosineDistance}
-      ORDER BY distance ASC
-      LIMIT 200
+    const rows = await prisma.$queryRaw<Array<{personId: number}>>`
+      SELECT "personId"
+      FROM "face_embeddings"
+      GROUP BY "personId"
+      HAVING MIN(embedding <=> ${vectorLiteral}::vector) <= ${MAX_COSINE_DISTANCE}
+      ORDER BY MIN(embedding <=> ${vectorLiteral}::vector) ASC
     `;
 
-    ids.push(...rows.map((r) => r.personId));
+    if (rows.length) {
+      ids.push(...rows.map((r) => r.personId));
+    } else {
+      // Ensure image-only search does not accidentally return every person.
+      ids.push(-1);
+    }
+  }
+
+  if (args.id?.length) {
+    ids.push(...args.id);
   }
 
   const where: Prisma.PersonWhereInput = {
@@ -74,4 +79,59 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
     ok: true,
     data,
   });
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<Person>>> {
+  const body = await req.json();
+  const result = CreatePersonInputDefinition.safeParse(body);
+
+  if (!result.success) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'BadRequest',
+          message: result.error.issues[0].message,
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  const person = await prisma.person.create({
+    data: {
+      ...result.data,
+      password: await hash(result.data.password, 8),
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      middleName: true,
+      gender: true,
+      dateOfBirth: true,
+      emailAddress: true,
+      mobileNumber: true,
+      image: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const Cookies = await cookies();
+
+  Cookies.set('user', person.id.toString(), {
+    httpOnly: true,
+    expires: addDays(new Date(), 30),
+    sameSite: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
+
+  return NextResponse.json(
+    {
+      ok: true,
+      data: person,
+    },
+    {status: 201},
+  );
 }

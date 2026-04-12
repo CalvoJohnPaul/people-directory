@@ -21,12 +21,12 @@ CREATE TABLE "people" (
 );
 
 -- CreateTable
-CREATE TABLE "person_face_embeddings" (
+CREATE TABLE "face_embeddings" (
     "id" SERIAL NOT NULL,
-    "embedding" VECTOR(1536) NOT NULL,
+    "embedding" VECTOR NOT NULL,
     "personId" INTEGER NOT NULL,
 
-    CONSTRAINT "person_face_embeddings_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "face_embeddings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -67,4 +67,4 @@ CREATE UNIQUE INDEX "otps_email_address_key" ON "otps"("email_address");
 CREATE UNIQUE INDEX "uploaded_files_url_key" ON "uploaded_files"("url");
 
 -- AddForeignKey
-ALTER TABLE "person_face_embeddings" ADD CONSTRAINT "person_face_embeddings_personId_fkey" FOREIGN KEY ("personId") REFERENCES "people"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "face_embeddings" ADD CONSTRAINT "face_embeddings_personId_fkey" FOREIGN KEY ("personId") REFERENCES "people"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -276,7 +276,14 @@ function SearchByPhoto() {
         <Swap.Indicator type="on">
           <Tooltip.Root>
             <Tooltip.Trigger asChild>
-              <IconButton variant="outline" size="lg" className="shrink-0">
+              <IconButton
+                variant="outline"
+                size="lg"
+                className="shrink-0"
+                onClick={() => {
+                  setValue(null);
+                }}
+              >
                 <XIcon />
               </IconButton>
             </Tooltip.Trigger>
@@ -333,12 +340,28 @@ function SearchByPhoto() {
                   <Button
                     fullWidth
                     onClick={async () => {
-                      setParsing(true);
-                      const embedding = await getFaceEmbedding(photo);
-                      console.log({embedding});
-                      setValue(embedding);
-                      setParsing(false);
-                      disclosure.setOpen(false);
+                      try {
+                        setParsing(true);
+                        const embedding = await getFaceEmbedding(photo);
+                        if (!embedding) {
+                          toaster.error({
+                            title: 'Failed to extract face embedding',
+                            description: 'Could not process the face in the image.',
+                          });
+                          setParsing(false);
+                          return;
+                        }
+                        setValue(embedding);
+                        disclosure.setOpen(false);
+                      } catch (error) {
+                        toaster.error({
+                          title: 'Error',
+                          description:
+                            error instanceof Error ? error.message : 'Failed to extract embedding',
+                        });
+                      } finally {
+                        setParsing(false);
+                      }
                     }}
                   >
                     Continue

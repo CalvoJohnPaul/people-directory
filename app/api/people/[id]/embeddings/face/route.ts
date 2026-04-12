@@ -8,16 +8,22 @@ const def = z.object({
 });
 
 function normalize(vec: number[]): number[] {
+  if (vec.length === 0) {
+    throw new Error('Embedding array cannot be empty');
+  }
   const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
+  if (norm === 0) {
+    throw new Error('Cannot normalize zero vector');
+  }
   return vec.map((v) => v / norm);
 }
 
 export async function PUT(
   req: NextRequest,
-  ctx: RouteContext<'/api/people/[id]/embeddings/face'>,
+  {params}: {params: Promise<{id: string}>},
 ): Promise<NextResponse<HttpVoidResponse>> {
-  const params = await ctx.params;
-  const id = Number.parseInt(params.id, 10);
+  const {id: idParam} = await params;
+  const id = Number.parseInt(idParam, 10);
 
   if (Number.isNaN(id) || id < 0) {
     return NextResponse.json(
@@ -54,13 +60,27 @@ export async function PUT(
     );
   }
 
-  const normalized = normalize(result.data.embedding);
-  const vectorLiteral = `[${normalized.join(',')}]`;
+  try {
+    const normalized = normalize(result.data.embedding);
+    const vectorLiteral = `[${normalized.join(',')}]`;
 
-  await prisma.$executeRaw`
-    INSERT INTO face_embeddings ("personId", embedding)
-    VALUES (${id}, ${vectorLiteral}::vector)
-  `;
+    await prisma.$executeRaw`
+      INSERT INTO face_embeddings ("personId", embedding)
+      VALUES (${id}, ${vectorLiteral}::vector)
+    `;
+  } catch (error) {
+    console.error('Failed to save face embedding:', error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'InternalServerError',
+          message: error instanceof Error ? error.message : 'Failed to save embedding',
+        },
+      },
+      {status: 500},
+    );
+  }
 
   return NextResponse.json({ok: true});
 }
