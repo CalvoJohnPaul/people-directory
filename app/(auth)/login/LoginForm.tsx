@@ -15,6 +15,7 @@ import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useCooldown} from '~/hooks/useCooldown';
 import {useCreateSessionMutation} from '~/hooks/useCreateSessionMutation';
+import {useGenerateOtpMutation} from '~/hooks/useGenerateOtpMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
 import {CreateSessionInputDefinition} from '~/types/Session';
 
@@ -39,7 +40,8 @@ export function LoginForm() {
 function OtpLoginForm() {
   const client = getClient();
   const query = useMeQuery();
-  const mutation = useCreateSessionMutation({
+  const generateOtpMutation = useGenerateOtpMutation();
+  const createSessionMutation = useCreateSessionMutation({
     onError() {
       toaster.error({
         title: 'Login failed',
@@ -87,7 +89,7 @@ function OtpLoginForm() {
   return (
     <form
       onSubmit={form.handleSubmit(async (data) => {
-        mutation.mutate(data);
+        createSessionMutation.mutate(data);
       })}
       noValidate
       className="mx-auto max-w-100"
@@ -106,20 +108,32 @@ function OtpLoginForm() {
             variant="outline"
             className="shrink-0"
             onClick={async () => {
-              cooldown.start();
-
-              toaster.success({
-                title: 'OTP sent!',
-                description: (
-                  <>
-                    An OTP has been sent to {emailAddress}.<br />
-                    Please check your inbox.
-                  </>
-                ),
-              });
+              try {
+                await generateOtpMutation.mutateAsync(emailAddress);
+                cooldown.start();
+                toaster.success({
+                  title: 'OTP sent!',
+                  description: (
+                    <>
+                      An OTP has been sent to {emailAddress}.<br />
+                      Please check your inbox.
+                    </>
+                  ),
+                });
+              } catch {
+                toaster.error({
+                  title: 'Failed to send OTP',
+                  description: 'An error occurred while sending the OTP. Please try again.',
+                });
+              }
             }}
             disabled={
-              !emailAddressValid || cooldown.cooling || query.isLoading || query.data != null
+              !emailAddressValid ||
+              cooldown.cooling ||
+              query.isLoading ||
+              query.data != null ||
+              createSessionMutation.isPending ||
+              generateOtpMutation.isPending
             }
           >
             Get OTP
@@ -147,7 +161,10 @@ function OtpLoginForm() {
         fullWidth
         className="mt-8"
         disabled={
-          form.formState.isSubmitting || query.isLoading || query.data != null || mutation.isPending
+          form.formState.isSubmitting ||
+          query.isLoading ||
+          query.data != null ||
+          createSessionMutation.isPending
         }
       >
         Log in

@@ -11,22 +11,6 @@ import {mailto} from '~/utils/mailto';
 const def = z.object({emailAddress: z.email()});
 
 export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidResponse>> {
-  const Cookies = req.cookies;
-  const id = Number.parseInt(Cookies.get('user')?.value ?? '', 10);
-
-  if (id == null || Number.isNaN(id)) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          name: 'Unauthorized',
-          message: 'Unauthorized',
-        },
-      },
-      {status: 401},
-    );
-  }
-
   const body = await req.json();
   const result = def.safeParse(body);
 
@@ -42,7 +26,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
 
   const count = await prisma.person.count({
     where: {
-      id,
       emailAddress: result.data.emailAddress,
     },
   });
@@ -60,7 +43,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
     );
   }
 
-  const code = uid(6);
+  const code = uid(6).toUpperCase();
   const expiresAt = addMinutes(new Date(), 10);
   const {emailAddress} = result.data;
   const emailContent = await render(<Otp code={code} emailAddress={emailAddress} />);
