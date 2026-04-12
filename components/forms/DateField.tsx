@@ -135,7 +135,7 @@ export function DateField(props: DateFieldProps) {
 
   return (
     <DatePicker.Root
-      size="lg"
+      size={props.size}
       value={value == null ? [] : [parseDate(value)]}
       onValueChange={(details) => {
         const newValue = details.value.at(0)?.toDate(tz);

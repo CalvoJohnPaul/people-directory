@@ -74,11 +74,7 @@ export default async function Layout({children}: PropsWithChildren) {
   return (
     <html
       lang="en"
-      className={cx(
-        sans.variable,
-        mono.variable,
-        'scheme-light scroll-smooth lg:[scrollbar-gutter:stable]',
-      )}
+      className={cx(sans.variable, mono.variable, 'scheme-light scroll-smooth')}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh bg-white font-sans text-gray-800">

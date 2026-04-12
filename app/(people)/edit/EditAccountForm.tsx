@@ -1,0 +1,201 @@
+'use client';
+
+import {zodResolver} from '@hookform/resolvers/zod';
+import {capitalize, invariant, isNil, omitBy} from 'es-toolkit';
+import Link from 'next/link';
+import {useRouter} from 'next/navigation';
+import {useNavigationGuard} from 'next-navigation-guard';
+import {Controller, useForm} from 'react-hook-form';
+import {useTimeout} from 'usehooks-ts';
+import {DateField} from '~/components/forms/DateField';
+import {MobileNumberField} from '~/components/forms/MobileNumberField';
+import {PasswordField} from '~/components/forms/PasswordField';
+import {PhotoField} from '~/components/forms/PhotoField';
+import {SelectField} from '~/components/forms/SelectField';
+import {Button} from '~/components/ui/Button';
+import {Field} from '~/components/ui/Field';
+import {getClient} from '~/config/client';
+import {toaster} from '~/config/toaster';
+import {useMeQuery} from '~/hooks/useMeQuery';
+import {useUpdatePersonMutation} from '~/hooks/useUpdatePersonMutation';
+import {GenderDefinition, type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
+
+export function EditAccountForm() {
+  const router = useRouter();
+  const query = useMeQuery();
+  const client = getClient();
+  const mutation = useUpdatePersonMutation({
+    onSuccess(data) {
+      client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
+      form.reset();
+      router.push(`/${data.id}`);
+    },
+    onError(error) {
+      toaster.error({
+        title: 'Error',
+        description: error.message,
+      });
+    },
+  });
+
+  const form = useForm({
+    resolver: zodResolver(UpdatePersonDataInputDefinition),
+    defaultValues: {
+      dateOfBirth: null,
+      emailAddress: '',
+      firstName: '',
+      gender: null,
+      image: '',
+      lastName: '',
+      middleName: '',
+      mobileNumber: '',
+      password: '',
+    },
+  });
+
+  useTimeout(
+    () => {
+      form.reset({
+        lastName: query.data?.lastName ?? '',
+        firstName: query.data?.firstName ?? '',
+        middleName: query.data?.middleName ?? '',
+        dateOfBirth: query.data?.dateOfBirth ? new Date(query.data.dateOfBirth) : undefined,
+        gender: query.data?.gender ?? null,
+        emailAddress: query.data?.emailAddress ?? '',
+        mobileNumber: query.data?.mobileNumber ?? '',
+        image: query.data?.image ?? '',
+        password: '',
+      });
+    },
+    query.data == null ? null : 0,
+  );
+
+  useTimeout(
+    () => {
+      router.push('/login');
+    },
+    !query.isLoading && query.data == null ? 0 : null,
+  );
+
+  useNavigationGuard({
+    enabled: form.formState.isDirty && mutation.isIdle,
+    confirm: () => window.confirm('You have unsaved changes. Are you sure you want to leave?'),
+  });
+
+  return (
+    <form
+      className="mx-auto max-w-100"
+      onSubmit={form.handleSubmit((values) => {
+        const id = query.data?.id;
+        invariant(id, "'id' is undefined");
+        const data = omitBy(values, (v) => isNil(v) || v === '');
+        mutation.mutate({
+          id,
+          data,
+        });
+      })}
+      noValidate
+    >
+      <Field.Root invalid={!!form.formState.errors.lastName}>
+        <Field.Label>Last name</Field.Label>
+        <Field.Input placeholder="eg. Doe" {...form.register('lastName')} />
+        <Field.ErrorText>{form.formState.errors.lastName?.message}</Field.ErrorText>
+      </Field.Root>
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.firstName}>
+        <Field.Label>First name</Field.Label>
+        <Field.Input placeholder="eg. John" {...form.register('firstName')} />
+        <Field.ErrorText>{form.formState.errors.firstName?.message}</Field.ErrorText>
+      </Field.Root>
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.middleName}>
+        <Field.Label>Middle name</Field.Label>
+        <Field.Input placeholder="eg. Smith" {...form.register('middleName')} />
+        <Field.ErrorText>{form.formState.errors.middleName?.message}</Field.ErrorText>
+      </Field.Root>
+      <Controller
+        control={form.control}
+        name="dateOfBirth"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Date of birth</Field.Label>
+            <DateField
+              value={ctx.field.value || null}
+              onChange={(v) => ctx.field.onChange(v || null)}
+            />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="gender"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Gender</Field.Label>
+            <SelectField
+              options={GenderDefinition.options.map((value) => ({
+                label: capitalize(value.toLowerCase()),
+                value,
+              }))}
+              value={ctx.field.value || ''}
+              onChange={(v) => ctx.field.onChange(v || null)}
+            />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="mobileNumber"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Mobile number</Field.Label>
+            <MobileNumberField value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.emailAddress}>
+        <Field.Label>Email address</Field.Label>
+        <Field.Input placeholder="eg. john.doe@example.com" {...form.register('emailAddress')} />
+        <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
+      </Field.Root>
+      <Controller
+        control={form.control}
+        name="password"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Password</Field.Label>
+            <PasswordField value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="image"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Image</Field.Label>
+            <PhotoField
+              value={ctx.field.value || null}
+              onChange={(v) => ctx.field.onChange(v || null)}
+            />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <div className="mt-8 flex gap-3">
+        <Button type="button" variant="outline" fullWidth>
+          <Link href={`/${query.data?.id}`}>Cancel</Link>
+        </Button>
+        <Button
+          type="submit"
+          fullWidth
+          disabled={query.isLoading || mutation.isPending || form.formState.isSubmitting}
+        >
+          Save
+        </Button>
+      </div>
+    </form>
+  );
+}
