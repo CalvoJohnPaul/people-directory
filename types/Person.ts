@@ -9,8 +9,8 @@ export const PersonDefinition = z.object({
   middleName: z.string().optional().nullable(),
   emailAddress: z.email(),
   mobileNumber: z.string().optional().nullable(),
-  gender: GenderDefinition,
-  dateOfBirth: DateDefinition,
+  gender: GenderDefinition.optional().nullable(),
+  dateOfBirth: DateDefinition.optional().nullable(),
   image: z.url().optional().nullable(),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
@@ -20,11 +20,13 @@ export const CreatePersonInputDefinition = z.object({
   firstName: z
     .string()
     .trim()
+    .min(1, 'First name is required')
     .min(2, 'First name must be at least 2 characters')
     .max(50, 'First name must be at most 50 characters'),
   lastName: z
     .string()
     .trim()
+    .min(1, 'Last name is required')
     .min(2, 'Last name must be at least 2 characters')
     .max(50, 'Last name must be at most 50 characters'),
   middleName: z
@@ -34,9 +36,9 @@ export const CreatePersonInputDefinition = z.object({
     .max(50, 'Middle name must be at most 50 characters')
     .optional()
     .or(z.literal('')),
-  gender: GenderDefinition,
-  dateOfBirth: DateDefinition,
-  image: z.url('Image must be a url').optional().or(z.literal('')),
+  gender: GenderDefinition.optional().nullable(),
+  dateOfBirth: DateDefinition.optional().nullable(),
+  image: z.url('Invalid image'),
   emailAddress: z.email('Invalid email address'),
   mobileNumber: z.string().optional().or(z.literal('')),
 });
@@ -65,7 +67,7 @@ export const UpdatePersonDataInputDefinition = z.object({
     .or(z.literal('')),
   gender: GenderDefinition.optional().nullable(),
   dateOfBirth: DateDefinition.optional().nullable(),
-  image: z.url('Image must be a url').optional().or(z.literal('')),
+  image: z.url('Image must be a url').optional().nullable(),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
   mobileNumber: z.string().optional().or(z.literal('')),
 });

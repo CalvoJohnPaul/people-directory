@@ -1,20 +1,19 @@
 'use client';
 
 import {zodResolver} from '@hookform/resolvers/zod';
-import {capitalize} from 'es-toolkit';
 import {useRouter} from 'next/navigation';
 import {useNavigationGuard} from 'next-navigation-guard';
 import {Controller, useForm} from 'react-hook-form';
 import {useTimeout} from 'usehooks-ts';
-import {DateField} from '~/components/forms/DateField';
-import {MobileNumberField} from '~/components/forms/MobileNumberField';
-import {SelectField} from '~/components/forms/SelectField';
+import {PhotoField} from '~/components/forms/PhotoField';
 import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
+import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {CreatePersonInputDefinition, GenderDefinition} from '~/types/Person';
+import {CreatePersonInputDefinition} from '~/types/Person';
 
 export function RegisterForm() {
+  const mutation = useCreatePersonMutation();
   const query = useMeQuery();
   const router = useRouter();
   const form = useForm({
@@ -24,11 +23,8 @@ export function RegisterForm() {
       firstName: '',
       lastName: '',
       middleName: '',
-      dateOfBirth: new Date(),
-      gender: 'MALE',
-      image: '',
       emailAddress: '',
-      mobileNumber: '',
+      image: '',
     },
   });
 
@@ -41,81 +37,32 @@ export function RegisterForm() {
 
   return (
     <form className="mx-auto max-w-100" noValidate onSubmit={form.handleSubmit(async () => {})}>
-      <Field.Root size="lg" required invalid={!!form.formState.errors.lastName}>
-        <Field.Label>
-          Last name <Field.RequiredIndicator />
-        </Field.Label>
-        <Field.Input placeholder="eg. Doe" {...form.register('lastName')} />
-        <Field.ErrorText>{form.formState.errors.lastName?.message}</Field.ErrorText>
-      </Field.Root>
-      <Field.Root size="lg" className="mt-4" required invalid={!!form.formState.errors.firstName}>
-        <Field.Label>
-          First name <Field.RequiredIndicator />
-        </Field.Label>
-        <Field.Input placeholder="eg. John" {...form.register('firstName')} />
-        <Field.ErrorText>{form.formState.errors.firstName?.message}</Field.ErrorText>
-      </Field.Root>
-      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.middleName}>
-        <Field.Label>Middle name</Field.Label>
-        <Field.Input placeholder="eg. Smith" {...form.register('middleName')} />
-        <Field.ErrorText>{form.formState.errors.middleName?.message}</Field.ErrorText>
-      </Field.Root>
-      <Field.Root
-        size="lg"
-        required
-        className="mt-4"
-        invalid={!!form.formState.errors.emailAddress}
-      >
-        <Field.Label>
-          Email address
-          <Field.RequiredIndicator />
-        </Field.Label>
-        <Field.Input placeholder="eg. john.doe@example.com" {...form.register('emailAddress')} />
+      <div className="flex gap-3">
+        <Field.Root size="lg" invalid={!!form.formState.errors.firstName}>
+          <Field.Label>First name</Field.Label>
+          <Field.Input placeholder="Enter first name" {...form.register('firstName')} />
+          <Field.ErrorText>{form.formState.errors.firstName?.message}</Field.ErrorText>
+        </Field.Root>
+        <Field.Root size="lg" invalid={!!form.formState.errors.lastName}>
+          <Field.Label>Last name</Field.Label>
+          <Field.Input placeholder="Enter last name" {...form.register('lastName')} />
+          <Field.ErrorText>{form.formState.errors.lastName?.message}</Field.ErrorText>
+        </Field.Root>
+      </div>
+      <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.emailAddress}>
+        <Field.Label>Email address</Field.Label>
+        <Field.Input placeholder="Enter email address" {...form.register('emailAddress')} />
         <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
       <Controller
         control={form.control}
-        name="mobileNumber"
+        name="image"
         render={(ctx) => (
-          <Field.Root size="lg" required className="mt-4" invalid={ctx.fieldState.invalid}>
-            <Field.Label>
-              Mobile number
-              <Field.RequiredIndicator />
-            </Field.Label>
-            <MobileNumberField size="lg" value={ctx.field.value} onChange={ctx.field.onChange} />
-            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
-          </Field.Root>
-        )}
-      />
-      <Controller
-        control={form.control}
-        name="dateOfBirth"
-        render={(ctx) => (
-          <Field.Root size="lg" className="mt-4" required invalid={ctx.fieldState.invalid}>
-            <Field.Label>
-              Date of birth <Field.RequiredIndicator />
-            </Field.Label>
-            <DateField size="lg" value={ctx.field.value} onChange={ctx.field.onChange} />
-            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
-          </Field.Root>
-        )}
-      />
-      <Controller
-        control={form.control}
-        name="gender"
-        render={(ctx) => (
-          <Field.Root size="lg" className="mt-4" required invalid={ctx.fieldState.invalid}>
-            <Field.Label>
-              Gender <Field.RequiredIndicator />
-            </Field.Label>
-            <SelectField
-              size="lg"
-              options={GenderDefinition.options.map((option) => ({
-                value: option,
-                label: capitalize(option.toLowerCase()),
-              }))}
-              value={ctx.field.value}
-              onChange={ctx.field.onChange}
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Image</Field.Label>
+            <PhotoField
+              value={ctx.field.value || null}
+              onChange={(value) => ctx.field.onChange(value || '')}
             />
             <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
           </Field.Root>

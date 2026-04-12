@@ -1,3 +1,5 @@
+'use client';
+
 import {Portal, parseDate} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {endOfDay, format, startOfDay} from 'date-fns';

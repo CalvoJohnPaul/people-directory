@@ -1,3 +1,5 @@
+'use client';
+
 import {Portal, useListCollection} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import type {Option} from '~/types/common';

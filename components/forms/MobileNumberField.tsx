@@ -1,3 +1,5 @@
+'use client';
+
 import {useFieldContext} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {twMerge} from 'tailwind-merge';

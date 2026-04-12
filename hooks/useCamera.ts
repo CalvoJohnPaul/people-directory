@@ -6,6 +6,7 @@ export type CameraPosition = 'REAR' | 'FRONT';
 export interface UseCameraOptions {
   position?: CameraPosition;
   aspectRatio?: number;
+  transformer?: (snapshot: File) => File | Promise<File>;
 }
 
 export interface CameraSnapOptions {
@@ -42,18 +43,19 @@ type UnsubscribeFn = () => void;
 
 export interface UseCameraReturn {
   videoRef: RefObject<HTMLVideoElement | null>;
-  videoProps: ComponentPropsWithRef<'video'>;
   opened: boolean;
   open: () => Promise<void>;
   close: () => Promise<void>;
   snap: (options?: CameraSnapOptions) => Promise<File>;
   snapping: boolean;
   subscribe: (fn: SubscribeFn) => UnsubscribeFn;
+  getVideoProps: () => ComponentPropsWithRef<'video'>;
 }
 
 export function useCamera(options?: UseCameraOptions): UseCameraReturn {
   const position = options?.position ?? 'FRONT';
   const aspectRatio = options?.aspectRatio ?? 1;
+  const transformer = options?.transformer ?? ((file: File) => file);
   const mirrored = position === 'FRONT';
 
   const [opened, setOpened] = useState(false);
@@ -61,7 +63,8 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const videoProps: ComponentPropsWithRef<'video'> = {
+
+  const getVideoProps = (): ComponentPropsWithRef<'video'> => ({
     ref: videoRef,
     muted: true,
     autoPlay: true,
@@ -79,7 +82,7 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
       pointerEvents: 'none',
       transform: mirrored ? 'scaleX(-1)' : undefined,
     },
-  };
+  });
 
   const subscribers = useRef<SubscribeFn[]>([]);
   const subscribe = (fn: SubscribeFn): UnsubscribeFn => {
@@ -182,7 +185,10 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
     return Promise.resolve();
   };
 
-  const snap = ({type = 'image/jpg', quality = 0.925}: CameraSnapOptions = {}): Promise<File> => {
+  const snap = async ({
+    type = 'image/jpg',
+    quality = 0.925,
+  }: CameraSnapOptions = {}): Promise<File> => {
     if (!opened) {
       const error = new Error();
       error.name = 'CameraError';
@@ -209,7 +215,7 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    return new Promise<File>((resolve, reject) => {
+    const snapshot = await new Promise<File>((resolve, reject) => {
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -222,14 +228,6 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
             });
 
             resolve(file);
-            subscribers.current.forEach((subscriber) => {
-              subscriber({
-                type: 'SNAPSHOT',
-                details: {
-                  file,
-                },
-              });
-            });
           } else {
             const error = new Error();
             error.name = 'CameraError';
@@ -243,17 +241,30 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
         quality,
       );
     });
+
+    const final = await transformer(snapshot);
+
+    subscribers.current.forEach((subscriber) => {
+      subscriber({
+        type: 'SNAPSHOT',
+        details: {
+          file: final,
+        },
+      });
+    });
+
+    return final;
   };
 
   return {
     videoRef,
-    videoProps,
     opened,
     snapping,
     open,
     close,
     snap,
     subscribe,
+    getVideoProps,
   };
 }
 

@@ -1,3 +1,5 @@
+'use client';
+
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import type {ReactNode} from 'react';
 import {Checkbox} from '../ui/Checkbox';

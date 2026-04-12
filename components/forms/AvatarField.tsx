@@ -1,3 +1,5 @@
+'use client';
+
 import {Presence, useFieldContext} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {XIcon} from 'lucide-react';

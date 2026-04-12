@@ -16,7 +16,7 @@ let $vision: Awaited<ReturnType<(typeof FilesetResolver)['forVisionTasks']>> | n
 async function $getVision() {
   if (!$vision) {
     $vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm',
+      `${process.env.NEXT_PUBLIC_URL}/@mediapipe/wasm`,
     );
   }
 
@@ -39,8 +39,7 @@ async function $getFaceDetector(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
     minDetectionConfidence: 0.5,
     baseOptions: {
       delegate: 'GPU',
-      modelAssetPath:
-        'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+      modelAssetPath: `${process.env.NEXT_PUBLIC_URL}/@mediapipe/models/blaze_face_short_range.tflite`,
     },
   });
 
@@ -67,8 +66,7 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
     numFaces: 1,
     baseOptions: {
       delegate: 'GPU',
-      modelAssetPath:
-        'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+      modelAssetPath: `${process.env.NEXT_PUBLIC_URL}/@mediapipe/models/face_landmarker.task`,
     },
   });
 
@@ -243,5 +241,49 @@ export async function getFaceEmbedding(file: File) {
   } catch (error) {
     console.error(error);
     return null;
+  }
+}
+
+export async function cropFace(file: File): Promise<File> {
+  try {
+    const detector = await $getFaceDetector();
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    invariant(context, 'Could not get canvas context');
+
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    context.drawImage(bitmap, 0, 0);
+    const result = detector.detect(canvas);
+
+    invariant(result.detections.length > 0, 'No faces detected in the image');
+
+    const detection = result.detections[0];
+    const boundingBox = detection.boundingBox;
+
+    invariant(boundingBox, 'No bounding box found for detected face');
+
+    const {height, originX, originY, width} = boundingBox;
+
+    const croppedCanvas = document.createElement('canvas');
+    const croppedContext = croppedCanvas.getContext('2d');
+
+    invariant(croppedContext, 'Could not get cropped canvas context');
+
+    croppedCanvas.width = width;
+    croppedCanvas.height = height;
+    croppedContext.drawImage(canvas, originX, originY, width, height, 0, 0, width, height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      croppedCanvas.toBlob(resolve, file.type, 1),
+    );
+
+    invariant(blob, 'Could not create blob from cropped canvas');
+
+    return new File([blob], file.name, {type: file.type});
+  } catch (error) {
+    console.error(error);
+    return file;
   }
 }
