@@ -92,18 +92,6 @@ export const UpdatePersonInputDefinition = z.object({
 
 export const PeopleInputDefinition = z
   .object({
-    first: z.coerce
-      .number()
-      .optional()
-      .nullable()
-      .catch(null)
-      .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
-    after: z.coerce
-      .number()
-      .optional()
-      .nullable()
-      .catch(null)
-      .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? v : null)),
     keyword: z.string().optional().nullable().catch(null),
     image: z
       .array(z.coerce.number().nullable().catch(null))

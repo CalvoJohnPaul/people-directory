@@ -14,13 +14,8 @@ export function People() {
     id: parseAsNativeArrayOf(parseAsInteger),
   });
 
-  const query = usePeopleQuery({
-    first: 21,
-    ...state,
-  });
-
-  const totalCount = query.data?.pages.at(0)?.totalCount ?? 0;
-  const people = query.data?.pages.at(0)?.data ?? [];
+  const query = usePeopleQuery(state);
+  const people = query.data ?? [];
   const searched =
     size(omitBy(state, (v) => isNil(v) || v === '' || (Array.isArray(v) && v.length === 0))) > 0;
 
@@ -30,9 +25,9 @@ export function People() {
         {query.isLoading
           ? 'Crunching latest data. Please wait...'
           : searched
-            ? totalCount <= 0
+            ? people.length <= 0
               ? 'No matching records'
-              : `Showing ${totalCount} matches`
+              : `Showing ${people.length} matches`
             : 'Showing latest records'}
         .
       </p>

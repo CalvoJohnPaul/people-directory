@@ -2,22 +2,6 @@ import * as z from 'zod';
 
 /*
  *------------------------------------------------
- *  PAGINATED
- *------------------------------------------------
- */
-
-export const PaginatedResponseDefinition = <T extends z.ZodTypeAny>(def: T) =>
-  z.object({
-    data: z.array(def),
-    totalCount: z.number(),
-    pageInfo: z.object({
-      hasNextPage: z.boolean(),
-      endCursor: z.number().optional().nullable(),
-    }),
-  });
-
-/*
- *------------------------------------------------
  *  HTTP RESPONSE
  *------------------------------------------------
  */
@@ -77,9 +61,6 @@ export const OptionDefinition = z.object({
  *------------------------------------------------
  */
 
-export type PaginatedResponse<T> = z.infer<
-  ReturnType<typeof PaginatedResponseDefinition<z.ZodType<T>>>
->;
 export type HttpError = z.infer<typeof HttpErrorDefinition>;
 export type HttpFailedResponse = z.infer<typeof HttpFailedResponseDefinition>;
 export type HttpSuccessResponse<T> = z.infer<

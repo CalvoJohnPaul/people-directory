@@ -1,9 +1,6 @@
-import {type QueryKey, type UseInfiniteQueryOptions, useInfiniteQuery} from '@tanstack/react-query';
-import {
-  HttpResponseDefinition,
-  type PaginatedResponse,
-  PaginatedResponseDefinition,
-} from '~/types/common';
+import {type QueryKey, type UseQueryOptions, useQuery} from '@tanstack/react-query';
+import * as z from 'zod';
+import {HttpResponseDefinition} from '~/types/common';
 import {type PeopleInput, type Person, PersonDefinition} from '~/types/Person';
 
 const getQueryKey = (args?: PeopleInput): QueryKey => ['people', args].filter(Boolean);
@@ -11,13 +8,7 @@ const getQueryKey = (args?: PeopleInput): QueryKey => ['people', args].filter(Bo
 export function usePeopleQuery(
   args?: PeopleInput,
   opts?: Pick<
-    UseInfiniteQueryOptions<
-      PaginatedResponse<Person>,
-      Error,
-      PaginatedResponse<Person>,
-      QueryKey,
-      number | null
-    >,
+    UseQueryOptions<Person[]>,
     | 'enabled'
     | 'gcTime'
     | 'initialData'
@@ -35,18 +26,10 @@ export function usePeopleQuery(
     | 'throwOnError'
   >,
 ) {
-  return useInfiniteQuery({
+  return useQuery({
     queryKey: getQueryKey(args),
-    queryFn: async ({pageParam}) => {
+    queryFn: async () => {
       const params = new URLSearchParams();
-
-      if (pageParam) {
-        params.set('after', pageParam.toString());
-      }
-
-      if (args?.first) {
-        params.set('first', args.first.toString());
-      }
 
       if (args?.keyword) {
         params.set('keyword', args.keyword);
@@ -71,9 +54,7 @@ export function usePeopleQuery(
         credentials: 'include',
       })
         .then((r) => r.json())
-        .then((r) =>
-          HttpResponseDefinition(PaginatedResponseDefinition(PersonDefinition)).parse(r),
-        );
+        .then((r) => HttpResponseDefinition(z.array(PersonDefinition)).parse(r));
 
       if (!res.ok) {
         const err = new Error();
@@ -83,10 +64,6 @@ export function usePeopleQuery(
       }
 
       return res.data;
-    },
-    initialPageParam: args?.after ?? null,
-    getNextPageParam: (lastPage) => {
-      return lastPage?.pageInfo?.endCursor ?? null;
     },
     ...opts,
   });
