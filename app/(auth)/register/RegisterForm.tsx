@@ -3,6 +3,7 @@
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useRouter} from 'next/navigation';
 import {useNavigationGuard} from 'next-navigation-guard';
+import {useRef} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useTimeout} from 'usehooks-ts';
 import {PasswordField} from '~/components/forms/PasswordField';
@@ -14,24 +15,23 @@ import {toaster} from '~/config/toaster';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import {useUpdateFaceEmbedding} from '~/hooks/useUpdateFaceEmbedding';
 import {CreatePersonInputDefinition} from '~/types/Person';
+import {getFaceEmbedding} from '~/utils/face';
 
 export function RegisterForm() {
   const client = getClient();
   const query = useMeQuery();
-  const mutation = useCreatePersonMutation({
+  const photoRef = useRef<File | null>(null);
+  const updateFaceEmbeddingMutation = useUpdateFaceEmbedding();
+  const createPersonMutation = useCreatePersonMutation({
     onError(error) {
       toaster.error({
         title: 'Error',
         description: error.message,
       });
     },
-    onSuccess() {
-      toaster.success({
-        title: 'Success',
-        description: 'Account created. Good luck!',
-      });
-
+    onSuccess(person) {
       client.invalidateQueries({
         queryKey: useMeQuery.getQueryKey(),
         refetchType: 'all',
@@ -43,6 +43,19 @@ export function RegisterForm() {
         refetchType: 'all',
         exact: false,
       });
+
+      if (photoRef.current) {
+        getFaceEmbedding(photoRef.current)
+          .then((embedding) => {
+            if (embedding) {
+              updateFaceEmbeddingMutation.mutate({
+                id: person.id,
+                embedding,
+              });
+            }
+          })
+          .catch(console.error);
+      }
     },
   });
 
@@ -63,7 +76,7 @@ export function RegisterForm() {
   useTimeout(() => router.push('/'), query.data != null ? 0 : null);
 
   useNavigationGuard({
-    enabled: form.formState.isDirty && !mutation.isSuccess,
+    enabled: form.formState.isDirty && !createPersonMutation.isSuccess,
     confirm: () => window.confirm('You have unsaved changes. Are you sure you want to leave?'),
   });
 
@@ -72,7 +85,7 @@ export function RegisterForm() {
       className="mx-auto max-w-100"
       noValidate
       onSubmit={form.handleSubmit((data) => {
-        mutation.mutate(data);
+        createPersonMutation.mutate(data);
       })}
     >
       <Field.Root size="lg" invalid={!!form.formState.errors.firstName}>
@@ -94,6 +107,9 @@ export function RegisterForm() {
             <PhotoField
               value={ctx.field.value || null}
               onChange={(value) => ctx.field.onChange(value || '')}
+              onFileChange={(file) => {
+                photoRef.current = file;
+              }}
             />
             <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
           </Field.Root>
@@ -127,7 +143,7 @@ export function RegisterForm() {
             form.formState.isSubmitting ||
             query.isLoading ||
             query.data != null ||
-            mutation.isPending
+            createPersonMutation.isPending
           }
         >
           Submit

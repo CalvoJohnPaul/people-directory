@@ -20,6 +20,7 @@ import {Dialog} from '../ui/Dialog';
 export interface PhotoFieldProps {
   value?: string | null;
   onChange?: (value: string | null) => void;
+  onFileChange?: (file: File | null) => void;
   defaultValue?: string | null;
   className?: string;
   disabled?: boolean;
@@ -92,7 +93,10 @@ export function PhotoField(props: PhotoFieldProps) {
         >
           <button
             type="button"
-            onClick={() => setValue(null)}
+            onClick={() => {
+              setValue(null);
+              props.onFileChange?.(null);
+            }}
             tabIndex={-1}
             className="absolute top-2 right-2 size-7 place-items-center self-end border bg-white"
             aria-label="Clear photo"
@@ -119,9 +123,10 @@ export function PhotoField(props: PhotoFieldProps) {
             </Dialog.CloseTrigger>
 
             <Camera
-              onCompleted={(photo) => {
+              onCompleted={(photo, photoAsString) => {
                 disclosure.setOpen(false);
-                setValue(photo);
+                setValue(photoAsString);
+                props.onFileChange?.(photo);
               }}
               onCancelled={() => {
                 disclosure.setOpen(false);
@@ -134,7 +139,10 @@ export function PhotoField(props: PhotoFieldProps) {
   );
 }
 
-function Camera(props: {onCancelled?: () => void; onCompleted?: (photo: string | null) => void}) {
+function Camera(props: {
+  onCancelled?: () => void;
+  onCompleted?: (photo: File | null, photoAsString: string | null) => void;
+}) {
   const mutation = useUploadFileMutation();
 
   const camera = useCamera({
@@ -303,9 +311,9 @@ function Camera(props: {onCancelled?: () => void; onCompleted?: (photo: string |
               onClick={async () => {
                 if (snapshot) {
                   const uploadedFile = await mutation.mutateAsync(snapshot);
-                  props.onCompleted?.(uploadedFile.url);
+                  props.onCompleted?.(snapshot, uploadedFile.url);
                 } else {
-                  props.onCompleted?.(null);
+                  props.onCompleted?.(null, null);
                 }
 
                 reset();
