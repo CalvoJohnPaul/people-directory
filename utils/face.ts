@@ -246,7 +246,7 @@ export async function getFaceEmbedding(file: File) {
 
 export async function cropFace(file: File): Promise<File> {
   try {
-    const detector = await $getFaceDetector();
+    const detector = await $getFaceDetector('IMAGE');
     const bitmap = await createImageBitmap(file);
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -267,21 +267,71 @@ export async function cropFace(file: File): Promise<File> {
 
     const {height, originX, originY, width} = boundingBox;
 
+    const marginX = width * 0.25;
+    const marginTop = Math.max(height * 0.55, width * 0.35);
+    const marginBottom = height * 1.05;
+
+    const desiredLeft = originX - marginX;
+    const desiredTop = originY - marginTop;
+    const desiredRight = originX + width + marginX;
+    const desiredBottom = originY + height + marginBottom;
+
+    const sourceX = Math.max(0, desiredLeft);
+    const sourceY = Math.max(0, desiredTop);
+    const sourceRight = Math.min(canvas.width, desiredRight);
+    let sourceBottom = Math.min(canvas.height, desiredBottom);
+
+    const lostTop = sourceY - desiredTop;
+
+    if (lostTop > 0) {
+      sourceBottom = Math.min(canvas.height, sourceBottom + lostTop);
+    }
+
+    const sourceWidth = Math.max(1, sourceRight - sourceX);
+    const sourceHeight = Math.max(1, sourceBottom - sourceY);
+    const squareSize = Math.max(sourceWidth, sourceHeight);
+    const excessWidth = squareSize - sourceWidth;
+    const excessHeight = squareSize - sourceHeight;
+
+    let finalSourceX = Math.max(0, sourceX - Math.floor(excessWidth / 2));
+    let finalSourceY = Math.max(0, sourceY - Math.floor(excessHeight / 2));
+
+    finalSourceX = Math.min(finalSourceX, Math.max(0, canvas.width - squareSize));
+    finalSourceY = Math.min(finalSourceY, Math.max(0, canvas.height - squareSize));
+
+    const targetWidth = Math.max(1, Math.round(squareSize));
+    const targetHeight = Math.max(1, Math.round(squareSize));
+
     const croppedCanvas = document.createElement('canvas');
     const croppedContext = croppedCanvas.getContext('2d');
 
     invariant(croppedContext, 'Could not get cropped canvas context');
 
-    croppedCanvas.width = width;
-    croppedCanvas.height = height;
-    croppedContext.drawImage(canvas, originX, originY, width, height, 0, 0, width, height);
+    croppedCanvas.width = targetWidth;
+    croppedCanvas.height = targetHeight;
+    croppedContext.drawImage(
+      canvas,
+      finalSourceX,
+      finalSourceY,
+      squareSize,
+      squareSize,
+      0,
+      0,
+      targetWidth,
+      targetHeight,
+    );
+
     const blob = await new Promise<Blob | null>((resolve) =>
       croppedCanvas.toBlob(resolve, file.type, 1),
     );
 
     invariant(blob, 'Could not create blob from cropped canvas');
 
-    return new File([blob], file.name, {type: file.type});
+    return new File([blob], file.name, {
+      type: file.type,
+      endings: 'native',
+      lastModified: Date.now(),
+    });
   } catch (error) {
     console.error(error);
     return file;

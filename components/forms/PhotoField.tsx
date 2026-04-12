@@ -114,6 +114,10 @@ export function PhotoField(props: PhotoFieldProps) {
         <Dialog.Backdrop />
         <Dialog.Positioner className="flex items-center justify-center">
           <Dialog.Content className="h-auto w-90 p-6 lg:min-w-100 lg:max-w-100">
+            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
+              <XIcon className="size-5" />
+            </Dialog.CloseTrigger>
+
             <Camera
               onCompleted={(photo) => {
                 disclosure.setOpen(false);
