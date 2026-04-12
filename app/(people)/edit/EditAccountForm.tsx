@@ -18,6 +18,8 @@ import {Field} from '~/components/ui/Field';
 import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import {usePersonQuery} from '~/hooks/usePersonQuery';
 import {useUpdateFaceEmbedding} from '~/hooks/useUpdateFaceEmbedding';
 import {useUpdatePersonMutation} from '~/hooks/useUpdatePersonMutation';
 import {GenderDefinition, type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
@@ -32,6 +34,15 @@ export function EditAccountForm() {
   const updatePersonMutation = useUpdatePersonMutation({
     onSuccess(data) {
       client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
+      client.setQueryData<Person>(usePersonQuery.getQueryKey(data.id), data);
+      client.setQueriesData<Person[]>(
+        {
+          queryKey: usePeopleQuery.getQueryKey(),
+          exact: false,
+          type: 'all',
+        },
+        (arr) => arr?.map((p) => (p.id === data.id ? data : p)),
+      );
 
       if (photoRef.current) {
         getFaceEmbedding(photoRef.current)
