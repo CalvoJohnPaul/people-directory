@@ -5,6 +5,7 @@ import {capitalize, invariant, isNil, omitBy} from 'es-toolkit';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {useNavigationGuard} from 'next-navigation-guard';
+import {useRef} from 'react';
 import {Controller, useForm} from 'react-hook-form';
 import {useTimeout} from 'usehooks-ts';
 import {DateField} from '~/components/forms/DateField';
@@ -17,16 +18,34 @@ import {Field} from '~/components/ui/Field';
 import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {useUpdateFaceEmbedding} from '~/hooks/useUpdateFaceEmbedding';
 import {useUpdatePersonMutation} from '~/hooks/useUpdatePersonMutation';
 import {GenderDefinition, type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
+import {getFaceEmbedding} from '~/utils/face';
 
 export function EditAccountForm() {
   const router = useRouter();
   const query = useMeQuery();
   const client = getClient();
-  const mutation = useUpdatePersonMutation({
+  const photoRef = useRef<File | null>(null);
+  const updateFaceEmbeddingMutation = useUpdateFaceEmbedding();
+  const updatePersonMutation = useUpdatePersonMutation({
     onSuccess(data) {
       client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
+
+      if (photoRef.current) {
+        getFaceEmbedding(photoRef.current)
+          .then((embedding) => {
+            if (embedding) {
+              updateFaceEmbeddingMutation.mutate({
+                id: data.id,
+                embedding,
+              });
+            }
+          })
+          .catch(console.error);
+      }
+
       form.reset();
       router.push(`/${data.id}`);
     },
@@ -78,7 +97,7 @@ export function EditAccountForm() {
   );
 
   useNavigationGuard({
-    enabled: form.formState.isDirty && mutation.isIdle,
+    enabled: form.formState.isDirty && updatePersonMutation.isIdle,
     confirm: () => window.confirm('You have unsaved changes. Are you sure you want to leave?'),
   });
 
@@ -89,7 +108,7 @@ export function EditAccountForm() {
         const id = query.data?.id;
         invariant(id, "'id' is undefined");
         const data = omitBy(values, (v) => isNil(v) || v === '');
-        mutation.mutate({
+        updatePersonMutation.mutate({
           id,
           data,
         });
@@ -179,6 +198,9 @@ export function EditAccountForm() {
             <PhotoField
               value={ctx.field.value || null}
               onChange={(v) => ctx.field.onChange(v || null)}
+              onFileChange={(file) => {
+                photoRef.current = file;
+              }}
             />
             <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
           </Field.Root>
@@ -191,7 +213,9 @@ export function EditAccountForm() {
         <Button
           type="submit"
           fullWidth
-          disabled={query.isLoading || mutation.isPending || form.formState.isSubmitting}
+          disabled={
+            query.isLoading || updatePersonMutation.isPending || form.formState.isSubmitting
+          }
         >
           Save
         </Button>

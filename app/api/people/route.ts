@@ -30,6 +30,8 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
 
     if (rows.length) {
       ids.push(...rows.map((r) => r.personId));
+    } else {
+      ids.push(-1);
     }
   }
 

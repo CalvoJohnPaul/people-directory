@@ -1,8 +1,8 @@
 'use client';
 
-import {Portal, Swap} from '@ark-ui/react';
-import {invariant, uniq} from 'es-toolkit';
-import {ImageIcon, QrCodeIcon, SearchIcon, XIcon} from 'lucide-react';
+import { Portal, Swap } from '@ark-ui/react';
+import { invariant, uniq } from 'es-toolkit';
+import { ImageIcon, QrCodeIcon, SearchIcon, XIcon } from 'lucide-react';
 import Image from 'next/image';
 import {
   parseAsFloat,
@@ -11,19 +11,19 @@ import {
   parseAsString,
   useQueryState,
 } from 'nuqs';
-import {useRef, useState} from 'react';
-import {useInterval} from 'usehooks-ts';
-import {ImagePlaceholderIcon} from '~/components/icons/ImagePlaceholderIcon';
-import {Button} from '~/components/ui/Button';
-import {Dialog} from '~/components/ui/Dialog';
-import {Field} from '~/components/ui/Field';
-import {IconButton} from '~/components/ui/IconButton';
-import {Tooltip} from '~/components/ui/Tooltip';
-import {toaster} from '~/config/toaster';
-import {useCamera} from '~/hooks/useCamera';
-import {useDisclosure} from '~/hooks/useDisclosure';
-import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
-import {parseQrCode} from '~/utils/qrCode';
+import { useRef, useState } from 'react';
+import { useInterval } from 'usehooks-ts';
+import { ImagePlaceholderIcon } from '~/components/icons/ImagePlaceholderIcon';
+import { Button } from '~/components/ui/Button';
+import { Dialog } from '~/components/ui/Dialog';
+import { Field } from '~/components/ui/Field';
+import { IconButton } from '~/components/ui/IconButton';
+import { Tooltip } from '~/components/ui/Tooltip';
+import { toaster } from '~/config/toaster';
+import { useCamera } from '~/hooks/useCamera';
+import { useDisclosure } from '~/hooks/useDisclosure';
+import { cropFace, detectFace, getFaceEmbedding } from '~/utils/face';
+import { parseQrCode } from '~/utils/qrCode';
 
 export function Toolbar() {
   return (
@@ -340,6 +340,7 @@ function SearchByPhoto() {
                   <Button
                     fullWidth
                     variant="outline"
+                    disabled={parsing}
                     onClick={() => {
                       setPhoto(null);
                     }}
@@ -348,6 +349,7 @@ function SearchByPhoto() {
                   </Button>
                   <Button
                     fullWidth
+                    disabled={parsing}
                     onClick={async () => {
                       setParsing(true);
 

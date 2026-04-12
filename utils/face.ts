@@ -61,7 +61,7 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
   const vision = await $getVision();
   const landmarker = await FaceLandmarker.createFromOptions(vision, {
     runningMode,
-    outputFaceBlendshapes: false,
+    outputFaceBlendshapes: true,
     outputFacialTransformationMatrixes: true,
     numFaces: 1,
     baseOptions: {
@@ -219,30 +219,106 @@ async function $detectHeadTurnFromVideo(
 
 export async function getFaceEmbedding(file: File): Promise<number[] | null> {
   try {
-    const landmarker = await $getFaceLandmarker();
-    const bitmap = await createImageBitmap(file);
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const image = await $loadImage(file);
+    const baseCanvas = document.createElement('canvas');
+    const baseContext = baseCanvas.getContext('2d');
 
-    invariant(context, 'Could not get canvas context');
+    invariant(baseContext, 'Could not get base canvas context');
 
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    context.drawImage(bitmap, 0, 0);
+    baseCanvas.width = image.naturalWidth || image.width;
+    baseCanvas.height = image.naturalHeight || image.height;
+    baseContext.drawImage(image, 0, 0, baseCanvas.width, baseCanvas.height);
 
-    const result = landmarker.detect(canvas);
-    const faceBlendshape = result.faceBlendshapes?.at(0);
+    const direct = await $extractEmbeddingFromCanvas(baseCanvas);
+    if (direct) return direct;
 
-    if (!faceBlendshape) {
-      return null;
+    const enhanced = $enhanceCanvas(baseCanvas, 1.35, 1.28);
+    const fromEnhanced = await $extractEmbeddingFromCanvas(enhanced);
+    if (fromEnhanced) return fromEnhanced;
+
+    const cropped = await $cropFaceFromCanvas(baseCanvas);
+    if (cropped) {
+      const fromCropped = await $extractEmbeddingFromCanvas(cropped);
+      if (fromCropped) return fromCropped;
+
+      const croppedEnhanced = $enhanceCanvas(cropped, 1.25, 1.22);
+      const fromCroppedEnhanced = await $extractEmbeddingFromCanvas(croppedEnhanced);
+      if (fromCroppedEnhanced) return fromCroppedEnhanced;
     }
 
-    const data = faceBlendshape.categories.map((c) => c.score);
-    return data.length ? data : null;
+    return null;
   } catch (error) {
     console.error(error);
     return null;
   }
+}
+
+async function $extractEmbeddingFromCanvas(canvas: HTMLCanvasElement): Promise<number[] | null> {
+  const landmarker = await $getFaceLandmarker('IMAGE');
+  const result = landmarker.detect(canvas);
+  const faceBlendshape = result.faceBlendshapes?.at(0);
+
+  if (!faceBlendshape) return null;
+
+  const values = faceBlendshape.categories
+    .map((category) => category.score)
+    .filter((score) => Number.isFinite(score));
+
+  if (!values.length) return null;
+
+  const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+
+  if (norm === 0) return null;
+
+  return values.map((value) => value / norm);
+}
+
+function $enhanceCanvas(
+  source: HTMLCanvasElement,
+  brightness: number,
+  contrast: number,
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  invariant(context, 'Could not get enhancement canvas context');
+
+  canvas.width = source.width;
+  canvas.height = source.height;
+  context.filter = `brightness(${brightness}) contrast(${contrast})`;
+  context.drawImage(source, 0, 0, source.width, source.height);
+  context.filter = 'none';
+
+  return canvas;
+}
+
+async function $cropFaceFromCanvas(source: HTMLCanvasElement): Promise<HTMLCanvasElement | null> {
+  const detector = await $getFaceDetector('IMAGE');
+  const result = detector.detect(source);
+  const detection = result.detections.at(0);
+  const box = detection?.boundingBox;
+
+  if (!box) return null;
+
+  const marginX = box.width * 0.3;
+  const marginY = box.height * 0.45;
+  const left = Math.max(0, Math.floor(box.originX - marginX));
+  const top = Math.max(0, Math.floor(box.originY - marginY));
+  const right = Math.min(source.width, Math.ceil(box.originX + box.width + marginX));
+  const bottom = Math.min(source.height, Math.ceil(box.originY + box.height + marginY));
+  const width = Math.max(1, right - left);
+  const height = Math.max(1, bottom - top);
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  invariant(context, 'Could not get crop canvas context');
+
+  canvas.width = 512;
+  canvas.height = 512;
+  context.drawImage(source, left, top, width, height, 0, 0, 512, 512);
+
+  return canvas;
 }
 
 export async function cropFace(file: File): Promise<File> {
