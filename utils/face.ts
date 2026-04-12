@@ -299,16 +299,14 @@ export async function cropFace(file: File): Promise<File> {
     finalSourceX = Math.min(finalSourceX, Math.max(0, canvas.width - squareSize));
     finalSourceY = Math.min(finalSourceY, Math.max(0, canvas.height - squareSize));
 
-    const targetWidth = Math.max(1, Math.round(squareSize));
-    const targetHeight = Math.max(1, Math.round(squareSize));
-
+    const outputSize = 1024;
     const croppedCanvas = document.createElement('canvas');
     const croppedContext = croppedCanvas.getContext('2d');
 
     invariant(croppedContext, 'Could not get cropped canvas context');
 
-    croppedCanvas.width = targetWidth;
-    croppedCanvas.height = targetHeight;
+    croppedCanvas.width = outputSize;
+    croppedCanvas.height = outputSize;
     croppedContext.drawImage(
       canvas,
       finalSourceX,
@@ -317,8 +315,8 @@ export async function cropFace(file: File): Promise<File> {
       squareSize,
       0,
       0,
-      targetWidth,
-      targetHeight,
+      outputSize,
+      outputSize,
     );
 
     const blob = await new Promise<Blob | null>((resolve) =>

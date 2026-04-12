@@ -219,7 +219,7 @@ export function useCamera(options?: UseCameraOptions): UseCameraReturn {
       canvas.toBlob(
         (blob) => {
           if (blob) {
-            const ext = type.split(/\\/g).at(-1) || 'jpg';
+            const ext = type.split(/\//g).at(-1) || 'jpg';
             const name = `screenshot-${Date.now()}.${ext}`;
             const file = new File([blob], name, {
               type,

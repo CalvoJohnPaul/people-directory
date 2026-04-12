@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse<HttpResponse<U
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const extension = path.extname(file.name);
-    const filename = `${randomUUID()}${extension}`;
+    const filename = `${randomUUID().replace(/-/g, '')}${extension}`;
     const location = path.join(uploadsDir, filename);
 
     await fs.writeFile(location, buffer);
