@@ -262,7 +262,7 @@ function Camera(props: {onCancelled?: () => void; onCompleted?: (photo: string |
       <div
         hidden={src != null}
         className={twMerge(
-          'relative aspect-square w-full bg-gray-100',
+          'relative aspect-square w-full bg-gray-50',
           camera.opened && 'border-2 border-dashed',
           faceVerified && livenessLeftVerified && livenessRightVerified
             ? 'border-green-400'

@@ -217,12 +217,7 @@ async function $detectHeadTurnFromVideo(
   return 'CENTER';
 }
 
-export interface FaceEmbedding {
-  data: number[] | null;
-  toString(): string | null;
-}
-
-export async function getFaceEmbedding(file: File): Promise<FaceEmbedding> {
+export async function getFaceEmbedding(file: File): Promise<number[] | null> {
   try {
     const landmarker = await $getFaceLandmarker();
     const bitmap = await createImageBitmap(file);
@@ -239,30 +234,14 @@ export async function getFaceEmbedding(file: File): Promise<FaceEmbedding> {
     const faceBlendshape = result.faceBlendshapes?.at(0);
 
     if (!faceBlendshape) {
-      return {
-        data: null,
-        toString() {
-          return null;
-        },
-      };
+      return null;
     }
 
     const data = faceBlendshape.categories.map((c) => c.score);
-
-    return {
-      data,
-      toString() {
-        return `[${data.join(',')}]`;
-      },
-    };
+    return data.length ? data : null;
   } catch (error) {
     console.error(error);
-    return {
-      data: null,
-      toString() {
-        return null;
-      },
-    };
+    return null;
   }
 }
 

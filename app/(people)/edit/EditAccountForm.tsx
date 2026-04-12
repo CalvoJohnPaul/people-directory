@@ -185,7 +185,7 @@ export function EditAccountForm() {
         )}
       />
       <div className="mt-8 flex gap-3">
-        <Button type="button" variant="outline" fullWidth>
+        <Button type="button" variant="outline" fullWidth asChild>
           <Link href={`/${query.data?.id}`}>Cancel</Link>
         </Button>
         <Button
