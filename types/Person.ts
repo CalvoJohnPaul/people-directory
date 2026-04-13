@@ -8,10 +8,16 @@ export const PersonDefinition = z.object({
   lastName: z.string(),
   middleName: z.string().optional().nullable(),
   emailAddress: z.email(),
+  emailAddressVerifiedAt: DateDefinition.optional().nullable(),
   mobileNumber: z.string().optional().nullable(),
+  mobileNumberVerifiedAt: DateDefinition.optional().nullable(),
   gender: GenderDefinition.optional().nullable(),
   dateOfBirth: DateDefinition.optional().nullable(),
+  currentAddress: z.string().optional().nullable(),
+  permanentAddress: z.string().optional().nullable(),
   image: z.url(),
+  idDocument: z.string().optional().nullable(),
+  verifiedAt: DateDefinition.optional().nullable(),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
 });
@@ -36,11 +42,8 @@ export const CreatePersonInputDefinition = z.object({
     .max(50, 'Middle name must be at most 50 characters')
     .optional()
     .or(z.literal('')),
-  gender: GenderDefinition.optional().nullable(),
-  dateOfBirth: DateDefinition.optional().nullable(),
   image: z.url('Invalid image'),
   emailAddress: z.email('Invalid email address'),
-  mobileNumber: z.string().optional().or(z.literal('')),
   password: z
     .string()
     .trim()
@@ -76,6 +79,9 @@ export const UpdatePersonDataInputDefinition = z.object({
   image: z.url('Image must be a url').optional().or(z.literal('')),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
   mobileNumber: z.string().optional().or(z.literal('')),
+  currentAddress: z.string().optional().or(z.literal('')),
+  permanentAddress: z.string().optional().or(z.literal('')),
+  idDocument: z.url().optional().or(z.literal('')),
   password: z
     .string()
     .trim()

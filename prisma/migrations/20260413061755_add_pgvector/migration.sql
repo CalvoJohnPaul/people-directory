@@ -13,7 +13,14 @@ CREATE TABLE "people" (
     "date_of_birth" TIMESTAMP(3),
     "image" TEXT NOT NULL,
     "email_address" TEXT NOT NULL,
+    "email_address_verified_at" TIMESTAMP(3),
     "mobile_number" TEXT,
+    "mobile_number_verified_at" TIMESTAMP(3),
+    "current_address" TEXT,
+    "permanent_address" TEXT,
+    "password" TEXT NOT NULL,
+    "id_document" TEXT,
+    "verified_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -46,6 +53,7 @@ CREATE TABLE "uploaded_files" (
     "name" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "size" INTEGER NOT NULL,
+    "private" BOOLEAN DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "uploaded_files_pkey" PRIMARY KEY ("id")
