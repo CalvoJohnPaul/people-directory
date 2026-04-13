@@ -36,7 +36,7 @@ export function People() {
         {query.isLoading && <Loader />}
         {!query.isLoading &&
           people.map((person) => (
-            <Link key={person.id} href={`/${person.id}`} className="block w-full">
+            <Link key={person.id} href={`/people/${person.id}`} className="block w-full">
               <div className="aspect-square w-full bg-gray-50">
                 <Image
                   src={person.image}

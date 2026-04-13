@@ -73,7 +73,7 @@ export function RegisterForm() {
     },
   });
 
-  useTimeout(() => router.push('/'), query.data != null ? 0 : null);
+  useTimeout(() => router.push('/people'), query.data != null ? 0 : null);
 
   useNavigationGuard({
     enabled: form.formState.isDirty && !createPersonMutation.isSuccess,

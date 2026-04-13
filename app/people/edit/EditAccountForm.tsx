@@ -58,7 +58,7 @@ export function EditAccountForm() {
       }
 
       form.reset();
-      router.push(`/${data.id}`);
+      router.push(`/people/${data.id}`);
     },
     onError(error) {
       toaster.error({
@@ -219,7 +219,7 @@ export function EditAccountForm() {
       />
       <div className="mt-8 flex gap-3">
         <Button type="button" variant="outline" fullWidth asChild>
-          <Link href={`/${query.data?.id}`}>Cancel</Link>
+          <Link href={`/people/${query.data?.id}`}>Cancel</Link>
         </Button>
         <Button
           type="submit"

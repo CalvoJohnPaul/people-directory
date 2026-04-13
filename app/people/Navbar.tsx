@@ -48,7 +48,7 @@ export function Navbar() {
               <Menu.Positioner>
                 <Menu.Content>
                   <Menu.Item value="profile" asChild>
-                    <Link href={`/${query.data.id}`}>
+                    <Link href={`/people/${query.data.id}`}>
                       <UserIcon />
                       My profile
                     </Link>
