@@ -1,88 +1,26 @@
-import {hash} from 'bcrypt';
 import {addDays} from 'date-fns';
-import {uniq} from 'es-toolkit';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {prisma} from '~/config/prisma';
-import type {Prisma} from '~/prisma/generated/prisma/client';
+import {createPerson, getPeople} from '~/services/person';
 import type {HttpResponse} from '~/types/common';
 import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
 
 export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<Person[]>>> {
-  const args = PeopleInputDefinition.parse({
-    keyword: req.nextUrl.searchParams.get('keyword'),
-    image: req.nextUrl.searchParams.getAll('image'),
+  const input = PeopleInputDefinition.parse({
+    q: req.nextUrl.searchParams.get('q'),
     id: req.nextUrl.searchParams.getAll('id'),
+    gender: req.nextUrl.searchParams.getAll('gender'),
+    emailAddress: req.nextUrl.searchParams.get('emailAddress'),
+    mobileNumber: req.nextUrl.searchParams.get('mobileNumber'),
+    dateOfBirth__from: req.nextUrl.searchParams.get('dateOfBirth__from'),
+    dateOfBirth__to: req.nextUrl.searchParams.get('dateOfBirth__to'),
+    createdAt__from: req.nextUrl.searchParams.get('createdAt__from'),
+    createdAt__to: req.nextUrl.searchParams.get('createdAt__to'),
   });
 
-  const ids: number[] = [];
+  const data = await getPeople(input);
 
-  if (args.image?.length) {
-    const vectorLiteral = `[${args.image.join(',')}]`;
-    const MAX_COSINE_DISTANCE = 0.45;
-    const rows = await prisma.$queryRaw<Array<{personId: number}>>`
-      SELECT "personId"
-      FROM "face_embeddings"
-      GROUP BY "personId"
-      HAVING MIN(embedding <=> ${vectorLiteral}::vector) <= ${MAX_COSINE_DISTANCE}
-      ORDER BY MIN(embedding <=> ${vectorLiteral}::vector) ASC
-    `;
-
-    if (rows.length) {
-      ids.push(...rows.map((r) => r.personId));
-    } else {
-      ids.push(-1);
-    }
-  }
-
-  if (args.id?.length) {
-    ids.push(...args.id);
-  }
-
-  const where: Prisma.PersonWhereInput = {
-    ...(ids.length && {id: {in: uniq(ids)}}),
-    ...(args.keyword && {
-      OR: [
-        {firstName: {contains: args.keyword, mode: 'insensitive'}},
-        {lastName: {contains: args.keyword, mode: 'insensitive'}},
-        {middleName: {contains: args.keyword, mode: 'insensitive'}},
-        {emailAddress: {contains: args.keyword, mode: 'insensitive'}},
-        {mobileNumber: {contains: args.keyword, mode: 'insensitive'}},
-      ],
-    }),
-  };
-
-  const data = await prisma.person.findMany({
-    take: 100,
-    where,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      id: 'asc',
-    },
-  });
-
-  return NextResponse.json({
-    ok: true,
-    data,
-  });
+  return NextResponse.json({ok: true, data});
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<Person>>> {
@@ -102,46 +40,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
     );
   }
 
-  const person = await prisma.person.create({
-    data: {
-      ...result.data,
-      password: await hash(result.data.password, 8),
-    },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
+  const data = await createPerson(result.data);
   const Cookies = await cookies();
 
-  Cookies.set('user', person.id.toString(), {
+  Cookies.set('user', data.id.toString(), {
     httpOnly: true,
     expires: addDays(new Date(), 30),
     sameSite: true,
     secure: process.env.NODE_ENV === 'production',
   });
 
-  return NextResponse.json(
-    {
-      ok: true,
-      data: person,
-    },
-    {status: 201},
-  );
+  return NextResponse.json({ok: true, data}, {status: 201});
 }

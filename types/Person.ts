@@ -98,33 +98,23 @@ export const UpdatePersonInputDefinition = z.object({
 
 export const PeopleInputDefinition = z
   .object({
-    q: z.string().optional().nullable().catch(null),
+    q: z.string().nullable().catch(null),
     id: z
-      .union([
-        z
-          .array(z.coerce.number().nullable().catch(null))
-          .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
-        z.coerce
-          .number()
-          .nullable()
-          .catch(null)
-          .transform((v) => (v != null && !Number.isNaN(v) && v > 0 ? [v] : null)),
-      ])
-      .optional()
-      .nullable(),
+      .array(z.coerce.number().nullable().catch(null))
+      .nullable()
+      .catch(null)
+      .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
     gender: z
-      .union([
-        z.array(GenderDefinition.nullable().catch(null)).transform((l) => l?.filter(Boolean)),
-        GenderDefinition.nullable().catch(null),
-      ])
-      .optional()
-      .nullable(),
-    emailAddress: z.string().optional().nullable().catch(null),
-    mobileNumber: z.string().optional().nullable().catch(null),
-    age__from: z.coerce.number().optional().nullable().catch(null),
-    age__to: z.coerce.number().optional().nullable().catch(null),
-    createdAt__from: DateDefinition.optional().nullable().catch(null),
-    createdAt__to: DateDefinition.optional().nullable().catch(null),
+      .array(GenderDefinition.nullable().catch(null))
+      .nullable()
+      .catch(null)
+      .transform((l) => l?.filter(Boolean)),
+    emailAddress: z.string().nullable().catch(null),
+    mobileNumber: z.string().nullable().catch(null),
+    dateOfBirth__from: DateDefinition.nullable().catch(null),
+    dateOfBirth__to: DateDefinition.nullable().catch(null),
+    createdAt__from: DateDefinition.nullable().catch(null),
+    createdAt__to: DateDefinition.nullable().catch(null),
   })
   .partial();
 

@@ -2,12 +2,11 @@ import type {Metadata} from 'next';
 import {Google_Sans, JetBrains_Mono, Poppins} from 'next/font/google';
 import './globals.css';
 import {dehydrate, HydrationBoundary} from '@tanstack/react-query';
-import {cookies} from 'next/dist/server/request/cookies';
 import type {PropsWithChildren} from 'react';
 import {cx} from 'tailwind-variants';
 import {getClient} from '~/config/client';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {getPerson} from '~/services/person';
+import {getMe} from '~/services/Session';
 import {Providers} from './Providers';
 
 const sans = Google_Sans({
@@ -54,12 +53,7 @@ export default async function Layout({children}: PropsWithChildren) {
   const client = getClient();
   await client.prefetchQuery({
     queryKey: useMeQuery.getQueryKey(),
-    queryFn: async () => {
-      const Cookies = await cookies();
-      const id = parseInt(Cookies.get('user')?.value ?? '', 10);
-      if (Number.isNaN(id)) return null;
-      return await getPerson(id);
-    },
+    queryFn: () => getMe(),
   });
 
   return (

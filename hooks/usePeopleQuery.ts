@@ -31,20 +31,44 @@ export function usePeopleQuery(
     queryFn: async () => {
       const params = new URLSearchParams();
 
-      if (args?.keyword) {
-        params.set('keyword', args.keyword);
+      if (args?.q) {
+        params.set('q', args.q);
       }
 
-      if (args?.id) {
+      if (args?.id?.length) {
         args.id.forEach((id) => {
           params.append('id', id.toString());
         });
       }
 
-      if (args?.image?.length) {
-        args.image.forEach((id) => {
-          params.append('image', id.toString());
+      if (args?.gender?.length) {
+        args.gender.forEach((gender) => {
+          params.append('gender', gender);
         });
+      }
+
+      if (args?.emailAddress) {
+        params.append('emailAddress', args.emailAddress);
+      }
+
+      if (args?.mobileNumber) {
+        params.append('mobileNumber', args.mobileNumber);
+      }
+
+      if (args?.createdAt__from) {
+        params.append('createdAt__from', args.createdAt__from.toISOString());
+      }
+
+      if (args?.createdAt__to) {
+        params.append('createdAt__to', args.createdAt__to.toISOString());
+      }
+
+      if (args?.dateOfBirth__from) {
+        params.append('dateOfBirth__from', args.dateOfBirth__from.toISOString());
+      }
+
+      if (args?.dateOfBirth__to) {
+        params.append('dateOfBirth__to', args.dateOfBirth__to.toISOString());
       }
 
       const res = await fetch(`/api/people?${params.toString()}`, {

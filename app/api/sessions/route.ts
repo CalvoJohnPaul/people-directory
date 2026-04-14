@@ -1,8 +1,5 @@
-import {compare} from 'bcrypt';
-import {addDays, isAfter} from 'date-fns';
-import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {prisma} from '~/config/prisma';
+import {createSession, destroySession} from '~/services/Session';
 import type {HttpVoidResponse} from '~/types/common';
 import {CreateSessionInputDefinition} from '~/types/Session';
 
@@ -23,111 +20,25 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
     );
   }
 
-  /* OTP LOGIN */
-  if ('otpCode' in result.data) {
-    const {emailAddress, otpCode} = result.data;
+  const ok = await createSession(result.data);
 
-    const now = new Date();
-    const otp = await prisma.otp.findUnique({
-      where: {
-        emailAddress,
-      },
-      select: {
-        code: true,
-        expiresAt: true,
-      },
-    });
-
-    if (!otp || isAfter(now, otp.expiresAt) || otpCode !== otp.code) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: {
-            name: 'Unauthorized',
-            message: 'Invalid OTP code',
-          },
+  if (!ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'Unauthorized',
+          message: 'Unauthorized',
         },
-        {status: 401},
-      );
-    }
-
-    await prisma.otp.deleteMany({
-      where: {
-        emailAddress,
       },
-    });
-
-    const person = await prisma.person.findUnique({
-      where: {
-        emailAddress,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (person == null) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: {
-            name: 'Unauthorized',
-            message: 'Unauthorized',
-          },
-        },
-        {status: 401},
-      );
-    }
-
-    const Cookies = await cookies();
-
-    Cookies.set('user', person.id.toString(), {
-      httpOnly: true,
-      expires: addDays(new Date(), 30),
-      sameSite: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
-  } else {
-    const {emailAddress, password} = result.data;
-
-    const person = await prisma.person.findUnique({
-      where: {
-        emailAddress,
-      },
-      select: {
-        id: true,
-        password: true,
-      },
-    });
-
-    if (person == null || !(await compare(password, person.password))) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: {
-            name: 'Unauthorized',
-            message: 'Invalid email address or password',
-          },
-        },
-        {status: 401},
-      );
-    }
-
-    const Cookies = await cookies();
-
-    Cookies.set('user', person.id.toString(), {
-      httpOnly: true,
-      expires: addDays(new Date(), 30),
-      sameSite: true,
-      secure: process.env.NODE_ENV === 'production',
-    });
+      {status: 401},
+    );
   }
 
   return NextResponse.json({ok: true}, {status: 201});
 }
 
 export async function DELETE(): Promise<NextResponse<HttpVoidResponse>> {
-  const Cookies = await cookies();
-  Cookies.delete('user');
+  await destroySession();
   return NextResponse.json({ok: true});
 }
