@@ -30,16 +30,12 @@ const features = [
 export function Features() {
   return (
     <section id="features" className="mx-auto max-w-6xl px-4 pb-28 lg:px-6 lg:pb-40">
-      <div className="flex items-end justify-between gap-6 lg:mx-auto lg:w-fit">
-        <div>
-          <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em] lg:text-center">
-            Features
-          </p>
-          <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl">
-            Core functionality built into your people directory
-          </h2>
-        </div>
-      </div>
+      <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em] lg:text-center">
+        Features
+      </p>
+      <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl lg:text-center">
+        Core functionality built into your people directory
+      </h2>
 
       <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2">
         {features.map((item) => (

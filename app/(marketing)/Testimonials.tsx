@@ -1,7 +1,6 @@
 'use client';
 
 import {Avatar, Carousel} from '@ark-ui/react';
-import {chunk} from 'es-toolkit';
 import {ChevronLeftIcon, ChevronRightIcon, QuoteIcon} from 'lucide-react';
 import {useMediaQuery} from 'usehooks-ts';
 
@@ -69,39 +68,35 @@ const testimonials: Testimonial[] = [
 ];
 
 export function Testimonials() {
-  const desktop = useMediaQuery('(min-width: 1024px)');
-  const chunks = desktop ? chunk(testimonials, 2) : chunk(testimonials, 1);
+  const desktop = useMediaQuery('(min-width: 1024px)', {
+    defaultValue: true,
+    initializeWithValue: false,
+  });
 
   return (
     <section id="testimonials" className="mx-auto max-w-6xl px-4 py-28 lg:px-6 lg:py-40">
-      <div className="lg:mx-auto lg:w-fit">
-        <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em] lg:text-center">
-          Testimonials
-        </p>
-        <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl lg:text-center">
-          See what our customers are saying about us
-        </h2>
-      </div>
+      <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em] lg:text-center">
+        Testimonials
+      </p>
+      <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl lg:text-center">
+        See what our customers are saying about us
+      </h2>
 
       <Carousel.Root
-        slideCount={chunks.length}
-        spacing={desktop ? '24px' : '0px'}
+        slideCount={testimonials.length}
+        slidesPerPage={desktop ? 2 : 1}
+        spacing={desktop ? '24px' : '16px'}
         className="mt-12"
+        suppressHydrationWarning
       >
         <div className="flex items-center lg:gap-6">
           <Carousel.PrevTrigger className="hidden shrink-0 text-neutral-500 disabled:text-neutral-300 lg:block">
             <ChevronLeftIcon className="size-8" />
           </Carousel.PrevTrigger>
           <Carousel.ItemGroup>
-            {chunks.map((list, index) => (
-              <Carousel.Item key={index} index={index} asChild>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  {list.map((item, index) => (
-                    <div key={index}>
-                      <Item data={item} />
-                    </div>
-                  ))}
-                </div>
+            {testimonials.map((item, index) => (
+              <Carousel.Item key={index} index={index} suppressHydrationWarning>
+                <Item data={item} />
               </Carousel.Item>
             ))}
           </Carousel.ItemGroup>
@@ -111,13 +106,15 @@ export function Testimonials() {
         </div>
 
         <Carousel.IndicatorGroup className="mx-auto mt-8 flex w-fit gap-2">
-          {chunks.map((_, index) => (
-            <Carousel.Indicator
-              key={index}
-              index={index}
-              className="size-3 rounded-full bg-neutral-200 ui-current:bg-blue-500"
-            />
-          ))}
+          {Array.from({length: Math.ceil(testimonials.length / (desktop ? 2 : 1))}).map(
+            (_, index) => (
+              <Carousel.Indicator
+                key={index}
+                index={index}
+                className="size-3 rounded-full bg-neutral-200 ui-current:bg-blue-500 transition-colors duration-250"
+              />
+            ),
+          )}
         </Carousel.IndicatorGroup>
       </Carousel.Root>
     </section>

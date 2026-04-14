@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import {Navbar} from '~/components/Navbar';
+import {ContactUs} from './ContactUs';
 import {Faqs} from './Faqs';
 import {Features} from './Features';
 import {Footer} from './Footer';
@@ -23,6 +24,7 @@ export default function MarketingPage() {
         <HowItWorks />
         <Testimonials />
         <Faqs />
+        <ContactUs />
       </main>
       <Footer />
     </>

@@ -27,14 +27,12 @@ const faqs = [
 export function Faqs() {
   return (
     <section id="faqs" className="mx-auto max-w-6xl px-4 pb-28 lg:px-6 lg:pb-40">
-      <div className="lg:mx-auto">
-        <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em] lg:text-center">
-          FAQs
-        </p>
-        <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl lg:text-center">
-          Common questions about visibility and access
-        </h2>
-      </div>
+      <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em] lg:text-center">
+        Faqs
+      </p>
+      <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl lg:text-center">
+        Common questions about visibility and access
+      </h2>
 
       <Accordion.Root collapsible className="mt-12 rounded-sm border border-neutral-200 bg-white">
         {faqs.map((item) => (
