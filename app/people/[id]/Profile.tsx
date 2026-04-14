@@ -38,7 +38,7 @@ export function Profile({id}: ProfileProps) {
         <div className="aspect-square w-56 shrink-0 bg-neutral-50">
           <Image
             src={query.data.image}
-            alt="Avatar"
+            alt=""
             width={600}
             height={600}
             priority

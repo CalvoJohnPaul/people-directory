@@ -367,7 +367,7 @@ function SearchByPhoto() {
               {photo && (
                 <Image
                   src={URL.createObjectURL(photo)}
-                  alt="Uploaded photo"
+                  alt=""
                   width={400}
                   height={400}
                   unoptimized
