@@ -78,11 +78,7 @@ export default function MarketingPage() {
   return (
     <>
       <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
-        <Link
-          href="/"
-          draggable={false}
-          className="inline-flex items-center justify-center rounded-sm border bg-white p-1"
-        >
+        <Link href="/" className="block" draggable={false}>
           <Image
             src="/branding/logo-people.svg"
             alt="People logo"
@@ -104,7 +100,7 @@ export default function MarketingPage() {
         <section className="mx-auto flex max-w-6xl flex-col px-4 pt-4 pb-14 lg:px-6 lg:pt-6 lg:pb-20">
           <div className="mt-16 grid items-end gap-10 lg:mt-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
-              <p className="inline-flex items-center border border-neutral-300 bg-white px-4 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
+              <p className="inline-flex items-center rounded-sm border border-neutral-300 bg-white px-2.5 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
                 Public directory with privacy controls
               </p>
               <h1 className="mt-6 text-balance font-bold text-4xl text-neutral-900 leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -329,7 +325,7 @@ export default function MarketingPage() {
               alt="People logo"
               width={64}
               height={64}
-              className="size-8 rounded-sm border border-stone-700 bg-stone-800 p-1"
+              className="block size-8"
             />
             <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
               Let people register themselves and be found publicly while keeping sensitive contact
