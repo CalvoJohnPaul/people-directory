@@ -2,16 +2,20 @@
 
 import {Portal, Presence} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
+import {useIsFetching} from '@tanstack/react-query';
 import {omit} from 'es-toolkit';
-import {DownloadIcon, RefreshCcwIcon, SearchIcon, Settings2Icon, XIcon} from 'lucide-react';
+import {RefreshCcwIcon, SearchIcon, Settings2Icon, XIcon} from 'lucide-react';
 import {useReducer, useState} from 'react';
 import {useDebouncedCallback} from 'use-debounce';
+import {useTimeout} from 'usehooks-ts';
 import {Field} from '~/components/ui/Field';
 import {IconButton} from '~/components/ui/IconButton';
 import {Swap} from '~/components/ui/Swap';
 import {Tooltip} from '~/components/ui/Tooltip';
+import {getClient} from '~/config/client';
 import {useDisclosure} from '~/hooks/useDisclosure';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import {ExportPeople} from './ExportPeople';
 import {Filter, type FilterValue} from './Filter';
 import {PeopleProvider} from './PeopleContext';
 import {PeopleList} from './PeopleList';
@@ -35,55 +39,55 @@ export function People() {
   const searched = true;
 
   return (
-    <div className="flex items-start gap-4">
-      <Presence
-        present={disclosure.open}
-        className="shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem]"
-      >
-        <Filter value={omit(state, ['q'])} onChange={setState} className="w-(--width)" />
-      </Presence>
-      <div className="grow space-y-8">
-        <div className="flex gap-3">
-          <IconButton
-            variant="outline"
-            onClick={() => disclosure.setOpen((open) => !open)}
-            className="relative border-amber-400"
-          >
-            <Swap.Root swap={disclosure.open}>
-              <Swap.Indicator type="off">
-                <Settings2Icon />
-              </Swap.Indicator>
-              <Swap.Indicator type="on">
-                <XIcon />
-              </Swap.Indicator>
-            </Swap.Root>
+    <PeopleProvider value={query.data ?? []}>
+      <div className="flex items-start gap-4">
+        <Presence
+          present={disclosure.open}
+          className="shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem]"
+        >
+          <Filter value={omit(state, ['q'])} onChange={setState} className="w-(--width)" />
+        </Presence>
+        <div className="grow space-y-8">
+          <div className="flex gap-3">
+            <IconButton
+              variant="outline"
+              onClick={() => disclosure.setOpen((open) => !open)}
+              className="relative border-amber-400"
+            >
+              <Swap.Root swap={disclosure.open}>
+                <Swap.Indicator type="off">
+                  <Settings2Icon />
+                </Swap.Indicator>
+                <Swap.Indicator type="on">
+                  <XIcon />
+                </Swap.Indicator>
+              </Swap.Root>
 
-            <div className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none" />
-          </IconButton>
-          <Search value={state.q} onChange={(q) => setState({q})} />
-          <div className="grow" />
-          <Export />
-          <Reload />
-        </div>
+              <div className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none" />
+            </IconButton>
+            <Search value={state.q} onChange={(q) => setState({q})} />
+            <div className="grow" />
+            <ExportPeople />
+            <Reload />
+          </div>
 
-        <div>
-          <p role="alert" aria-live="polite" className="mb-4 text-neutral-500 text-sm">
-            {query.isLoading
-              ? 'Crunching latest data. Please wait...'
-              : searched
-                ? people.length <= 0
-                  ? 'No matching records'
-                  : `Showing ${people.length} matches`
-                : 'Showing latest records'}
-            .
-          </p>
+          <div>
+            <p role="alert" aria-live="polite" className="mb-4 text-neutral-500 text-sm">
+              {query.isLoading
+                ? 'Crunching latest data. Please wait...'
+                : searched
+                  ? people.length <= 0
+                    ? 'No matching records'
+                    : `Showing ${people.length} matches`
+                  : 'Showing latest records'}
+              .
+            </p>
 
-          <PeopleProvider value={query.data ?? []}>
             <PeopleList />
-          </PeopleProvider>
+          </div>
         </div>
       </div>
-    </div>
+    </PeopleProvider>
   );
 }
 
@@ -119,34 +123,37 @@ function Search(props: {
   );
 }
 
-function Export() {
-  return (
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <IconButton variant="outline">
-          <DownloadIcon />
-        </IconButton>
-      </Tooltip.Trigger>
-      <Portal>
-        <Tooltip.Positioner>
-          <Tooltip.Content>
-            <Tooltip.Arrow>
-              <Tooltip.ArrowTip />
-            </Tooltip.Arrow>
-            Export
-          </Tooltip.Content>
-        </Tooltip.Positioner>
-      </Portal>
-    </Tooltip.Root>
-  );
-}
-
 function Reload() {
+  const [loading, setLoading] = useState(false);
+
+  const client = getClient();
+  const count = useIsFetching({
+    queryKey: usePeopleQuery.getQueryKey(),
+    exact: false,
+    type: 'all',
+  });
+
+  useTimeout(() => setLoading(true), count > 0 ? 0 : null);
+  useTimeout(() => setLoading(false), loading ? 1000 : null);
+
   return (
-    <Tooltip.Root>
+    <Tooltip.Root disabled={loading}>
       <Tooltip.Trigger asChild>
-        <IconButton variant="outline">
-          <RefreshCcwIcon />
+        <IconButton
+          variant="outline"
+          onClick={() => {
+            client.invalidateQueries({
+              queryKey: usePeopleQuery.getQueryKey(),
+              exact: false,
+              type: 'all',
+            });
+          }}
+          disabled={loading}
+        >
+          <RefreshCcwIcon
+            className="ui-loading:animate-spin"
+            data-loading={loading ? '' : undefined}
+          />
         </IconButton>
       </Tooltip.Trigger>
       <Portal>
