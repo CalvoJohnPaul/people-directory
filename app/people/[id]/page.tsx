@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import {getClient} from '~/config/client';
 import {usePersonQuery} from '~/hooks/usePersonQuery';
-import {getPerson} from '~/services/person';
+import {getPerson} from '~/services/Person_';
 import {Profile} from './Profile';
 
 interface Props {

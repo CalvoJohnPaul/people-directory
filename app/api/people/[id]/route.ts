@@ -1,5 +1,5 @@
 import {type NextRequest, NextResponse} from 'next/server';
-import {getPerson, updatePerson} from '~/services/person';
+import {getPerson, updatePerson} from '~/services/Person_';
 import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {type Person, UpdatePersonDataInputDefinition} from '~/types/Person';

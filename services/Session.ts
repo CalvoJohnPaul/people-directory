@@ -4,7 +4,7 @@ import {cookies} from 'next/headers';
 import {prisma} from '~/config/prisma';
 import type {Person} from '~/types/Person';
 import type {CreateSessionInput} from '~/types/Session';
-import {getPerson} from './person';
+import {getPerson} from './Person_';
 
 export async function getMe(): Promise<Person | null> {
   const Cookies = await cookies();

@@ -1,7 +1,7 @@
 import {addDays} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {createPerson, getPeople} from '~/services/person';
+import {createPerson, getPeople} from '~/services/Person_';
 import type {HttpResponse} from '~/types/common';
 import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
 
