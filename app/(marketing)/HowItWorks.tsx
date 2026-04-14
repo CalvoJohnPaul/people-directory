@@ -20,14 +20,14 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-neutral-900 py-28 text-white sm:py-20">
       <div className="mx-auto max-w-6xl px-4 lg:px-6">
-        <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.15em]">
+        <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.15em] lg:text-center">
           How It Works
         </p>
-        <h2 className="mt-2 max-w-2xl font-bold text-2xl leading-tight sm:text-3xl">
+        <h2 className="mt-2 max-w-2xl font-bold text-2xl leading-tight sm:text-3xl lg:mx-auto lg:text-center">
           From self-registration to protected profile access in three steps.
         </h2>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
           {steps.map((card) => (
             <article
               key={card.step}

@@ -27,14 +27,16 @@ const faqs = [
 export function Faqs() {
   return (
     <section id="faqs" className="mx-auto max-w-6xl px-4 pb-28 lg:px-6 lg:pb-40">
-      <div className="max-w-3xl">
-        <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">FAQs</p>
-        <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl">
+      <div className="lg:mx-auto">
+        <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em] lg:text-center">
+          FAQs
+        </p>
+        <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl lg:text-center">
           Common questions about visibility and access
         </h2>
       </div>
 
-      <Accordion.Root collapsible className="mt-10 rounded-sm border border-neutral-200 bg-white">
+      <Accordion.Root collapsible className="mt-12 rounded-sm border border-neutral-200 bg-white">
         {faqs.map((item) => (
           <Accordion.Item
             key={item.question}
@@ -43,11 +45,14 @@ export function Faqs() {
           >
             <Accordion.ItemTrigger className="flex w-full items-center justify-between gap-4 text-left font-semibold text-neutral-900 sm:text-lg">
               <span className="grow">{item.question}</span>
-              <Accordion.ItemIndicator>
+              <Accordion.ItemIndicator
+                asChild
+                className="size-5 ui-open:rotate-180 text-neutral-500 transition-transform duration-250"
+              >
                 <ChevronDownIcon />
               </Accordion.ItemIndicator>
             </Accordion.ItemTrigger>
-            <Accordion.ItemContent className="ui-closed:animate-collapse-out ui-open:animate-collapse-in pt-3 text-neutral-700 text-sm leading-relaxed">
+            <Accordion.ItemContent className="ui-closed:animate-collapse-out ui-open:animate-collapse-in pt-3 text-neutral-600 text-sm leading-relaxed">
               {item.answer}
             </Accordion.ItemContent>
           </Accordion.Item>

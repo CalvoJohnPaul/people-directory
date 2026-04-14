@@ -41,7 +41,7 @@ export function Features() {
         </div>
       </div>
 
-      <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2">
+      <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2">
         {features.map((item) => (
           <article key={item.title}>
             <Image
