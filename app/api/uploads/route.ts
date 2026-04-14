@@ -16,7 +16,6 @@ export async function PUT(req: NextRequest): Promise<NextResponse<HttpResponse<U
       file.type === 'image/webp')
   ) {
     const data = await uploadFile(file);
-
     return NextResponse.json({ok: true, data});
   }
 

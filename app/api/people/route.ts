@@ -1,9 +1,11 @@
 import {addDays} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {createPerson, getPeople} from '~/services/Person_';
+import {createPerson, getPeople} from '~/services/Person';
+import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
+import {obfuscateEmail, obfuscateMobileNumber} from '~/utils/obfuscate';
 
 export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<Person[]>>> {
   const input = PeopleInputDefinition.parse({
@@ -16,9 +18,18 @@ export async function GET(req: NextRequest): Promise<NextResponse<HttpResponse<P
     dateOfBirth__to: req.nextUrl.searchParams.get('dateOfBirth__to'),
     createdAt__from: req.nextUrl.searchParams.get('createdAt__from'),
     createdAt__to: req.nextUrl.searchParams.get('createdAt__to'),
+    limit: req.nextUrl.searchParams.get('limit'),
   });
 
-  const data = await getPeople(input);
+  const [me, people] = await Promise.all([getMe(), getPeople(input)]);
+
+  const data = me
+    ? people
+    : people.map((person) => ({
+        ...person,
+        emailAddress: obfuscateEmail(person.emailAddress),
+        mobileNumber: person.mobileNumber ? obfuscateMobileNumber(person.mobileNumber) : null,
+      }));
 
   return NextResponse.json({ok: true, data});
 }
@@ -41,9 +52,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
   }
 
   const data = await createPerson(result.data);
-  const Cookies = await cookies();
+  const store = await cookies();
 
-  Cookies.set('user', data.id.toString(), {
+  store.set('user', data.id.toString(), {
     httpOnly: true,
     expires: addDays(new Date(), 30),
     sameSite: true,

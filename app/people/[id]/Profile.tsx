@@ -2,7 +2,7 @@
 
 import {differenceInYears, format} from 'date-fns';
 import {map} from 'es-toolkit/compat';
-import {twJoin} from 'tailwind-merge';
+import {cx} from 'tailwind-variants';
 import {Avatar} from '~/components/ui/Avatar';
 import {usePersonQuery} from '~/hooks/usePersonQuery';
 import {CopyProfileLink} from './CopyProfileLink';
@@ -30,6 +30,7 @@ export function Profile({id}: ProfileProps) {
     Email: query.data.emailAddress,
     'Mobile number': query.data.mobileNumber || null,
     'Date registered': format(query.data.createdAt, "MMM dd, yyyy 'at' h:mm a"),
+    'Last updated': format(query.data.updatedAt, "MMM dd, yyyy 'at' h:mm a"),
   };
 
   return (
@@ -51,8 +52,16 @@ export function Profile({id}: ProfileProps) {
           return (
             <div key={key}>
               <div className="text-neutral-500 text-sm">{key}</div>
-              <div className={twJoin(value == null && 'font-mono text-neutral-600')}>
-                {value || '[NA]'}
+              <div className={cx(value == null && 'font-mono text-neutral-600')}>
+                {value
+                  ? value.includes('*')
+                    ? value.split('').map((char, idx) => (
+                        <span key={idx} className={cx(char === '*' && 'font-mono opacity-75')}>
+                          {char}
+                        </span>
+                      ))
+                    : value
+                  : '[NA]'}
               </div>
             </div>
           );

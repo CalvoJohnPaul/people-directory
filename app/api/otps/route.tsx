@@ -1,6 +1,5 @@
 import {type NextRequest, NextResponse} from 'next/server';
 import z from 'zod';
-import {prisma} from '~/config/prisma';
 import {sendOtp} from '~/services/Otp';
 import type {HttpVoidResponse} from '~/types/common';
 
@@ -20,10 +19,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
     });
   }
 
-  const {emailAddress} = result.data;
-  const count = await prisma.person.count({where: {emailAddress}});
+  const ok = await sendOtp(result.data.emailAddress);
 
-  if (count <= 0) {
+  if (!ok) {
     return NextResponse.json(
       {
         ok: false,
@@ -35,8 +33,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpVoidRespo
       {status: 401},
     );
   }
-
-  await sendOtp(emailAddress);
 
   return NextResponse.json({ok: true});
 }

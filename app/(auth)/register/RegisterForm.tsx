@@ -14,7 +14,6 @@ import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {usePeopleQuery} from '~/hooks/usePeopleQuery';
 import {useUpdateFaceEmbedding} from '~/hooks/useUpdateFaceEmbedding';
 import {CreatePersonInputDefinition} from '~/types/Person';
 import {getFaceEmbedding} from '~/utils/face';
@@ -32,30 +31,24 @@ export function RegisterForm() {
       });
     },
     onSuccess(person) {
-      client.invalidateQueries({
-        queryKey: useMeQuery.getQueryKey(),
-        refetchType: 'all',
-        exact: true,
-      });
+      client.clear();
 
-      client.invalidateQueries({
-        queryKey: usePeopleQuery.getQueryKey(),
-        refetchType: 'all',
-        exact: false,
-      });
+      setTimeout(() => {
+        client.invalidateQueries({queryKey: useMeQuery.getQueryKey()});
 
-      if (photoRef.current) {
-        getFaceEmbedding(photoRef.current)
-          .then((embedding) => {
-            if (embedding) {
-              updateFaceEmbeddingMutation.mutate({
-                id: person.id,
-                embedding,
-              });
-            }
-          })
-          .catch(console.error);
-      }
+        if (photoRef.current) {
+          getFaceEmbedding(photoRef.current)
+            .then((embedding) => {
+              if (embedding) {
+                updateFaceEmbeddingMutation.mutate({
+                  id: person.id,
+                  embedding,
+                });
+              }
+            })
+            .catch(console.error);
+        }
+      }, 1);
     },
   });
 

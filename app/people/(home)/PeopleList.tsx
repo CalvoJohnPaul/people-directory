@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {cx} from 'tailwind-variants';
 import {Avatar} from '~/components/ui/Avatar';
 import {PersonProvider, usePeopleContext, usePersonContext} from './PeopleContext';
 
@@ -30,7 +31,11 @@ function Person() {
         {person.firstName} {person.lastName}
       </h2>
       <div className="line-clamp-1 text-neutral-600 text-xs leading-tight">
-        {person.emailAddress}
+        {person.emailAddress.split('').map((char, idx) => (
+          <span key={idx} className={cx(char === '*' && 'font-mono opacity-75')}>
+            {char}
+          </span>
+        ))}
       </div>
     </Link>
   );

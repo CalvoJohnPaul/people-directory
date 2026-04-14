@@ -50,11 +50,8 @@ function OtpLoginForm() {
     },
     onSuccess() {
       toaster.dismiss();
-      client.invalidateQueries({
-        queryKey: useMeQuery.getQueryKey(),
-        refetchType: 'all',
-        exact: true,
-      });
+      client.clear();
+      setTimeout(() => client.invalidateQueries({queryKey: useMeQuery.getQueryKey()}), 1);
     },
   });
 
@@ -186,11 +183,8 @@ function PasswordLoginForm() {
     },
     onSuccess() {
       toaster.dismiss();
-      client.invalidateQueries({
-        queryKey: useMeQuery.getQueryKey(),
-        refetchType: 'all',
-        exact: true,
-      });
+      client.clear();
+      setTimeout(() => client.invalidateQueries({queryKey: useMeQuery.getQueryKey()}), 1);
     },
   });
 

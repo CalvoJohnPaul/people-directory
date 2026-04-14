@@ -5,7 +5,11 @@ import {prisma} from '~/config/prisma';
 import Otp from '~/emails/Otp';
 import {mailto} from '~/utils/mailto';
 
-export async function sendOtp(emailAddress: string): Promise<void> {
+export async function sendOtp(emailAddress: string): Promise<boolean> {
+  const count = await prisma.person.count({where: {emailAddress}});
+
+  if (count <= 0) return false;
+
   const code = uid(6).toUpperCase();
   const expiresAt = addMinutes(new Date(), 10);
   const emailContent = await render(<Otp code={code} emailAddress={emailAddress} />);
@@ -34,4 +38,6 @@ export async function sendOtp(emailAddress: string): Promise<void> {
       },
     }),
   ]);
+
+  return true;
 }

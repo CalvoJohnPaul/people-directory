@@ -1,20 +1,21 @@
 'use client';
 
 import {Portal, Presence} from '@ark-ui/react';
-import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {useIsFetching} from '@tanstack/react-query';
-import {omit} from 'es-toolkit';
-import {RefreshCcwIcon, SearchIcon, Settings2Icon, XIcon} from 'lucide-react';
+import {isNil, omit, omitBy} from 'es-toolkit';
+import {size} from 'es-toolkit/compat';
+import {RefreshCcwIcon, Settings2Icon, XIcon} from 'lucide-react';
 import {useReducer, useState} from 'react';
-import {useDebouncedCallback} from 'use-debounce';
+import {cx} from 'tailwind-variants';
 import {useTimeout} from 'usehooks-ts';
-import {Field} from '~/components/ui/Field';
+import {SearchField} from '~/components/forms/SearchField';
 import {IconButton} from '~/components/ui/IconButton';
 import {Swap} from '~/components/ui/Swap';
 import {Tooltip} from '~/components/ui/Tooltip';
 import {getClient} from '~/config/client';
 import {useDisclosure} from '~/hooks/useDisclosure';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import type {PeopleInput} from '~/types/Person';
 import {ExportPeople} from './ExportPeople';
 import {Filter, type FilterValue} from './Filter';
 import {PeopleProvider} from './PeopleContext';
@@ -34,9 +35,33 @@ export function People() {
   );
 
   const disclosure = useDisclosure();
-  const query = usePeopleQuery();
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const dateOfBirth__from = state.age?.to
+    ? new Date(currentYear - state.age.to, 0, 1, 0, 0, 0, 0)
+    : null;
+  const dateOfBirth__to = state.age?.from
+    ? new Date(currentYear - state.age.from, 11, 31, 23, 59, 59, 999)
+    : null;
+
+  const input: PeopleInput = omitBy(
+    {
+      q: state.q,
+      id: state.id,
+      gender: state.gender,
+      dateOfBirth__from,
+      dateOfBirth__to,
+      createdAt__from: state.createdAt?.from,
+      createdAt__to: state.createdAt?.to,
+    },
+    (v) => isNil(v) || v === '' || (Array.isArray(v) && v.length <= 0),
+  );
+
+  const query = usePeopleQuery(input);
   const people = query.data ?? [];
-  const searched = true;
+  const filtered = size(omit(input, ['q'])) > 0;
+  const searched = size(input) > 0;
 
   return (
     <PeopleProvider value={query.data ?? []}>
@@ -45,14 +70,17 @@ export function People() {
           present={disclosure.open}
           className="shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem]"
         >
-          <Filter value={omit(state, ['q'])} onChange={setState} className="w-(--width)" />
+          <Filter value={state} onChange={setState} className="w-(--width)" />
         </Presence>
         <div className="grow space-y-8">
           <div className="flex gap-3">
             <IconButton
               variant="outline"
               onClick={() => disclosure.setOpen((open) => !open)}
-              className="relative border-amber-400"
+              className={cx(
+                'relative transition-colors duration-300',
+                filtered && 'border-amber-400',
+              )}
             >
               <Swap.Root swap={disclosure.open}>
                 <Swap.Indicator type="off">
@@ -62,10 +90,12 @@ export function People() {
                   <XIcon />
                 </Swap.Indicator>
               </Swap.Root>
-
-              <div className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none" />
+              <Presence
+                present={filtered}
+                className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none"
+              />
             </IconButton>
-            <Search value={state.q} onChange={(q) => setState({q})} />
+            <SearchField value={state.q} onChange={(q) => setState({q})} className="w-64" />
             <div className="grow" />
             <ExportPeople />
             <Reload />
@@ -88,38 +118,6 @@ export function People() {
         </div>
       </div>
     </PeopleProvider>
-  );
-}
-
-function Search(props: {
-  value?: string;
-  onChange?: (value: string) => void;
-  defaultValue?: string;
-}) {
-  const [value, setValue] = useControllableState({
-    prop: props.value,
-    defaultProp: props.defaultValue ?? '',
-    onChange: props.onChange,
-  });
-
-  const [value__internal, setValue__internal] = useState(value);
-
-  const setValue__debounced = useDebouncedCallback(setValue, 500);
-
-  return (
-    <Field.Root className="relative w-64">
-      <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-neutral-500" />
-      <Field.Input
-        value={value__internal}
-        onChange={(e) => {
-          setValue__internal(e.target.value);
-          setValue__debounced(e.target.value);
-        }}
-        autoComplete="off"
-        placeholder="Search"
-        className="pl-10"
-      />
-    </Field.Root>
   );
 }
 

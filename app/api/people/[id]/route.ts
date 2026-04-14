@@ -1,8 +1,9 @@
 import {type NextRequest, NextResponse} from 'next/server';
-import {getPerson, updatePerson} from '~/services/Person_';
+import {getPerson, updatePerson} from '~/services/Person';
 import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
+import {obfuscateEmail, obfuscateMobileNumber} from '~/utils/obfuscate';
 
 export async function GET(
   _req: NextRequest,
@@ -24,9 +25,9 @@ export async function GET(
     );
   }
 
-  const data = await getPerson(id);
+  const [me, person] = await Promise.all([getMe(), getPerson(id)]);
 
-  if (!data) {
+  if (!person) {
     return NextResponse.json(
       {
         ok: false,
@@ -38,6 +39,14 @@ export async function GET(
       {status: 404},
     );
   }
+
+  const data = me
+    ? person
+    : {
+        ...person,
+        emailAddress: obfuscateEmail(person.emailAddress),
+        mobileNumber: person.mobileNumber ? obfuscateMobileNumber(person.mobileNumber) : null,
+      };
 
   return NextResponse.json({ok: true, data}, {status: 200});
 }

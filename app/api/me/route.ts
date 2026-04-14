@@ -5,9 +5,5 @@ import type {Person} from '~/types/Person';
 
 export async function GET(): Promise<NextResponse<HttpResponse<Person | null>>> {
   const data = await getMe();
-
-  return NextResponse.json({
-    ok: true,
-    data,
-  });
+  return NextResponse.json({ok: true, data});
 }

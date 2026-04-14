@@ -104,11 +104,8 @@ function Logout() {
   const mutation = useDestroySessionMutation({
     onSuccess() {
       router.push('/people');
-      client.invalidateQueries({
-        queryKey: useMeQuery.getQueryKey(),
-        refetchType: 'all',
-        exact: true,
-      });
+      client.invalidateQueries({queryKey: useMeQuery.getQueryKey()});
+      setTimeout(() => client.clear(), 1);
     },
   });
 

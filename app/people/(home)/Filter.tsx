@@ -8,7 +8,9 @@ import Image from 'next/image';
 import {parseAsFloat, parseAsInteger, parseAsNativeArrayOf, useQueryState} from 'nuqs';
 import {useRef, useState} from 'react';
 import {cx} from 'tailwind-variants';
+import {useDebouncedCallback} from 'use-debounce';
 import {useInterval} from 'usehooks-ts';
+import z from 'zod';
 import {AsyncComboboxField} from '~/components/forms/AsyncComboboxField';
 import {DateRangeField} from '~/components/forms/DateRangeField';
 import {NumberRangeField} from '~/components/forms/NumberRangeField';
@@ -19,23 +21,21 @@ import {Dialog} from '~/components/ui/Dialog';
 import {Field} from '~/components/ui/Field';
 import {IconButton} from '~/components/ui/IconButton';
 import {Tooltip} from '~/components/ui/Tooltip';
+import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useCamera} from '~/hooks/useCamera';
 import {useDisclosure} from '~/hooks/useDisclosure';
+import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import type {DateRange, NumberRange} from '~/types/common';
 import {type Gender, GenderDefinition} from '~/types/Person';
 import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
 import {parseQrCode} from '~/utils/qrCode';
 
 export interface FilterValue {
-  emailAddress?: number[];
-  mobileNumber?: number[];
-  gender?: Gender[];
-  age__from?: number;
-  age__to?: number;
-  qrCode?: number[];
-  image?: number[];
-  createdAt__from?: string;
-  createdAt__to?: string;
+  id?: number[] | null;
+  gender?: Gender[] | null;
+  age?: NumberRange | null;
+  createdAt?: DateRange | null;
 }
 
 export interface FilterProps {
@@ -45,12 +45,18 @@ export interface FilterProps {
   className?: string;
 }
 
+const client = getClient();
+
 export function Filter(props: FilterProps) {
   const [value, setValue] = useControllableState({
     prop: props.value,
     defaultProp: props.defaultValue ?? {},
     onChange: props.onChange,
   });
+
+  const [value__internal, setValue__internal] = useState(value);
+
+  const setValue__debounced = useDebouncedCallback(setValue, 350);
 
   return (
     <div className={cx('rounded-sm border', props.className)}>
@@ -61,7 +67,25 @@ export function Filter(props: FilterProps) {
         <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Email address</Field.Label>
           <AsyncComboboxField
-            options={async () => []}
+            options={async (emailAddress) => {
+              if (emailAddress.trim().length < 1) return [];
+
+              const data = await client.fetchQuery({
+                queryKey: usePeopleQuery.getQueryKey({emailAddress, limit: 5}),
+                queryFn: usePeopleQuery.getQueryFn({emailAddress, limit: 5}),
+              });
+
+              return data.map((person) => ({
+                value: `${person.id}`,
+                label: `${person.firstName} ${person.lastName}`,
+              }));
+            }}
+            value={value__internal.id?.map((v) => v.toString()) ?? []}
+            onChange={(newValue) => {
+              const id = newValue.map((v) => Number.parseInt(v, 10));
+              setValue__internal((prev) => ({...prev, id}));
+              setValue__debounced((prev) => ({...prev, id}));
+            }}
             multiple
             placeholder="Search email address"
           />
@@ -69,7 +93,25 @@ export function Filter(props: FilterProps) {
         <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Mobile number</Field.Label>
           <AsyncComboboxField
-            options={async () => []}
+            options={async (mobileNumber) => {
+              if (mobileNumber.trim().length < 1) return [];
+
+              const data = await client.fetchQuery({
+                queryKey: usePeopleQuery.getQueryKey({mobileNumber, limit: 5}),
+                queryFn: usePeopleQuery.getQueryFn({mobileNumber, limit: 5}),
+              });
+
+              return data.map((person) => ({
+                value: `${person.id}`,
+                label: `${person.firstName} ${person.lastName}`,
+              }));
+            }}
+            value={value__internal.id?.map((v) => v.toString()) ?? []}
+            onChange={(newValue) => {
+              const id = newValue.map((v) => Number.parseInt(v, 10));
+              setValue__internal((prev) => ({...prev, id}));
+              setValue__debounced((prev) => ({...prev, id}));
+            }}
             multiple
             placeholder="Search mobile number"
           />
@@ -81,13 +123,25 @@ export function Filter(props: FilterProps) {
               value: option,
               label: capitalize(option.toLowerCase()),
             }))}
+            value={value__internal.gender ?? []}
+            onChange={(newValue) => {
+              const gender = z.array(GenderDefinition).parse(newValue);
+              setValue__internal((prev) => ({...prev, gender}));
+              setValue__debounced((prev) => ({...prev, gender}));
+            }}
             multiple
             placeholder="Select gender"
           />
         </Field.Root>
         <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Age</Field.Label>
-          <NumberRangeField />
+          <NumberRangeField
+            value={value__internal.age ?? null}
+            onChange={(age) => {
+              setValue__internal((prev) => ({...prev, age}));
+              setValue__debounced((prev) => ({...prev, age}));
+            }}
+          />
         </Field.Root>
         <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Date registered</Field.Label>

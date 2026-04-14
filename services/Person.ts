@@ -1,5 +1,5 @@
 import {hash} from 'bcrypt';
-import {isNil, omitBy} from 'es-toolkit';
+import {clamp, isNil, omitBy} from 'es-toolkit';
 import {cache} from 'react';
 import {prisma} from '~/config/prisma';
 import type {Prisma} from '~/prisma/generated/prisma/client';
@@ -31,6 +31,7 @@ export const getPerson = cache(async (id: number): Promise<Person | null> => {
 });
 
 export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> => {
+  const take = clamp(input?.limit ?? 100, 1, 100);
   const where: Prisma.PersonWhereInput = {
     ...(input?.q && {
       OR: [
@@ -72,7 +73,7 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
     }),
     ...(input?.mobileNumber?.length && {
       mobileNumber: {
-        contains: input.mobileNumber,
+        equals: input.mobileNumber,
         mode: 'insensitive',
       },
     }),
@@ -99,7 +100,7 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
   };
 
   return await prisma.person.findMany({
-    take: 100,
+    take,
     where,
     select: {
       id: true,

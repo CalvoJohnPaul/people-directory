@@ -7,7 +7,7 @@ export const PersonDefinition = z.object({
   firstName: z.string(),
   lastName: z.string(),
   middleName: z.string().optional().nullable(),
-  emailAddress: z.email(),
+  emailAddress: z.string(),
   emailAddressVerifiedAt: DateDefinition.optional().nullable(),
   mobileNumber: z.string().optional().nullable(),
   mobileNumberVerifiedAt: DateDefinition.optional().nullable(),
@@ -103,18 +103,21 @@ export const PeopleInputDefinition = z
       .array(z.coerce.number().nullable().catch(null))
       .nullable()
       .catch(null)
-      .transform((l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0)),
+      .transform(
+        (l) => l?.filter((v): v is number => v != null && !Number.isNaN(v) && v > 0) ?? null,
+      ),
     gender: z
       .array(GenderDefinition.nullable().catch(null))
       .nullable()
       .catch(null)
-      .transform((l) => l?.filter(Boolean)),
+      .transform((l) => l?.filter(Boolean) ?? null),
     emailAddress: z.string().nullable().catch(null),
     mobileNumber: z.string().nullable().catch(null),
     dateOfBirth__from: DateDefinition.nullable().catch(null),
     dateOfBirth__to: DateDefinition.nullable().catch(null),
     createdAt__from: DateDefinition.nullable().catch(null),
     createdAt__to: DateDefinition.nullable().catch(null),
+    limit: z.coerce.number().int().min(1).max(100).nullable().catch(null),
   })
   .partial();
 

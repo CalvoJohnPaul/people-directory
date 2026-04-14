@@ -3,7 +3,10 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import {getClient} from '~/config/client';
 import {usePersonQuery} from '~/hooks/usePersonQuery';
-import {getPerson} from '~/services/Person_';
+import {getPerson} from '~/services/Person';
+import {getMe} from '~/services/Session';
+import type {Person} from '~/types/Person';
+import {obfuscateEmail, obfuscateMobileNumber} from '~/utils/obfuscate';
 import {Profile} from './Profile';
 
 interface Props {
@@ -37,7 +40,19 @@ export default async function Page(props: Props) {
     getPerson(id),
     client.prefetchQuery({
       queryKey: usePersonQuery.getQueryKey(id),
-      queryFn: () => getPerson(id),
+      queryFn: async (): Promise<Person | null> => {
+        const [me, person] = await Promise.all([getMe(), getPerson(id)]);
+
+        if (!person) return null;
+
+        return me
+          ? person
+          : {
+              ...person,
+              emailAddress: obfuscateEmail(person.emailAddress),
+              mobileNumber: person.mobileNumber ? obfuscateMobileNumber(person.mobileNumber) : null,
+            };
+      },
     }),
   ]);
 
