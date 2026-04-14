@@ -59,7 +59,7 @@ export function PhotoField(props: PhotoFieldProps) {
             disclosure.setOpen(true);
           }}
           disabled={field?.disabled || props.disabled}
-          className="relative flex size-full flex-col items-center justify-center border ui-invalid:border-red-400 bg-white py-4 outline-none"
+          className="relative flex size-full flex-col items-center justify-center rounded-sm border ui-invalid:border-rose-400 bg-white py-4 outline-none"
           aria-invalid={field?.invalid || props.invalid}
           data-readonly={dataAttr(field?.readOnly || props.readOnly)}
           data-required={dataAttr(field?.required || props.required)}
@@ -98,7 +98,7 @@ export function PhotoField(props: PhotoFieldProps) {
               props.onFileChange?.(null);
             }}
             tabIndex={-1}
-            className="absolute top-2 right-2 size-7 place-items-center self-end border bg-white"
+            className="absolute top-2 right-2 size-7 place-items-center self-end rounded-sm border bg-white"
             aria-label="Clear photo"
           >
             <XIcon className="size-4.5 text-gray-700" />
@@ -118,7 +118,7 @@ export function PhotoField(props: PhotoFieldProps) {
         <Dialog.Backdrop />
         <Dialog.Positioner className="flex items-center justify-center">
           <Dialog.Content className="h-auto w-90 p-6 lg:min-w-100 lg:max-w-100">
-            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
+            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 rounded-sm bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
               <XIcon className="size-5" />
             </Dialog.CloseTrigger>
 
@@ -270,10 +270,10 @@ function Camera(props: {
       <div
         hidden={src != null}
         className={twMerge(
-          'relative aspect-square w-full bg-gray-50',
+          'relative aspect-square w-full rounded-sm bg-gray-50',
           camera.opened && 'border-2 border-dashed',
           faceVerified && livenessLeftVerified && livenessRightVerified
-            ? 'border-green-400'
+            ? 'border-emerald-400'
             : 'border-amber-400',
         )}
       >
@@ -286,14 +286,14 @@ function Camera(props: {
         )}
 
         {camera.opened && !livenessRightVerified && (
-          <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-green-800/50 px-2.5 py-1.5 font-mono text-green-100 text-xs uppercase leading-none">
+          <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <span>Turn right</span>
             <ArrowBigRightIcon className="size-4 animate-sway-right" />
           </div>
         )}
 
         {camera.opened && livenessRightVerified && !livenessLeftVerified && (
-          <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-green-800/50 px-2.5 py-1.5 font-mono text-green-100 text-xs uppercase leading-none">
+          <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <ArrowBigLeftIcon className="size-4 animate-sway-left" />
             <span>Turn left</span>
           </div>

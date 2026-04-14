@@ -10,15 +10,13 @@ import {Menu} from '~/components/ui/Menu';
 import {getClient} from '~/config/client';
 import {useDestroySessionMutation} from '~/hooks/useDestroySessionMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {IconButton} from './ui/IconButton';
 
 export function Navbar() {
   const query = useMeQuery();
 
   return (
-    <header className="flex items-start p-4 lg:p-6">
-      <Link href="/" draggable={false} className="block">
-        <FolderOpenIcon className="size-6 text-gray-700" />
-      </Link>
+    <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
       <div className="grow"></div>
       <div className="flex gap-3">
         {query.isLoading ? (
@@ -33,31 +31,39 @@ export function Navbar() {
             </Button>
           </>
         ) : (
-          <Menu.Root>
-            <Menu.Trigger>
-              <Image
-                src={query.data.image}
-                alt=""
-                width={250}
-                height={250}
-                unoptimized
-                className="size-11 object-cover"
-              />
-            </Menu.Trigger>
-            <Portal>
-              <Menu.Positioner>
-                <Menu.Content>
-                  <Menu.Item value="profile" asChild>
-                    <Link href={`/people/${query.data.id}`}>
-                      <UserIcon />
-                      My profile
-                    </Link>
-                  </Menu.Item>
-                  <Logout />
-                </Menu.Content>
-              </Menu.Positioner>
-            </Portal>
-          </Menu.Root>
+          <>
+            <IconButton variant="outline" asChild>
+              <Link href="/people">
+                <FolderOpenIcon />
+              </Link>
+            </IconButton>
+
+            <Menu.Root>
+              <Menu.Trigger>
+                <Image
+                  src={query.data.image}
+                  alt=""
+                  width={250}
+                  height={250}
+                  unoptimized
+                  className="size-11 object-cover"
+                />
+              </Menu.Trigger>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content>
+                    <Menu.Item value="profile" asChild>
+                      <Link href={`/people/${query.data.id}`}>
+                        <UserIcon />
+                        My profile
+                      </Link>
+                    </Menu.Item>
+                    <Logout />
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
+            </Menu.Root>
+          </>
         )}
       </div>
     </header>

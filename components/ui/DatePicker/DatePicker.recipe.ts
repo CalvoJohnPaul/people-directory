@@ -5,7 +5,7 @@ import {anatomyToRecipeSlots} from '~/utils/anatomyToRecipeSlots';
 export const datePickerRecipe = tv({
   slots: anatomyToRecipeSlots(datePickerAnatomy, {
     trigger:
-      'flex w-full shrink-0 items-center justify-center border ui-invalid:border-red-400 ui-open:ui-invalid:border-red-400 bg-white text-left icon:text-gray-500 ui-placeholder-shown:text-gray-500',
+      'flex w-full shrink-0 items-center justify-center rounded-sm border ui-invalid:border-rose-400 ui-open:ui-invalid:border-rose-400 bg-white text-left icon:text-gray-500 ui-placeholder-shown:text-gray-500',
     positioner: 'z-dropdown',
     content: [
       'z-dropdown',
@@ -13,6 +13,7 @@ export const datePickerRecipe = tv({
       'overflow-y-auto',
       'border',
       'bg-white',
+      'rounded-sm',
 
       'ui-placement-bottom:ui-open:animate-popover-in-bottom',
       'ui-placement-bottom-start:ui-open:animate-popover-in-bottom',
@@ -50,6 +51,7 @@ export const datePickerRecipe = tv({
       'justify-center',
       'text-sm',
       'text-gray-700',
+      'rounded-sm',
 
       'ui-view-day:size-10',
       'ui-view-month:h-9',

@@ -22,6 +22,7 @@ export const dialogRecipe = tv({
       'bg-white',
       'ui-open:animate-dialog-in',
       'ui-closed:animate-dialog-out',
+      'rounded-sm',
     ],
     header: 'relative p-6 pb-8',
     body: 'relative grow overflow-y-auto px-6 pb-8',

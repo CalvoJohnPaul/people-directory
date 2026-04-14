@@ -33,6 +33,7 @@
   --font-*: initial;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  --font-heading: var(--font-heading);
 
   --z-dropdown: 1000;
   --z-sticky: 1100;
@@ -264,7 +265,7 @@
   @keyframes collapse-in {
     from {
       height: var(--collapsed-height, 0);
-      opacity: 5;
+      opacity: 0.5;
     }
     to {
       height: var(--height);
@@ -279,14 +280,14 @@
     }
     to {
       height: var(--collapsed-height, 0);
-      opacity: 5;
+      opacity: 0.5;
     }
   }
 
   @keyframes collapse-x-in {
     from {
       width: var(--collapsed-width, 0);
-      opacity: 5;
+      opacity: 0.5;
     }
     to {
       width: var(--width);
@@ -301,7 +302,7 @@
     }
     to {
       width: var(--collapsed-width, 0);
-      opacity: 5;
+      opacity: 0;
     }
   }
 

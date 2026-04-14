@@ -1,53 +1,86 @@
 'use client';
 
-import { Portal, Swap } from '@ark-ui/react';
-import { invariant, uniq } from 'es-toolkit';
-import { ImageIcon, QrCodeIcon, SearchIcon, XIcon } from 'lucide-react';
+import {Portal, Swap} from '@ark-ui/react';
+import {useControllableState} from '@radix-ui/react-use-controllable-state';
+import {capitalize, invariant, uniq} from 'es-toolkit';
+import {ImageIcon, QrCodeIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
-import {
-  parseAsFloat,
-  parseAsInteger,
-  parseAsNativeArrayOf,
-  parseAsString,
-  useQueryState,
-} from 'nuqs';
-import { useRef, useState } from 'react';
-import { useInterval } from 'usehooks-ts';
-import { ImagePlaceholderIcon } from '~/components/icons/ImagePlaceholderIcon';
-import { Button } from '~/components/ui/Button';
-import { Dialog } from '~/components/ui/Dialog';
-import { Field } from '~/components/ui/Field';
-import { IconButton } from '~/components/ui/IconButton';
-import { Tooltip } from '~/components/ui/Tooltip';
-import { toaster } from '~/config/toaster';
-import { useCamera } from '~/hooks/useCamera';
-import { useDisclosure } from '~/hooks/useDisclosure';
-import { cropFace, detectFace, getFaceEmbedding } from '~/utils/face';
-import { parseQrCode } from '~/utils/qrCode';
+import {parseAsFloat, parseAsInteger, parseAsNativeArrayOf, useQueryState} from 'nuqs';
+import {useRef, useState} from 'react';
+import {cx} from 'tailwind-variants';
+import {useInterval} from 'usehooks-ts';
+import {DateRangeField} from '~/components/forms/DateRangeField';
+import {MobileNumberField} from '~/components/forms/MobileNumberField';
+import {SelectField} from '~/components/forms/SelectField';
+import {ImagePlaceholderIcon} from '~/components/icons/ImagePlaceholderIcon';
+import {Button} from '~/components/ui/Button';
+import {Dialog} from '~/components/ui/Dialog';
+import {Field} from '~/components/ui/Field';
+import {IconButton} from '~/components/ui/IconButton';
+import {Tooltip} from '~/components/ui/Tooltip';
+import {toaster} from '~/config/toaster';
+import {useCamera} from '~/hooks/useCamera';
+import {useDisclosure} from '~/hooks/useDisclosure';
+import {type Gender, GenderDefinition} from '~/types/Person';
+import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
+import {parseQrCode} from '~/utils/qrCode';
 
-export function Toolbar() {
-  return (
-    <section className="flex gap-3">
-      <SearchByName />
-      <SearchByQrCode />
-      <SearchByPhoto />
-    </section>
-  );
+interface FilterValue {
+  qrCode?: number[];
+  gender?: Gender[];
+  image?: number[];
 }
 
-function SearchByName() {
-  const [value, setValue] = useQueryState('keyword', parseAsString.withDefault(''));
+interface FilterProps {
+  value?: FilterValue | null;
+  onChange?: (value: FilterValue | null) => void;
+  defaultValue?: FilterValue | null;
+  onClose?: () => void;
+  className?: string;
+}
+
+export function Filter(props: FilterProps) {
+  const [value, setValue] = useControllableState({
+    prop: props.value,
+    defaultProp: props.defaultValue ?? null,
+    onChange: props.onChange,
+  });
 
   return (
-    <Field.Root className="relative grow" size="lg">
-      <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-gray-500" />
-      <Field.Input
-        placeholder="Search"
-        className="pl-10"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-    </Field.Root>
+    <div className={cx('rounded-sm border', props.className)}>
+      <div className="flex h-11 items-center gap-2 border-b px-4">
+        <h2 className="font-medium">Filters</h2>
+        <div className="grow"></div>
+        <button type="button" onClick={() => props.onClose?.()}>
+          <XIcon className="size-5" />
+        </button>
+      </div>
+      <div className="space-y-3 p-4">
+        <Field.Root className="rounded-md bg-gray-50 p-3">
+          <Field.Label>Email address</Field.Label>
+          <Field.Input placeholder="Enter email address" />
+        </Field.Root>
+        <Field.Root className="rounded-md bg-gray-50 p-3">
+          <Field.Label>Mobile number</Field.Label>
+          <MobileNumberField />
+        </Field.Root>
+        <Field.Root className="rounded-md bg-gray-50 p-3">
+          <Field.Label>Gender</Field.Label>
+          <SelectField
+            options={GenderDefinition.options.map((option) => ({
+              value: option,
+              label: capitalize(option.toLowerCase()),
+            }))}
+            multiple
+            placeholder="Select gender"
+          />
+        </Field.Root>
+        <Field.Root className="rounded-md bg-gray-50 p-3">
+          <Field.Label>Date registered</Field.Label>
+          <DateRangeField placeholder="Select date" />
+        </Field.Root>
+      </div>
+    </div>
   );
 }
 

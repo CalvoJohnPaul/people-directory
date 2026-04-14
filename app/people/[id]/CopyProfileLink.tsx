@@ -10,17 +10,16 @@ import {usePersonContext} from './ProfileContext';
 
 export function CopyProfileLink() {
   const person = usePersonContext();
-  const clipboard = useClipboard(`${process.env.NEXT_PUBLIC_URL}/${person.id}`);
+  const clipboard = useClipboard(`${process.env.NEXT_PUBLIC_URL}/people/${person.id}`);
 
   return (
     <Tooltip.Root disabled={clipboard.copied}>
       <Tooltip.Trigger asChild>
         <IconButton
-          size="lg"
           variant="outline"
           disabled={clipboard.copied}
           onClick={() => clipboard.copy()}
-          className={twJoin(clipboard.copied && 'text-green-600')}
+          className={twJoin(clipboard.copied && 'text-emerald-600')}
         >
           {clipboard.copied ? <CheckIcon /> : <LinkIcon />}
         </IconButton>

@@ -98,12 +98,7 @@ export const UpdatePersonInputDefinition = z.object({
 
 export const PeopleInputDefinition = z
   .object({
-    keyword: z.string().optional().nullable().catch(null),
-    image: z
-      .array(z.coerce.number().nullable().catch(null))
-      .optional()
-      .nullable()
-      .transform((l) => l?.filter((v): v is number => v != null && Number.isFinite(v))),
+    q: z.string().optional().nullable().catch(null),
     id: z
       .union([
         z
@@ -117,6 +112,19 @@ export const PeopleInputDefinition = z
       ])
       .optional()
       .nullable(),
+    gender: z
+      .union([
+        z.array(GenderDefinition.nullable().catch(null)).transform((l) => l?.filter(Boolean)),
+        GenderDefinition.nullable().catch(null),
+      ])
+      .optional()
+      .nullable(),
+    emailAddress: z.string().optional().nullable().catch(null),
+    mobileNumber: z.string().optional().nullable().catch(null),
+    age__from: z.coerce.number().optional().nullable().catch(null),
+    age__to: z.coerce.number().optional().nullable().catch(null),
+    createdAt__from: DateDefinition.optional().nullable().catch(null),
+    createdAt__to: DateDefinition.optional().nullable().catch(null),
   })
   .partial();
 

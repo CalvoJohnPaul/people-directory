@@ -17,7 +17,7 @@ export function EditProfile() {
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
-        <IconButton size="lg" variant="outline" asChild>
+        <IconButton variant="outline" asChild>
           <Link href="/edit">
             <SquarePenIcon />
           </Link>

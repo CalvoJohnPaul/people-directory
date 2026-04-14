@@ -1,11 +1,10 @@
+import type {Metadata} from 'next';
 import {People} from './People';
-import {Toolbar} from './Toolbar';
+
+export const metadata: Metadata = {
+  title: 'People',
+};
 
 export default async function Page() {
-  return (
-    <>
-      <Toolbar />
-      <People />
-    </>
-  );
+  return <People />;
 }

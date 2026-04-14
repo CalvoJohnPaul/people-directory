@@ -6,7 +6,7 @@ export const selectRecipe = tv({
   slots: anatomyToRecipeSlots(selectAnatomy, {
     control: 'flex gap-2',
     trigger:
-      'flex grow items-center border ui-invalid:border-red-400 bg-white ui-placeholder-shown:text-gray-500',
+      'flex grow items-center rounded-sm border ui-invalid:border-rose-400 bg-white ui-placeholder-shown:text-gray-500',
     valueText: 'grow text-left',
     indicator:
       'ui-closed:rotate-0 ui-open:rotate-180 text-gray-500 transition-transform duration-300',
@@ -18,6 +18,7 @@ export const selectRecipe = tv({
       'border',
       'bg-white',
       'p-1',
+      'rounded-sm',
 
       'ui-placement-bottom:ui-open:animate-popover-in-bottom',
       'ui-placement-bottom-start:ui-open:animate-popover-in-bottom',
@@ -47,9 +48,9 @@ export const selectRecipe = tv({
       'ui-placement-right-start:ui-closed:animate-popover-out-right',
       'ui-placement-right-end:ui-closed:animate-popover-out-right',
     ],
-    item: 'flex icon:size-4 w-full cursor-pointer ui-disabled:cursor-not-allowed items-center gap-2 ui-highlighted:bg-gray-50 px-3 py-2 icon:text-gray-500 text-gray-700 ui-disabled:opacity-65 transition-colors duration-200',
+    item: 'flex icon:size-4 w-full cursor-pointer ui-disabled:cursor-not-allowed items-center gap-2 rounded-xs ui-highlighted:bg-gray-50 px-3 py-2 icon:text-gray-500 text-gray-700 ui-disabled:opacity-65 transition-colors duration-200',
     itemText: 'grow',
-    itemIndicator: 'flex size-5 text-green-600!',
+    itemIndicator: 'flex size-5 text-emerald-600!',
   }),
   variants: {
     size: {

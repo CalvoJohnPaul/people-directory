@@ -18,7 +18,7 @@ export function ViewQrCode() {
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <Dialog.Trigger asChild>
-            <IconButton size="lg" variant="outline">
+            <IconButton variant="outline">
               <QrCodeIcon />
             </IconButton>
           </Dialog.Trigger>
@@ -38,7 +38,7 @@ export function ViewQrCode() {
         <Dialog.Backdrop />
         <Dialog.Positioner className="flex items-center justify-center">
           <Dialog.Content className="h-auto! min-w-80! max-w-80! p-4">
-            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
+            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 rounded-sm bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
               <XIcon className="size-5" />
             </Dialog.CloseTrigger>
             <QrCode.Root value={value}>

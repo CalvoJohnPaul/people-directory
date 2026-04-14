@@ -1,67 +1,69 @@
 'use client';
 
-import {isNil, omitBy} from 'es-toolkit';
-import {size} from 'es-toolkit/compat';
-import Image from 'next/image';
-import Link from 'next/link';
-import {parseAsInteger, parseAsNativeArrayOf, parseAsString, useQueryStates} from 'nuqs';
+import {Presence} from '@ark-ui/react';
+import {DownloadIcon, RefreshCcwIcon, SearchIcon, Settings2Icon} from 'lucide-react';
+import {Field} from '~/components/ui/Field';
+import {IconButton} from '~/components/ui/IconButton';
+import {useDisclosure} from '~/hooks/useDisclosure';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import {Filter} from './Filter';
+import {PeopleProvider} from './PeopleContext';
+import {PeopleList} from './PeopleList';
 
 export function People() {
-  const [state] = useQueryStates({
-    keyword: parseAsString,
-    image: parseAsNativeArrayOf(parseAsInteger),
-    id: parseAsNativeArrayOf(parseAsInteger),
-  });
-
-  const query = usePeopleQuery(state);
+  const disclosure = useDisclosure();
+  const query = usePeopleQuery();
   const people = query.data ?? [];
-  const searched =
-    size(omitBy(state, (v) => isNil(v) || v === '' || (Array.isArray(v) && v.length === 0))) > 0;
+  const searched = false;
 
   return (
-    <section className="mt-8 lg:mt-12">
-      <p role="alert" aria-live="polite" className="mb-4 text-gray-500 text-sm">
-        {query.isLoading
-          ? 'Crunching latest data. Please wait...'
-          : searched
-            ? people.length <= 0
-              ? 'No matching records'
-              : `Showing ${people.length} matches`
-            : 'Showing latest records'}
-        .
-      </p>
+    <div className="flex items-start gap-4">
+      <Presence
+        present={disclosure.open}
+        className="shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem]"
+      >
+        <Filter onClose={() => disclosure.setOpen(false)} className="w-(--width)" />
+      </Presence>
+      <div className="grow space-y-8">
+        <div className="flex gap-3">
+          <IconButton
+            variant="outline"
+            onClick={() => disclosure.setOpen((open) => !open)}
+            className="relative border-amber-400"
+          >
+            <Settings2Icon />
+            <div className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none" />
+          </IconButton>
+          <Field.Root className="relative w-64">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-gray-500" />
+            <Field.Input placeholder="Search" className="pl-10" />
+          </Field.Root>
+          <div className="grow" />
+          <IconButton variant="outline">
+            <DownloadIcon />
+          </IconButton>
+          <IconButton variant="outline">
+            <RefreshCcwIcon />
+          </IconButton>
+        </div>
 
-      <div className="grid grid-cols-3 gap-x-3 gap-y-5 md:grid-cols-5 lg:grid-cols-7">
-        {query.isLoading && <Loader />}
-        {!query.isLoading &&
-          people.map((person) => (
-            <Link key={person.id} href={`/people/${person.id}`} className="block w-full">
-              <div className="aspect-square w-full bg-gray-50">
-                <Image
-                  src={person.image}
-                  width={400}
-                  height={400}
-                  draggable={false}
-                  alt=""
-                  className="size-full object-cover"
-                  unoptimized
-                />
-              </div>
-              <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">
-                {person.firstName} {person.lastName}
-              </h2>
-              <div className="line-clamp-1 text-gray-600 text-xs leading-tight">
-                {person.emailAddress}
-              </div>
-            </Link>
-          ))}
+        <div>
+          <p role="alert" aria-live="polite" className="mb-4 text-gray-500 text-sm">
+            {query.isLoading
+              ? 'Crunching latest data. Please wait...'
+              : searched
+                ? people.length <= 0
+                  ? 'No matching records'
+                  : `Showing ${people.length} matches`
+                : 'Showing latest records'}
+            .
+          </p>
+
+          <PeopleProvider value={query.data ?? []}>
+            <PeopleList />
+          </PeopleProvider>
+        </div>
       </div>
-    </section>
+    </div>
   );
-}
-
-function Loader() {
-  const l = Array.from({length: 21}, (_, i) => i);
-  return l.map((i) => <div key={i} className="aspect-square w-full animate-pulse bg-gray-100" />);
 }

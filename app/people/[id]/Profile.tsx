@@ -10,7 +10,11 @@ import {EditProfile} from './EditProfile';
 import {PersonProvider} from './ProfileContext';
 import {ViewQrCode} from './ViewQrCode';
 
-export function Profile({id}: {id: number}) {
+interface ProfileProps {
+  id: number;
+}
+
+export function Profile({id}: ProfileProps) {
   const query = usePersonQuery(id);
 
   if (!query.data) return null;
@@ -40,7 +44,7 @@ export function Profile({id}: {id: number}) {
             priority
             unoptimized
             draggable={false}
-            className="size-full object-cover"
+            className="size-full rounded-sm object-cover"
           />
         </div>
         <div className="hidden grow lg:block"></div>

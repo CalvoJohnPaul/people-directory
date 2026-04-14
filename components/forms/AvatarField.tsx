@@ -47,7 +47,7 @@ export function AvatarField(props: AvatarFieldProps) {
             'size-full',
             'place-items-center',
             'border',
-            'ui-invalid:border-red-400',
+            'ui-invalid:border-rose-400',
             'bg-white',
           )}
           disabled={field?.disabled || props.disabled}

@@ -49,6 +49,7 @@ function OtpLoginForm() {
       });
     },
     onSuccess() {
+      toaster.dismiss();
       client.invalidateQueries({
         queryKey: useMeQuery.getQueryKey(),
         refetchType: 'all',
@@ -184,6 +185,7 @@ function PasswordLoginForm() {
       });
     },
     onSuccess() {
+      toaster.dismiss();
       client.invalidateQueries({
         queryKey: useMeQuery.getQueryKey(),
         refetchType: 'all',

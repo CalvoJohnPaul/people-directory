@@ -4,7 +4,7 @@ import {anatomyToRecipeSlots} from '~/utils/anatomyToRecipeSlots';
 
 export const passwordInputRecipe = tv({
   slots: anatomyToRecipeSlots(passwordInputAnatomy, {
-    control: ['flex', 'border', 'bg-white', 'ui-invalid:border-red-400'],
+    control: 'flex rounded-sm border ui-invalid:border-rose-400 bg-white',
     input: 'grow outline-none [&::-ms-clear]:hidden [&::-ms-reveal]:hidden',
     visibilityTrigger: 'flex shrink-0 items-center justify-center',
     indicator: 'text-neutral-500',
