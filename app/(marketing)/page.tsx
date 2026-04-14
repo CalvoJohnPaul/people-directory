@@ -7,25 +7,25 @@ import {Button} from '~/components/ui/Button';
 const highlights = [
   {
     title: 'Self-registration profiles',
-    image: '/marketing/public-profile.svg',
+    image: '/public-profile.svg',
     description:
       'People can register themselves and publish a profile so others can easily find them.',
   },
   {
     title: 'Verified privacy controls',
-    image: '/marketing/verification-flow.svg',
+    image: '/verification-flow.svg',
     description:
       'Mobile number and email remain protected unless a viewer is logged in and verified.',
   },
   {
     title: 'Robust identity verification',
-    image: '/marketing/robust-verification.svg',
+    image: '/robust-verification.svg',
     description:
       'Verification uses face liveness checks and compares submitted details against ID document data.',
   },
   {
     title: 'Public profile discovery',
-    image: '/marketing/search-modes.svg',
+    image: '/search-modes.svg',
     description:
       'Anyone can discover public profile information while sensitive fields stay gated.',
   },
@@ -154,7 +154,7 @@ export default function MarketingPage() {
               </p>
 
               <Image
-                src="/marketing/hero-network.svg"
+                src="/hero-network.svg"
                 alt="Directory network visualization"
                 width={720}
                 height={420}
@@ -307,7 +307,7 @@ export default function MarketingPage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:px-6">
           <div>
             <Image
-              src="/branding/logo-people-dark.svg"
+              src="/logo-dark.svg"
               alt="People logo"
               width={50}
               height={44}

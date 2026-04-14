@@ -20,7 +20,7 @@ export function Navbar() {
     <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
       <Link href="/" className="block" draggable={false}>
         <Image
-          src="/branding/logo-people.svg"
+          src="/branding/logo.svg"
           alt="People logo"
           width={50}
           height={44}
