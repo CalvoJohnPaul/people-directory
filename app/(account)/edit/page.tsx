@@ -1,4 +1,4 @@
-import {Navbar} from '~/components/Navbar';
+import {Navbar} from '~/layout/Navbar';
 import {EditAccountForm} from './EditAccountForm';
 
 export default function Page() {

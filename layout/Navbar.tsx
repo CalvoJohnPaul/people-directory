@@ -5,13 +5,13 @@ import {LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
+import {Avatar} from '~/components/ui/Avatar';
 import {Button} from '~/components/ui/Button';
+import {IconButton} from '~/components/ui/IconButton';
 import {Menu} from '~/components/ui/Menu';
 import {getClient} from '~/config/client';
 import {useDestroySessionMutation} from '~/hooks/useDestroySessionMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {Avatar} from './ui/Avatar';
-import {IconButton} from './ui/IconButton';
 
 export function Navbar() {
   const query = useMeQuery();

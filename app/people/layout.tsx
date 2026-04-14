@@ -1,5 +1,5 @@
 import type {PropsWithChildren} from 'react';
-import {Navbar} from '~/components/Navbar';
+import {Navbar} from '~/layout/Navbar';
 
 export default async function Layout({children}: PropsWithChildren) {
   return (
