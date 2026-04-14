@@ -1,0 +1,17 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="12" fill="#EFF6FF"/>
+  <rect x="20" y="20" width="92" height="180" rx="8" fill="#1D4ED8"/>
+  <circle cx="66" cy="65" r="16" fill="#DBEAFE"/>
+  <path d="M66 87C54.9543 87 46 95.9543 46 107V112H86V107C86 95.9543 77.0457 87 66 87Z" fill="#DBEAFE"/>
+  <text x="66" y="146" text-anchor="middle" fill="#BFDBFE" font-family="Arial, sans-serif" font-size="11">Liveness</text>
+  <rect x="134" y="20" width="92" height="180" rx="8" fill="#2563EB"/>
+  <rect x="150" y="48" width="60" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="150" y="68" width="60" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="150" y="88" width="42" height="8" rx="4" fill="#E0E7FF"/>
+  <rect x="150" y="118" width="60" height="44" rx="6" fill="#1E40AF"/>
+  <text x="180" y="178" text-anchor="middle" fill="#BFDBFE" font-family="Arial, sans-serif" font-size="11">ID Data</text>
+  <path d="M236 110H266" stroke="#60A5FA" stroke-width="3"/>
+  <circle cx="300" cy="110" r="36" fill="#1E3A8A"/>
+  <path d="M286 111L296 121L315 100" stroke="#DBEAFE" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="300" y="164" text-anchor="middle" fill="#1E3A8A" font-family="Arial, sans-serif" font-size="11">Match</text>
+</svg>

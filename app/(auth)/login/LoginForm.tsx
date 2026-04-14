@@ -168,7 +168,7 @@ function OtpLoginForm() {
           createSessionMutation.isPending
         }
       >
-        Log in
+        Sign in
       </Button>
     </form>
   );
@@ -246,7 +246,7 @@ function PasswordLoginForm() {
           form.formState.isSubmitting || query.isLoading || query.data != null || mutation.isPending
         }
       >
-        Log in
+        Sign in
       </Button>
     </form>
   );

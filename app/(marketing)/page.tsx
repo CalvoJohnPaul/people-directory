@@ -1,26 +1,30 @@
-import {FolderOpenIcon} from 'lucide-react';
 import type {Metadata} from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import {Button} from '~/components/ui/Button';
 
 const highlights = [
   {
     title: 'Self-Registration Profiles',
+    image: '/marketing/public-profile.svg',
     description:
       'People can register themselves and publish a profile so others can easily find them.',
   },
   {
     title: 'Verified Privacy Controls',
+    image: '/marketing/verification-flow.svg',
     description:
       'Mobile number and email remain protected unless a viewer is logged in and verified.',
   },
   {
     title: 'Robust Identity Verification',
+    image: '/marketing/verification-flow.svg',
     description:
       'Verification uses face liveness checks and compares submitted details against ID document data.',
   },
   {
     title: 'Public Profile Discovery',
+    image: '/marketing/search-modes.svg',
     description:
       'Anyone can discover public profile information while sensitive fields stay gated.',
   },
@@ -60,7 +64,7 @@ const footerQuickLinks = [
   {label: 'How It Works', href: '#how-it-works'},
   {label: 'Testimonials', href: '#testimonials'},
   {label: 'FAQs', href: '#faqs'},
-  {label: 'Log in', href: '/login'},
+  {label: 'Sign in', href: '/login'},
   {label: 'Register', href: '/register'},
 ];
 
@@ -77,9 +81,16 @@ export default function MarketingPage() {
         <Link
           href="/"
           draggable={false}
-          className="inline-flex size-11 items-center justify-center rounded-sm border bg-white text-neutral-700"
+          className="inline-flex items-center justify-center rounded-sm border bg-white p-1"
         >
-          <FolderOpenIcon className="size-5" />
+          <Image
+            src="/branding/logo-people.svg"
+            alt="People logo"
+            width={64}
+            height={64}
+            className="size-8"
+            priority
+          />
         </Link>
         <div className="grow" />
         <div className="flex gap-3">
@@ -140,6 +151,16 @@ export default function MarketingPage() {
                 Search by face, QR code, email, and profile fields
               </p>
 
+              <div className="mt-5 rounded-sm border border-stone-600/80 bg-stone-900/40 p-2">
+                <Image
+                  src="/marketing/hero-network.svg"
+                  alt="Directory network visualization"
+                  width={720}
+                  height={420}
+                  className="h-auto w-full rounded-sm"
+                />
+              </div>
+
               <div className="mt-8 space-y-3">
                 {[
                   {name: 'Public viewers', value: 'Profile basics only'},
@@ -177,6 +198,13 @@ export default function MarketingPage() {
                 key={item.title}
                 className="rounded-sm border border-neutral-200 bg-neutral-50 p-6"
               >
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  width={360}
+                  height={220}
+                  className="mb-4 h-32 w-full rounded-sm border border-neutral-200 object-cover"
+                />
                 <h3 className="font-semibold text-neutral-900 text-xl">{item.title}</h3>
                 <p className="mt-3 text-neutral-700 text-sm leading-relaxed">{item.description}</p>
               </article>
@@ -296,7 +324,13 @@ export default function MarketingPage() {
       <footer className="border-neutral-800 border-t bg-neutral-900 text-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:px-6">
           <div>
-            <p className="font-semibold text-lg text-neutral-200">People</p>
+            <Image
+              src="/branding/logo-people.svg"
+              alt="People logo"
+              width={64}
+              height={64}
+              className="size-8 rounded-sm border border-stone-700 bg-stone-800 p-1"
+            />
             <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
               Let people register themselves and be found publicly while keeping sensitive contact
               details visible only to verified users through liveness checks and ID data matching.

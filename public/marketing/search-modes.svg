@@ -1,0 +1,19 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="12" fill="#F8FAFC"/>
+  <circle cx="180" cy="110" r="34" fill="#1D4ED8"/>
+  <g stroke="#93C5FD" stroke-width="2">
+    <circle cx="180" cy="110" r="68"/>
+    <circle cx="180" cy="110" r="96"/>
+  </g>
+  <rect x="170" y="100" width="20" height="20" rx="4" fill="#DBEAFE"/>
+  <rect x="38" y="96" width="36" height="28" rx="6" fill="#2563EB"/>
+  <text x="56" y="115" text-anchor="middle" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="10">QR</text>
+  <rect x="286" y="96" width="36" height="28" rx="6" fill="#2563EB"/>
+  <text x="304" y="115" text-anchor="middle" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="10">@</text>
+  <circle cx="180" cy="28" r="14" fill="#2563EB"/>
+  <circle cx="180" cy="24" r="4" fill="#DBEAFE"/>
+  <path d="M180 30C176.686 30 174 32.6863 174 36V38H186V36C186 32.6863 183.314 30 180 30Z" fill="#DBEAFE"/>
+  <circle cx="180" cy="192" r="14" fill="#2563EB"/>
+  <path d="M173 192H187" stroke="#DBEAFE" stroke-width="3"/>
+  <path d="M180 185V199" stroke="#DBEAFE" stroke-width="3"/>
+</svg>

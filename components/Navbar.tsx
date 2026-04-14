@@ -24,7 +24,7 @@ export function Navbar() {
         ) : query.data == null ? (
           <>
             <Button variant="outline" asChild>
-              <Link href="/login">Log in</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild>
               <Link href="/register">Register</Link>

@@ -17,7 +17,7 @@ export default async function Page() {
         <p className="mt-8 text-center text-neutral-600">
           Already registered?{' '}
           <Link href="/login" className="text-blue-700 underline underline-offset-3">
-            Log in
+            Sign in
           </Link>
         </p>
       </div>
