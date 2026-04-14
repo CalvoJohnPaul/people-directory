@@ -5,51 +5,53 @@ import {Button} from '~/components/ui/Button';
 
 const highlights = [
   {
-    title: 'Smart Contact Cards',
-    description: 'Create clean, searchable profiles that are easy to share and easier to trust.',
-  },
-  {
-    title: 'One-Tap Verification',
+    title: 'Self-Registration Profiles',
     description:
-      'Reduce fake entries with optional email, mobile, and identity verification flows.',
+      'People can register themselves and publish a profile so others can easily find them.',
   },
   {
-    title: 'Face Matching Ready',
+    title: 'Verified Privacy Controls',
     description:
-      'Built to support modern identity workflows for teams that need stronger confidence.',
+      'Mobile number and email remain protected unless a viewer is logged in and verified.',
   },
   {
-    title: 'Team-Friendly Access',
-    description: 'Organize people records in one place and collaborate without spreadsheet chaos.',
+    title: 'Robust Identity Verification',
+    description:
+      'Verification uses face liveness checks and compares submitted details against ID document data.',
+  },
+  {
+    title: 'Public Profile Discovery',
+    description:
+      'Anyone can discover public profile information while sensitive fields stay gated.',
   },
 ];
 
 const stats = [
-  {label: 'People Profiles Created', value: '120K+'},
-  {label: 'Avg. Lookup Time', value: '1.2s'},
-  {label: 'Verification Success', value: '98.4%'},
+  {label: 'Search Methods', value: 'Face, QR, Email+'},
+  {label: 'Profile Visibility', value: 'Public by default'},
+  {label: 'Sensitive Fields', value: 'Verified users only'},
 ];
 
 const faqs = [
   {
-    question: 'Can we start without verification?',
+    question: 'Can anyone view mobile number or email?',
     answer:
-      'Yes. You can launch with profile capture first, then enable email or mobile verification when your team is ready.',
+      'No. Sensitive fields like mobile number and email are hidden unless the viewer is logged in and verified.',
   },
   {
-    question: 'Is People suitable for internal teams?',
+    question: 'Do people create their own profile?',
     answer:
-      'Yes. Operations, onboarding, and support teams use People to keep records accurate in one shared workspace.',
+      'Yes. The app is designed for self-registration so individuals can create and manage their own public profile.',
   },
   {
-    question: 'How quickly can we go live?',
+    question: 'How robust is your verification process?',
     answer:
-      'Most teams publish their first working directory in a day, then iterate with additional verification rules.',
+      'Our flow includes liveness checks during face verification and data matching against submitted ID details to strengthen trust.',
   },
   {
-    question: 'Do profile links work on mobile?',
+    question: 'How can someone search for a person?',
     answer:
-      'Yes. Shared profile pages and quick actions are designed to work smoothly on both desktop and mobile browsers.',
+      'Search supports multiple methods including face, QR code, email, and other searchable profile details.',
   },
 ];
 
@@ -64,7 +66,8 @@ const footerQuickLinks = [
 
 export const metadata: Metadata = {
   title: 'Marketing',
-  description: 'The faster way to build and manage trusted people profiles.',
+  description:
+    'Self-registration public profiles with robust verification, liveness checks, and protected sensitive fields.',
 };
 
 export default function MarketingPage() {
@@ -91,15 +94,16 @@ export default function MarketingPage() {
           <div className="mt-16 grid items-end gap-10 lg:mt-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
               <p className="inline-flex items-center border border-neutral-300 bg-white px-4 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
-                Built for fast-moving teams
+                Public directory with privacy controls
               </p>
               <h1 className="mt-6 text-balance font-bold text-4xl text-neutral-900 leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Build trusted people profiles without slowing down your team.
+                Register once. Get found by anyone.
               </h1>
               <p className="mt-6 max-w-2xl text-pretty text-base text-neutral-700 leading-relaxed sm:text-lg">
-                People helps you capture, verify, and organize profiles in one polished workflow.
-                From sign-up to verification, every step is designed to keep your directory accurate
-                and usable.
+                People lets individuals create public profiles so others can discover them quickly.
+                Non-verified viewers can search and browse, but sensitive fields like mobile number
+                and email stay protected. Verification is strengthened with face liveness checks and
+                ID data comparison.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -126,19 +130,21 @@ export default function MarketingPage() {
 
             <div className="relative rounded-sm border border-stone-700 bg-stone-800 p-6 text-white sm:p-8">
               <div className="absolute -top-5 -right-4 rounded-sm border border-stone-500 bg-stone-700 px-4 py-1 font-medium text-stone-100 text-xs">
-                Live Identity Health: 98%
+                Verification: Liveness + ID Match
               </div>
-              <p className="text-stone-300 text-xs uppercase tracking-widest">Today Snapshot</p>
-              <p className="mt-2 font-semibold text-3xl">2,483 Active Profiles</p>
+              <p className="text-stone-300 text-xs uppercase tracking-widest">
+                Trust & Privacy Rules
+              </p>
+              <p className="mt-2 font-semibold text-3xl">Robust Verification Enabled</p>
               <p className="mt-1 text-sm text-stone-300">
-                Updated in real time across your workspace
+                Search by face, QR code, email, and profile fields
               </p>
 
               <div className="mt-8 space-y-3">
                 {[
-                  {name: 'Verified contacts', value: '1,924'},
-                  {name: 'Pending review', value: '118'},
-                  {name: 'Need updates', value: '41'},
+                  {name: 'Public viewers', value: 'Profile basics only'},
+                  {name: 'Verified viewers', value: 'Contact details visible'},
+                  {name: 'Verification checks', value: 'Liveness + ID data match'},
                 ].map((row) => (
                   <div
                     key={row.name}
@@ -160,7 +166,7 @@ export default function MarketingPage() {
                 Features
               </p>
               <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl">
-                Everything needed to run a trusted people directory
+                Core functionality built into your people directory
               </h2>
             </div>
           </div>
@@ -184,25 +190,25 @@ export default function MarketingPage() {
               How It Works
             </p>
             <h2 className="mt-2 max-w-2xl font-bold text-2xl leading-tight sm:text-3xl">
-              From signup to searchable profile in three simple steps.
+              From self-registration to protected profile access in three steps.
             </h2>
 
             <div className="mt-10 grid gap-5 md:grid-cols-3">
               {[
                 {
                   step: '01',
-                  title: 'Collect Core Details',
-                  body: 'Capture names, contact points, and profile photo with structured forms.',
+                  title: 'Register Your Profile',
+                  body: 'People create their own public profile with searchable personal details.',
                 },
                 {
                   step: '02',
-                  title: 'Verify and Enrich',
-                  body: 'Run OTP checks and optional identity validation before publishing records.',
+                  title: 'Verify for Full Access',
+                  body: 'Verification runs face liveness checks and compares captured data with submitted ID details.',
                 },
                 {
                   step: '03',
-                  title: 'Share and Maintain',
-                  body: 'Distribute profile links and keep records fresh with clear update workflows.',
+                  title: 'Find Anyone Quickly',
+                  body: 'Use face, QR code, email, and other fields to locate profiles fast.',
                 },
               ].map((card) => (
                 <article
@@ -224,27 +230,27 @@ export default function MarketingPage() {
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">
-                Customer Story
+                What This App Does
               </p>
               <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl">
-                "We replaced four disconnected tools with one flow."
+                A public people directory with privacy-aware access control.
               </h2>
               <p className="mt-5 text-base text-neutral-700 leading-relaxed">
-                "Our onboarding team now validates and publishes profiles in minutes. Accuracy
-                improved, duplicate records dropped, and everyone works from the same source of
-                truth."
+                The directory is discoverable for everyone, while private contact details remain
+                visible only to users who are logged in and verified through liveness and ID-based
+                validation.
               </p>
               <p className="mt-4 font-medium text-neutral-800 text-sm">
-                Ariane Tan, Operations Lead
+                Built for open discovery with protected sensitive data.
               </p>
             </div>
 
             <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-7 sm:p-8">
               <h3 className="font-semibold text-lg text-neutral-900">
-                Ready to launch your directory?
+                Create your searchable public profile
               </h3>
               <p className="mt-2 text-neutral-700 text-sm">
-                Start with your first team and scale profile verification as you grow.
+                Register now and become discoverable by face, QR code, email, and more.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
@@ -264,7 +270,7 @@ export default function MarketingPage() {
               FAQs
             </p>
             <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl">
-              Common questions before you launch
+              Common questions about visibility and access
             </h2>
           </div>
 
@@ -292,8 +298,8 @@ export default function MarketingPage() {
           <div>
             <p className="font-semibold text-lg text-neutral-200">People</p>
             <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
-              Build and manage trusted profiles in one place. Capture, verify, and share records
-              with confidence.
+              Let people register themselves and be found publicly while keeping sensitive contact
+              details visible only to verified users through liveness checks and ID data matching.
             </p>
           </div>
 
