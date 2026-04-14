@@ -70,9 +70,13 @@ export const metadata: Metadata = {
 export default function MarketingPage() {
   return (
     <>
-      <header className="flex items-start p-4 lg:p-6">
-        <Link href="/" draggable={false} className="block">
-          <FolderOpenIcon className="size-6 text-neutral-700" />
+      <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
+        <Link
+          href="/"
+          draggable={false}
+          className="inline-flex size-11 items-center justify-center rounded-sm border bg-white text-neutral-700"
+        >
+          <FolderOpenIcon className="size-5" />
         </Link>
         <div className="grow" />
         <div className="flex gap-3">
@@ -89,7 +93,7 @@ export default function MarketingPage() {
               <p className="inline-flex items-center border border-neutral-300 bg-white px-4 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
                 Built for fast-moving teams
               </p>
-              <h1 className="mt-6 text-balance font-semibold text-4xl text-neutral-900 leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="mt-6 text-balance font-bold text-4xl text-neutral-900 leading-tight tracking-tight sm:text-5xl lg:text-6xl">
                 Build trusted people profiles without slowing down your team.
               </h1>
               <p className="mt-6 max-w-2xl text-pretty text-base text-neutral-700 leading-relaxed sm:text-lg">
@@ -99,17 +103,20 @@ export default function MarketingPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="bg-neutral-900">
+                <Button asChild size="lg">
                   <Link href="/register">Start Free</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-neutral-500 bg-white">
+                <Button asChild size="lg" variant="outline">
                   <Link href="/login">See Demo Workspace</Link>
                 </Button>
               </div>
 
               <ul className="mt-10 grid gap-4 text-neutral-700 text-sm sm:grid-cols-3">
                 {stats.map((item) => (
-                  <li key={item.label} className="border border-neutral-300 bg-white p-4">
+                  <li
+                    key={item.label}
+                    className="rounded-sm border border-neutral-200 bg-neutral-50 p-4"
+                  >
                     <p className="font-semibold text-2xl text-neutral-900">{item.value}</p>
                     <p className="mt-1 text-xs uppercase tracking-wide">{item.label}</p>
                   </li>
@@ -117,13 +124,13 @@ export default function MarketingPage() {
               </ul>
             </div>
 
-            <div className="relative border border-neutral-300 bg-neutral-900 p-6 text-white sm:p-8">
-              <div className="absolute -top-5 -right-4 border border-neutral-400 bg-neutral-800 px-4 py-1 font-medium text-xs">
+            <div className="relative rounded-sm border border-stone-700 bg-stone-800 p-6 text-white sm:p-8">
+              <div className="absolute -top-5 -right-4 rounded-sm border border-stone-500 bg-stone-700 px-4 py-1 font-medium text-stone-100 text-xs">
                 Live Identity Health: 98%
               </div>
-              <p className="text-neutral-300 text-xs uppercase tracking-widest">Today Snapshot</p>
+              <p className="text-stone-300 text-xs uppercase tracking-widest">Today Snapshot</p>
               <p className="mt-2 font-semibold text-3xl">2,483 Active Profiles</p>
-              <p className="mt-1 text-neutral-300 text-sm">
+              <p className="mt-1 text-sm text-stone-300">
                 Updated in real time across your workspace
               </p>
 
@@ -135,9 +142,9 @@ export default function MarketingPage() {
                 ].map((row) => (
                   <div
                     key={row.name}
-                    className="flex items-center justify-between bg-neutral-800 px-4 py-3"
+                    className="flex items-center justify-between rounded-sm border border-stone-500/60 bg-stone-700/80 px-4 py-3"
                   >
-                    <span className="text-neutral-300 text-sm">{row.name}</span>
+                    <span className="text-sm text-stone-200">{row.name}</span>
                     <span className="font-semibold text-sm text-white">{row.value}</span>
                   </div>
                 ))}
@@ -152,7 +159,7 @@ export default function MarketingPage() {
               <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em]">
                 Features
               </p>
-              <h2 className="mt-2 font-semibold text-3xl text-neutral-900 sm:text-4xl">
+              <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl">
                 Everything needed to run a trusted people directory
               </h2>
             </div>
@@ -160,7 +167,10 @@ export default function MarketingPage() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {highlights.map((item) => (
-              <article key={item.title} className="group border border-neutral-300 bg-white p-6">
+              <article
+                key={item.title}
+                className="rounded-sm border border-neutral-200 bg-neutral-50 p-6"
+              >
                 <h3 className="font-semibold text-neutral-900 text-xl">{item.title}</h3>
                 <p className="mt-3 text-neutral-700 text-sm leading-relaxed">{item.description}</p>
               </article>
@@ -168,12 +178,12 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="bg-neutral-900 py-16 text-white sm:py-20">
+        <section id="how-it-works" className="bg-stone-900 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 lg:px-6">
-            <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.15em]">
+            <p className="font-semibold text-stone-300 text-xs uppercase tracking-[0.15em]">
               How It Works
             </p>
-            <h2 className="mt-2 max-w-2xl font-semibold text-3xl leading-tight sm:text-4xl">
+            <h2 className="mt-2 max-w-2xl font-bold text-2xl leading-tight sm:text-3xl">
               From signup to searchable profile in three simple steps.
             </h2>
 
@@ -195,12 +205,15 @@ export default function MarketingPage() {
                   body: 'Distribute profile links and keep records fresh with clear update workflows.',
                 },
               ].map((card) => (
-                <article key={card.step} className="border border-neutral-700 bg-neutral-800 p-6">
-                  <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.16em]">
+                <article
+                  key={card.step}
+                  className="rounded-sm border border-stone-600 bg-stone-800 p-6"
+                >
+                  <p className="font-semibold text-stone-300 text-xs uppercase tracking-[0.16em]">
                     Step {card.step}
                   </p>
                   <h3 className="mt-2 font-semibold text-white text-xl">{card.title}</h3>
-                  <p className="mt-3 text-neutral-300 text-sm leading-relaxed">{card.body}</p>
+                  <p className="mt-3 text-sm text-stone-300 leading-relaxed">{card.body}</p>
                 </article>
               ))}
             </div>
@@ -213,7 +226,7 @@ export default function MarketingPage() {
               <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">
                 Customer Story
               </p>
-              <h2 className="mt-2 font-semibold text-3xl text-neutral-900 leading-tight sm:text-4xl">
+              <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl">
                 "We replaced four disconnected tools with one flow."
               </h2>
               <p className="mt-5 text-base text-neutral-700 leading-relaxed">
@@ -226,18 +239,18 @@ export default function MarketingPage() {
               </p>
             </div>
 
-            <div className="border border-neutral-300 bg-white p-7 sm:p-8">
-              <h3 className="font-semibold text-neutral-900 text-lg">
+            <div className="rounded-sm border border-neutral-200 bg-neutral-50 p-7 sm:p-8">
+              <h3 className="font-semibold text-lg text-neutral-900">
                 Ready to launch your directory?
               </h3>
               <p className="mt-2 text-neutral-700 text-sm">
                 Start with your first team and scale profile verification as you grow.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="bg-neutral-900">
+                <Button asChild size="lg">
                   <Link href="/register">Create Account</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="border-neutral-500 bg-white">
+                <Button asChild size="lg" variant="outline">
                   <Link href="/login">Sign In</Link>
                 </Button>
               </div>
@@ -250,18 +263,18 @@ export default function MarketingPage() {
             <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">
               FAQs
             </p>
-            <h2 className="mt-2 font-semibold text-3xl text-neutral-900 leading-tight sm:text-4xl">
+            <h2 className="mt-2 font-bold text-2xl text-neutral-900 leading-tight sm:text-3xl">
               Common questions before you launch
             </h2>
           </div>
 
-          <div className="mt-10 border border-neutral-300 bg-white">
+          <div className="mt-10 rounded-sm border border-neutral-200 bg-neutral-50">
             {faqs.map((item) => (
               <details
                 key={item.question}
-                className="group border-neutral-300 border-b px-6 py-4 last:border-b-0"
+                className="group border-neutral-200 border-b px-6 py-4 last:border-b-0"
               >
-                <summary className="flex list-none items-center justify-between gap-4 font-semibold text-neutral-900 text-lg leading-snug">
+                <summary className="flex list-none items-center justify-between gap-4 font-semibold text-base text-neutral-900 leading-snug sm:text-lg">
                   <span>{item.question}</span>
                   <span className="text-neutral-500 text-xl leading-none group-open:hidden">+</span>
                   <span className="hidden text-neutral-500 text-xl leading-none group-open:block">
@@ -277,7 +290,7 @@ export default function MarketingPage() {
       <footer className="border-neutral-800 border-t bg-neutral-900 text-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:px-6">
           <div>
-            <p className="font-semibold text-neutral-200 text-lg">People</p>
+            <p className="font-semibold text-lg text-neutral-200">People</p>
             <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
               Build and manage trusted profiles in one place. Capture, verify, and share records
               with confidence.
