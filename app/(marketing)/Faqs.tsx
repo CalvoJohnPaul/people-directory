@@ -1,3 +1,6 @@
+import {Accordion} from '@ark-ui/react';
+import {ChevronDownIcon} from 'lucide-react';
+
 const faqs = [
   {
     question: 'Can anyone view mobile number or email?',
@@ -31,23 +34,25 @@ export function Faqs() {
         </h2>
       </div>
 
-      <div className="mt-10 rounded-sm border border-neutral-200 bg-white">
+      <Accordion.Root collapsible className="mt-10 rounded-sm border border-neutral-200 bg-white">
         {faqs.map((item) => (
-          <details
+          <Accordion.Item
             key={item.question}
+            value={item.question}
             className="group border-neutral-200 border-b px-6 py-4 last:border-b-0"
           >
-            <summary className="flex list-none items-center justify-between gap-4 font-semibold text-base text-neutral-900 leading-snug sm:text-lg">
-              <span>{item.question}</span>
-              <span className="text-neutral-500 text-xl leading-none group-open:hidden">+</span>
-              <span className="hidden text-neutral-500 text-xl leading-none group-open:block">
-                -
-              </span>
-            </summary>
-            <p className="pt-3 text-neutral-700 text-sm leading-relaxed">{item.answer}</p>
-          </details>
+            <Accordion.ItemTrigger className="flex w-full items-center justify-between gap-4 text-left font-semibold text-neutral-900 sm:text-lg">
+              <span className="grow">{item.question}</span>
+              <Accordion.ItemIndicator>
+                <ChevronDownIcon />
+              </Accordion.ItemIndicator>
+            </Accordion.ItemTrigger>
+            <Accordion.ItemContent className="ui-closed:animate-collapse-out ui-open:animate-collapse-in pt-3 text-neutral-700 text-sm leading-relaxed">
+              {item.answer}
+            </Accordion.ItemContent>
+          </Accordion.Item>
         ))}
-      </div>
+      </Accordion.Root>
     </section>
   );
 }
