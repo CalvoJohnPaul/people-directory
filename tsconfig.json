@@ -23,7 +23,7 @@
       "~/config/*": ["./config/*"],
       "~/emails/*": ["./emails/*"],
       "~/hooks/*": ["./hooks/*"],
-      "~/layout/*": ["./layout/*"],
+      "~/layouts/*": ["./layouts/*"],
       "~/prisma/*": ["./prisma/*"],
       "~/services/*": ["./services/*"],
       "~/types/*": ["./types/*"],

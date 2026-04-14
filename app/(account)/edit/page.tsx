@@ -1,4 +1,4 @@
-import {Navbar} from '~/layout/Navbar';
+import {Navbar} from '~/layouts/Navbar';
 import {EditAccountForm} from './EditAccountForm';
 
 export default function Page() {

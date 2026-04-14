@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import {Navbar} from '~/layout/Navbar';
+import {Navbar} from '~/layouts/Navbar';
 import {ContactUs} from './ContactUs';
 import {Faqs} from './Faqs';
 import {Features} from './Features';
