@@ -85,7 +85,7 @@ function OtpLoginForm() {
     [emailAddress],
   );
 
-  useTimeout(() => router.push('/peoplee'), query.data != null ? 0 : null);
+  useTimeout(() => router.push('/people'), query.data != null ? 0 : null);
 
   return (
     <form
@@ -204,7 +204,7 @@ function PasswordLoginForm() {
     },
   });
 
-  useTimeout(() => router.push('/'), query.data != null ? 0 : null);
+  useTimeout(() => router.push('/people'), query.data != null ? 0 : null);
 
   return (
     <form

@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import {Avatar} from '~/components/ui/Avatar';
 import {PersonProvider, usePeopleContext, usePersonContext} from './PeopleContext';
 
 export function PeopleList() {
@@ -23,17 +23,9 @@ function Person() {
 
   return (
     <Link href={`/people/${person.id}`} className="block w-full">
-      <div className="aspect-square w-full bg-neutral-50 transition-all">
-        <Image
-          src={person.image}
-          width={400}
-          height={400}
-          draggable={false}
-          alt=""
-          className="size-full rounded-sm object-cover"
-          unoptimized
-        />
-      </div>
+      <Avatar.Root className="w-full">
+        <Avatar.Image src={person.image} />
+      </Avatar.Root>
       <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">
         {person.firstName} {person.lastName}
       </h2>

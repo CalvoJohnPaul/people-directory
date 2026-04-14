@@ -10,6 +10,7 @@ export const iconButtonRecipe = tv({
     variant: {
       solid: 'bg-blue-500 text-white',
       outline: 'border text-neutral-800',
+      subtle: 'bg-blue-50 text-blue-500',
     },
   },
   defaultVariants: {

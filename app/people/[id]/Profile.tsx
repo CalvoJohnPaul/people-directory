@@ -2,8 +2,8 @@
 
 import {differenceInYears, format} from 'date-fns';
 import {map} from 'es-toolkit/compat';
-import Image from 'next/image';
 import {twJoin} from 'tailwind-merge';
+import {Avatar} from '~/components/ui/Avatar';
 import {usePersonQuery} from '~/hooks/usePersonQuery';
 import {CopyProfileLink} from './CopyProfileLink';
 import {EditProfile} from './EditProfile';
@@ -35,18 +35,9 @@ export function Profile({id}: ProfileProps) {
   return (
     <PersonProvider value={query.data}>
       <section className="gap-3 lg:flex">
-        <div className="aspect-square w-56 shrink-0 bg-neutral-50">
-          <Image
-            src={query.data.image}
-            alt=""
-            width={600}
-            height={600}
-            priority
-            unoptimized
-            draggable={false}
-            className="size-full rounded-sm object-cover"
-          />
-        </div>
+        <Avatar.Root className="w-56 shrink-0">
+          <Avatar.Image src={query.data.image} />
+        </Avatar.Root>
         <div className="hidden grow lg:block"></div>
         <div className="mt-4 flex gap-3 self-start lg:mt-0">
           <ViewQrCode />

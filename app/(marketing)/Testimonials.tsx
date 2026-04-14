@@ -1,8 +1,9 @@
 'use client';
 
-import {Avatar, Carousel} from '@ark-ui/react';
+import {Carousel} from '@ark-ui/react';
 import {ChevronLeftIcon, ChevronRightIcon, QuoteIcon} from 'lucide-react';
 import {useMediaQuery} from 'usehooks-ts';
+import {Avatar} from '~/components/ui/Avatar';
 
 interface Testimonial {
   author: {
@@ -140,8 +141,8 @@ function Item(props: TestimonialProps) {
       />
 
       <div className="mt-4 flex items-center gap-2">
-        <Avatar.Root className="size-10 overflow-hidden rounded-full">
-          <Avatar.Image src={author.photo} className="size-full object-cover" />
+        <Avatar.Root size="sm" round>
+          <Avatar.Image src={author.photo} />
         </Avatar.Root>
         <div>
           <div className="font-medium text-sm">{author.name}</div>

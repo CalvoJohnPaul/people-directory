@@ -225,7 +225,10 @@ export function EditAccountForm() {
           type="submit"
           fullWidth
           disabled={
-            query.isLoading || updatePersonMutation.isPending || form.formState.isSubmitting
+            query.isLoading ||
+            updatePersonMutation.isPending ||
+            form.formState.isSubmitting ||
+            !form.formState.isDirty
           }
         >
           Save

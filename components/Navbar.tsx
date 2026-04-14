@@ -1,7 +1,7 @@
 'use client';
 
 import {Portal} from '@ark-ui/react';
-import {FolderOpenIcon, LogOutIcon, UserIcon} from 'lucide-react';
+import {LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
@@ -10,15 +10,17 @@ import {Menu} from '~/components/ui/Menu';
 import {getClient} from '~/config/client';
 import {useDestroySessionMutation} from '~/hooks/useDestroySessionMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
+import {Avatar} from './ui/Avatar';
 import {IconButton} from './ui/IconButton';
 
 export function Navbar() {
   const query = useMeQuery();
   const pathname = usePathname();
+  const index = pathname === '/';
 
   return (
     <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
-      <Link href="/" className="block" draggable={false}>
+      <Link href={index ? '/' : '/people'} className="block" draggable={false}>
         <Image
           src="/images/logo.svg"
           alt=""
@@ -30,7 +32,7 @@ export function Navbar() {
       </Link>
       <div className="grow"></div>
       <div className="flex gap-3">
-        {pathname === '/' ? (
+        {index ? (
           <div className="flex gap-3">
             <Button asChild>
               <Link href="/people">Get started</Link>
@@ -51,22 +53,27 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <IconButton variant="outline" asChild>
+                <IconButton variant="subtle" className="icon:size-7" asChild>
                   <Link href="/people">
-                    <FolderOpenIcon />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="1em"
+                      height="1em"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle cx="15" cy="6" r="3" fill="currentColor" opacity=".4" />
+                      <ellipse cx="16" cy="17" fill="currentColor" opacity=".4" rx="5" ry="3" />
+                      <circle cx="9.001" cy="6" r="4" fill="currentColor" />
+                      <ellipse cx="9.001" cy="17.001" fill="currentColor" rx="7" ry="4" />
+                    </svg>
                   </Link>
                 </IconButton>
 
                 <Menu.Root>
                   <Menu.Trigger>
-                    <Image
-                      src={query.data.image}
-                      alt=""
-                      width={250}
-                      height={250}
-                      unoptimized
-                      className="size-11 object-cover"
-                    />
+                    <Avatar.Root>
+                      <Avatar.Image src={query.data.image} />
+                    </Avatar.Root>
                   </Menu.Trigger>
                   <Portal>
                     <Menu.Positioner>
@@ -96,7 +103,7 @@ function Logout() {
   const router = useRouter();
   const mutation = useDestroySessionMutation({
     onSuccess() {
-      router.push('/');
+      router.push('/people');
       client.invalidateQueries({
         queryKey: useMeQuery.getQueryKey(),
         refetchType: 'all',
