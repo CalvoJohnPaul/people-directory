@@ -23,7 +23,7 @@ function Person() {
 
   return (
     <Link href={`/people/${person.id}`} className="block w-full">
-      <div className="aspect-square w-full bg-gray-50 transition-all">
+      <div className="aspect-square w-full bg-neutral-50 transition-all">
         <Image
           src={person.image}
           width={400}
@@ -37,7 +37,9 @@ function Person() {
       <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">
         {person.firstName} {person.lastName}
       </h2>
-      <div className="line-clamp-1 text-gray-600 text-xs leading-tight">{person.emailAddress}</div>
+      <div className="line-clamp-1 text-neutral-600 text-xs leading-tight">
+        {person.emailAddress}
+      </div>
     </Link>
   );
 }

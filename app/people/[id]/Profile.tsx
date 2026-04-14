@@ -35,7 +35,7 @@ export function Profile({id}: ProfileProps) {
   return (
     <PersonProvider value={query.data}>
       <section className="gap-3 lg:flex">
-        <div className="aspect-square w-56 shrink-0 bg-gray-50">
+        <div className="aspect-square w-56 shrink-0 bg-neutral-50">
           <Image
             src={query.data.image}
             alt="Avatar"
@@ -59,8 +59,8 @@ export function Profile({id}: ProfileProps) {
         {map(details, (value, key) => {
           return (
             <div key={key}>
-              <div className="text-gray-500 text-sm">{key}</div>
-              <div className={twJoin(value == null && 'font-mono text-gray-600')}>
+              <div className="text-neutral-500 text-sm">{key}</div>
+              <div className={twJoin(value == null && 'font-mono text-neutral-600')}>
                 {value || '[NA]'}
               </div>
             </div>

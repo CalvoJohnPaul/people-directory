@@ -101,7 +101,7 @@ export function PhotoField(props: PhotoFieldProps) {
             className="absolute top-2 right-2 size-7 place-items-center self-end rounded-sm border bg-white"
             aria-label="Clear photo"
           >
-            <XIcon className="size-4.5 text-gray-700" />
+            <XIcon className="size-4.5 text-neutral-700" />
           </button>
         </Presence>
       </div>
@@ -254,7 +254,7 @@ function Camera(props: {
 
   return (
     <div className="w-full">
-      <div hidden={src == null} className="block aspect-square w-full bg-gray-100">
+      <div hidden={src == null} className="block aspect-square w-full bg-neutral-100">
         {!!src && (
           <Image
             src={src}
@@ -270,7 +270,7 @@ function Camera(props: {
       <div
         hidden={src != null}
         className={twMerge(
-          'relative aspect-square w-full rounded-sm bg-gray-50',
+          'relative aspect-square w-full rounded-sm bg-neutral-50',
           camera.opened && 'border-2 border-dashed',
           faceVerified && livenessLeftVerified && livenessRightVerified
             ? 'border-emerald-400'
@@ -280,7 +280,7 @@ function Camera(props: {
         <video {...camera.getVideoProps()} />
 
         {!camera.opened && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neutral-300">
             <CameraOffIcon className="size-14" strokeWidth={1.33333} />
           </div>
         )}

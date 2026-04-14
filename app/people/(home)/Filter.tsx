@@ -9,8 +9,9 @@ import {parseAsFloat, parseAsInteger, parseAsNativeArrayOf, useQueryState} from 
 import {useRef, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useInterval} from 'usehooks-ts';
+import {AsyncComboboxField} from '~/components/forms/AsyncComboboxField';
 import {DateRangeField} from '~/components/forms/DateRangeField';
-import {MobileNumberField} from '~/components/forms/MobileNumberField';
+import {NumberRangeField} from '~/components/forms/NumberRangeField';
 import {SelectField} from '~/components/forms/SelectField';
 import {ImagePlaceholderIcon} from '~/components/icons/ImagePlaceholderIcon';
 import {Button} from '~/components/ui/Button';
@@ -25,24 +26,29 @@ import {type Gender, GenderDefinition} from '~/types/Person';
 import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
 import {parseQrCode} from '~/utils/qrCode';
 
-interface FilterValue {
-  qrCode?: number[];
+export interface FilterValue {
+  emailAddress?: number[];
+  mobileNumber?: number[];
   gender?: Gender[];
+  age__from?: number;
+  age__to?: number;
+  qrCode?: number[];
   image?: number[];
+  createdAt__from?: string;
+  createdAt__to?: string;
 }
 
-interface FilterProps {
-  value?: FilterValue | null;
-  onChange?: (value: FilterValue | null) => void;
-  defaultValue?: FilterValue | null;
-  onClose?: () => void;
+export interface FilterProps {
+  value?: FilterValue;
+  onChange?: (value: FilterValue) => void;
+  defaultValue?: FilterValue;
   className?: string;
 }
 
 export function Filter(props: FilterProps) {
   const [value, setValue] = useControllableState({
     prop: props.value,
-    defaultProp: props.defaultValue ?? null,
+    defaultProp: props.defaultValue ?? {},
     onChange: props.onChange,
   });
 
@@ -50,21 +56,25 @@ export function Filter(props: FilterProps) {
     <div className={cx('rounded-sm border', props.className)}>
       <div className="flex h-11 items-center gap-2 border-b px-4">
         <h2 className="font-medium">Filters</h2>
-        <div className="grow"></div>
-        <button type="button" onClick={() => props.onClose?.()}>
-          <XIcon className="size-5" />
-        </button>
       </div>
       <div className="space-y-3 p-4">
-        <Field.Root className="rounded-md bg-gray-50 p-3">
+        <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Email address</Field.Label>
-          <Field.Input placeholder="Enter email address" />
+          <AsyncComboboxField
+            options={async () => []}
+            multiple
+            placeholder="Search email address"
+          />
         </Field.Root>
-        <Field.Root className="rounded-md bg-gray-50 p-3">
+        <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Mobile number</Field.Label>
-          <MobileNumberField />
+          <AsyncComboboxField
+            options={async () => []}
+            multiple
+            placeholder="Search mobile number"
+          />
         </Field.Root>
-        <Field.Root className="rounded-md bg-gray-50 p-3">
+        <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Gender</Field.Label>
           <SelectField
             options={GenderDefinition.options.map((option) => ({
@@ -75,7 +85,11 @@ export function Filter(props: FilterProps) {
             placeholder="Select gender"
           />
         </Field.Root>
-        <Field.Root className="rounded-md bg-gray-50 p-3">
+        <Field.Root className="rounded-md bg-neutral-50 p-3">
+          <Field.Label>Age</Field.Label>
+          <NumberRangeField />
+        </Field.Root>
+        <Field.Root className="rounded-md bg-neutral-50 p-3">
           <Field.Label>Date registered</Field.Label>
           <DateRangeField placeholder="Select date" />
         </Field.Root>
@@ -189,10 +203,10 @@ function SearchByQrCode() {
             <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
               <XIcon className="size-5" />
             </Dialog.CloseTrigger>
-            <div className="relative block aspect-square w-full bg-gray-50">
+            <div className="relative block aspect-square w-full bg-neutral-50">
               <div
                 hidden={camera.opened}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neutral-300"
               >
                 <QrCodeIcon className="size-15" strokeWidth={1.33333} />
               </div>
@@ -349,7 +363,7 @@ function SearchByPhoto() {
             <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
               <XIcon className="size-5" />
             </Dialog.CloseTrigger>
-            <div className="relative block aspect-square w-full bg-gray-50">
+            <div className="relative block aspect-square w-full bg-neutral-50">
               {photo && (
                 <Image
                   src={URL.createObjectURL(photo)}
@@ -362,7 +376,7 @@ function SearchByPhoto() {
               )}
 
               {!photo && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neutral-300">
                   <ImagePlaceholderIcon className="size-15" />
                 </div>
               )}

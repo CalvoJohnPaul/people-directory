@@ -6,9 +6,9 @@ export const checkboxRecipe = tv({
   slots: anatomyToRecipeSlots(checkboxAnatomy, {
     root: 'flex items-center gap-2',
     control:
-      'flex shrink-0 cursor-pointer ui-disabled:cursor-not-allowed ui-readonly:cursor-default items-center justify-center border ui-checked:border-gray-900 bg-white ui-checked:bg-gray-900! ui-disabled:opacity-50',
+      'flex shrink-0 cursor-pointer ui-disabled:cursor-not-allowed ui-readonly:cursor-default items-center justify-center border ui-checked:border-neutral-900 bg-white ui-checked:bg-neutral-900! ui-disabled:opacity-50',
     indicator: 'text-white',
-    label: 'text-gray-600',
+    label: 'text-neutral-600',
   }),
   variants: {
     size: {

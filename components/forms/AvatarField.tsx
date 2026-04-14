@@ -90,7 +90,7 @@ export function AvatarField(props: AvatarFieldProps) {
             tabIndex={-1}
             className="absolute top-0 -right-9 size-7 place-items-center self-end border"
           >
-            <XIcon className="size-4.5 text-gray-700" />
+            <XIcon className="size-4.5 text-neutral-700" />
           </button>
         </Presence>
       </div>

@@ -49,23 +49,16 @@ export const DateRangeDefinition = z.object({
   to: z.date().optional().nullable(),
 });
 
+export const NumberRangeDefinition = z.object({
+  from: z.number().optional().nullable(),
+  to: z.number().optional().nullable(),
+});
+
 export const OptionDefinition = z.object({
   value: z.string(),
   label: z.string(),
   disabled: z.boolean().optional(),
 });
-
-export const PageInfoDefinition = z.object({
-  hasNextPage: z.boolean(),
-  endCursor: z.number().nullable(),
-});
-
-export const PaginatedResponseDefinition = <T extends z.ZodTypeAny>(def: T) =>
-  z.object({
-    data: z.array(def),
-    totalCount: z.number(),
-    pageInfo: PageInfoDefinition,
-  });
 
 /*
  *------------------------------------------------
@@ -82,8 +75,5 @@ export type HttpVoidSuccessResponse = z.infer<typeof HttpVoidSuccessResponseDefi
 export type HttpVoidResponse = z.infer<typeof HttpVoidResponseDefinition>;
 export type HttpResponse<T> = z.infer<ReturnType<typeof HttpResponseDefinition<z.ZodType<T>>>>;
 export type DateRange = z.infer<typeof DateRangeDefinition>;
+export type NumberRange = z.infer<typeof NumberRangeDefinition>;
 export type Option = z.infer<typeof OptionDefinition>;
-export type PageInfo = z.infer<typeof PageInfoDefinition>;
-export type PaginatedResponse<T> = z.infer<
-  ReturnType<typeof PaginatedResponseDefinition<z.ZodType<T>>>
->;

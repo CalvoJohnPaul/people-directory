@@ -28,8 +28,8 @@ export const dialogRecipe = tv({
     body: 'relative grow overflow-y-auto px-6 pb-8',
     footer: 'relative flex justify-end gap-3 px-6 py-5',
     title: 'block font-semibold text-lg leading-normal',
-    description: 'block text-gray-600 text-sm leading-tight',
+    description: 'block text-neutral-600 text-sm leading-tight',
     closeTrigger:
-      'absolute top-3 right-3 flex icon:size-5 items-center justify-center text-gray-300 hover:text-gray-500',
+      'absolute top-3 right-3 flex icon:size-5 items-center justify-center text-neutral-300 hover:text-neutral-500',
   }),
 });

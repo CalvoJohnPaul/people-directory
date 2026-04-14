@@ -162,7 +162,7 @@ export function DateField(props: DateFieldProps) {
                   : format(api.value[0].toDate(tz), 'dd MMM yyyy')}
               </span>
               <ChevronDownIcon
-                className="ui-open:rotate-180 text-gray-500 transition-transform duration-300"
+                className="ui-open:rotate-180 text-neutral-500 transition-transform duration-300"
                 data-state={api.open ? 'open' : 'closed'}
               />
             </DatePicker.Trigger>

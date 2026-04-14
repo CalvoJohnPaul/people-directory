@@ -29,6 +29,7 @@ export function PasswordField(props: PasswordFieldProps) {
       readOnly={props.readOnly}
       invalid={props.invalid}
       className={props.className}
+      autoComplete="new-password"
     >
       <PasswordInput.Control>
         <PasswordInput.Input

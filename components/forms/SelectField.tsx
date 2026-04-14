@@ -17,6 +17,7 @@ export interface SelectField__singleProps {
   disabled?: boolean;
   required?: boolean;
   invalid?: boolean;
+  clearable?: boolean;
   placeholder?: string;
   className?: string;
   portalled?: boolean;
@@ -34,6 +35,7 @@ export interface SelectField__multiProps {
   required?: boolean;
   invalid?: boolean;
   placeholder?: string;
+  clearable?: boolean;
   className?: string;
   portalled?: boolean;
 }
@@ -86,6 +88,7 @@ function SelectField__single(props: SelectField__singleProps) {
       required={props.required}
       readOnly={props.readOnly}
       invalid={props.invalid}
+      deselectable={props.clearable ?? true}
       className={props.className}
     >
       <Select.Control>
@@ -93,6 +96,7 @@ function SelectField__single(props: SelectField__singleProps) {
           <Select.ValueText placeholder={props.placeholder || 'Select'} />
           <Select.Indicator />
         </Select.Trigger>
+        {(props.clearable ?? true) && <Select.ClearTrigger />}
       </Select.Control>
       <Select.HiddenSelect />
       {props.portalled ? <Portal>{content}</Portal> : content}
@@ -141,6 +145,7 @@ function SelectField__multi(props: SelectField__multiProps) {
       required={props.required}
       readOnly={props.readOnly}
       invalid={props.invalid}
+      deselectable={props.clearable ?? true}
       className={props.className}
     >
       <Select.Label />
@@ -159,6 +164,7 @@ function SelectField__multi(props: SelectField__multiProps) {
           </Select.Context>
           <Select.Indicator />
         </Select.Trigger>
+        {(props.clearable ?? true) && <Select.ClearTrigger />}
       </Select.Control>
       <Select.Context>
         {(api) => {

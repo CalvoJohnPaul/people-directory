@@ -41,6 +41,7 @@
     "tailwind-variants": "^3.2.2",
     "tailwind-zag": "^1.1.0",
     "uid": "^2.0.2",
+    "use-debounce": "^10.1.1",
     "usehooks-ts": "^3.1.1",
     "zod": "^4.3.6"
   },

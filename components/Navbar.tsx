@@ -20,7 +20,7 @@ export function Navbar() {
       <div className="grow"></div>
       <div className="flex gap-3">
         {query.isLoading ? (
-          <div className="size-11 animate-pulse bg-gray-100" />
+          <div className="size-11 animate-pulse bg-neutral-100" />
         ) : query.data == null ? (
           <>
             <Button variant="outline" asChild>

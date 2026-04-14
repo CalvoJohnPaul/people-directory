@@ -91,7 +91,7 @@ export default async function Layout({children}: PropsWithChildren) {
       className={cx(sans.variable, heading.variable, mono.variable, 'scheme-light scroll-smooth')}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-dvh bg-white font-sans text-gray-800">
+      <body className="min-h-dvh bg-white font-sans text-neutral-800">
         <Providers>
           <HydrationBoundary state={dehydrate(client)}>{children}</HydrationBoundary>
         </Providers>

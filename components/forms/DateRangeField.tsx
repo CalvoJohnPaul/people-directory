@@ -45,7 +45,7 @@ export function DateRangeField(props: DateRangeFieldProps) {
                 <DatePicker.ViewControl>
                   <DatePicker.PrevTrigger />
                   <DatePicker.ViewTrigger>
-                    <span className="px-1.5 py-0.5 font-semibold text-gray-600 text-sm hover:bg-gray-50">
+                    <span className="px-1.5 py-0.5 font-semibold text-neutral-600 text-sm hover:bg-neutral-50">
                       {format(api.visibleRange.start.toDate(tz), 'MMMM yyyy')}
                     </span>
                   </DatePicker.ViewTrigger>
@@ -112,7 +112,7 @@ export function DateRangeField(props: DateRangeFieldProps) {
                 <DatePicker.ViewControl>
                   <DatePicker.PrevTrigger />
                   <DatePicker.ViewTrigger>
-                    <span className="px-1.5 py-0.5 font-semibold text-neutral-300 text-sm hover:bg-neutral-700/25 hover:text-neutral-100">
+                    <span className="rounded-sm px-1.5 py-0.5 font-semibold text-neutral-300 text-sm hover:bg-neutral-700/25 hover:text-neutral-100">
                       {format(api.visibleRange.start.toDate(tz), 'MMMM yyyy')}
                     </span>
                   </DatePicker.ViewTrigger>
@@ -185,12 +185,13 @@ export function DateRangeField(props: DateRangeFieldProps) {
               </span>
 
               <ChevronDownIcon
-                className="ui-open:rotate-180 text-gray-500 transition-transform duration-300"
+                className="ui-open:rotate-180 text-neutral-500 transition-transform duration-300"
                 data-state={api.open ? 'open' : 'closed'}
               />
             </DatePicker.Trigger>
           )}
         </DatePicker.Context>
+        <DatePicker.ClearTrigger />
       </DatePicker.Control>
       {props.portalled ? <Portal>{content}</Portal> : content}
     </DatePicker.Root>

@@ -1,17 +1,15 @@
-import {selectAnatomy} from '@ark-ui/react/select';
+import {comboboxAnatomy} from '@ark-ui/react/combobox';
 import {tv} from 'tailwind-variants';
 import {anatomyToRecipeSlots} from '~/utils/anatomyToRecipeSlots';
 
-export const selectRecipe = tv({
-  slots: anatomyToRecipeSlots(selectAnatomy, {
+export const comboboxRecipe = tv({
+  slots: anatomyToRecipeSlots(comboboxAnatomy, {
     control: 'flex gap-2',
+    input: 'block w-full rounded-sm border ui-invalid:border-rose-400 bg-white outline-none',
     trigger:
-      'flex grow items-center rounded-sm border ui-invalid:border-rose-400 bg-white ui-placeholder-shown:text-neutral-500',
+      'flex shrink-0 ui-closed:icon:rotate-0 ui-open:icon:rotate-180 items-center justify-center rounded-sm border bg-white icon:text-neutral-500 outline-none icon:transition-transform icon:duration-300',
     clearTrigger:
       'flex shrink-0 items-center justify-center rounded-sm border bg-white icon:text-neutral-500 outline-none',
-    valueText: 'grow text-left',
-    indicator:
-      'ui-closed:rotate-0 ui-open:rotate-180 text-neutral-500 transition-transform duration-300',
     positioner: 'z-dropdown',
     content: [
       'z-dropdown',
@@ -57,13 +55,13 @@ export const selectRecipe = tv({
   variants: {
     size: {
       md: {
-        trigger: 'h-11 px-4',
-        indicator: 'size-5',
+        input: 'h-11 px-4',
+        trigger: 'icon:size-5 size-11',
         clearTrigger: 'icon:size-5 size-11',
       },
       lg: {
-        trigger: 'h-12 px-4.5',
-        indicator: 'size-6',
+        input: 'h-12 px-4.5',
+        trigger: 'icon:size-6 size-12',
         clearTrigger: 'icon:size-6 size-12',
       },
     },

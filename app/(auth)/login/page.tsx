@@ -10,11 +10,11 @@ export default async function Page() {
   return (
     <>
       <h1 className="text-center font-bold text-2xl">Log in</h1>
-      <p className="mt-1 text-center text-gray-600">Enter your email to continue.</p>
+      <p className="mt-1 text-center text-neutral-600">Enter your email to continue.</p>
       <div className="mt-12">
         <LoginForm />
 
-        <p className="mt-8 text-center text-gray-600">
+        <p className="mt-8 text-center text-neutral-600">
           Not yet registered?{' '}
           <Link href="/register" className="text-blue-700 underline underline-offset-3">
             Click here
