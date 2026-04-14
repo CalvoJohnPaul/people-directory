@@ -1,29 +1,30 @@
 import type {Metadata} from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import {Navbar} from '~/components/Navbar';
 import {Button} from '~/components/ui/Button';
 
 const highlights = [
   {
-    title: 'Self-Registration Profiles',
+    title: 'Self-registration profiles',
     image: '/marketing/public-profile.svg',
     description:
       'People can register themselves and publish a profile so others can easily find them.',
   },
   {
-    title: 'Verified Privacy Controls',
+    title: 'Verified privacy controls',
     image: '/marketing/verification-flow.svg',
     description:
       'Mobile number and email remain protected unless a viewer is logged in and verified.',
   },
   {
-    title: 'Robust Identity Verification',
-    image: '/marketing/verification-flow.svg',
+    title: 'Robust identity verification',
+    image: '/marketing/robust-verification.svg',
     description:
       'Verification uses face liveness checks and compares submitted details against ID document data.',
   },
   {
-    title: 'Public Profile Discovery',
+    title: 'Public profile discovery',
     image: '/marketing/search-modes.svg',
     description:
       'Anyone can discover public profile information while sensitive fields stay gated.',
@@ -31,9 +32,9 @@ const highlights = [
 ];
 
 const stats = [
-  {label: 'Search Methods', value: 'Face, QR, Email+'},
-  {label: 'Profile Visibility', value: 'Public by default'},
-  {label: 'Sensitive Fields', value: 'Verified users only'},
+  {label: 'Search methods', value: 'Face, QR, Email+'},
+  {label: 'Profile visibility', value: 'Public by default'},
+  {label: 'Sensitive fields', value: 'Verified users only'},
 ];
 
 const faqs = [
@@ -59,6 +60,24 @@ const faqs = [
   },
 ];
 
+const steps = [
+  {
+    step: '1',
+    title: 'Register your profile',
+    body: 'People create their own public profile with searchable personal details.',
+  },
+  {
+    step: '2',
+    title: 'Verify for full access',
+    body: 'Verification runs face liveness checks and compares captured data with submitted ID details.',
+  },
+  {
+    step: '3',
+    title: 'Find anyone quickly',
+    body: 'Use face, QR code, email, and other fields to locate profiles fast.',
+  },
+];
+
 const footerQuickLinks = [
   {label: 'Features', href: '#features'},
   {label: 'How It Works', href: '#how-it-works'},
@@ -77,27 +96,10 @@ export const metadata: Metadata = {
 export default function MarketingPage() {
   return (
     <>
-      <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
-        <Link href="/" className="block" draggable={false}>
-          <Image
-            src="/branding/logo-people.svg"
-            alt="People logo"
-            width={64}
-            height={64}
-            className="size-8"
-            priority
-          />
-        </Link>
-        <div className="grow" />
-        <div className="flex gap-3">
-          <Button asChild>
-            <Link href="/people">Get started</Link>
-          </Button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="relative overflow-x-clip bg-white text-neutral-900">
-        <section className="mx-auto flex max-w-6xl flex-col px-4 pt-4 pb-14 lg:px-6 lg:pt-6 lg:pb-20">
+        <section className="mx-auto flex max-w-6xl flex-col px-4 pt-4 pb-28 lg:px-6 lg:pt-6 lg:pb-40">
           <div className="mt-16 grid items-end gap-10 lg:mt-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
               <p className="inline-flex items-center rounded-sm border border-neutral-300 bg-white px-2.5 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
@@ -115,47 +117,49 @@ export default function MarketingPage() {
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
-                  <Link href="/register">Start Free</Link>
+                  <Link href="/register">Create account</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href="/login">See Demo Workspace</Link>
+                  <Link href="/login">Sign in</Link>
                 </Button>
               </div>
 
-              <ul className="mt-10 grid gap-4 text-neutral-700 text-sm sm:grid-cols-3">
+              <ul className="mt-10 max-w-2xl space-y-2 text-neutral-700 text-sm">
                 {stats.map((item) => (
                   <li
                     key={item.label}
-                    className="rounded-sm border border-neutral-200 bg-neutral-50 p-4"
+                    className="flex items-center gap-4 border-blue-500 border-l-2 bg-neutral-50 px-4 py-3"
                   >
-                    <p className="font-semibold text-2xl text-neutral-900">{item.value}</p>
-                    <p className="mt-1 text-xs uppercase tracking-wide">{item.label}</p>
+                    <p className="grow text-neutral-600 text-xs uppercase tracking-[0.12em]">
+                      {item.label}
+                    </p>
+                    <p className="font-semibold text-lg text-neutral-900 leading-tight">
+                      {item.value}
+                    </p>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="relative rounded-sm border border-stone-700 bg-stone-800 p-6 text-white sm:p-8">
-              <div className="absolute -top-5 -right-4 rounded-sm border border-stone-500 bg-stone-700 px-4 py-1 font-medium text-stone-100 text-xs">
+            <div className="relative rounded-md border border-neutral-700 bg-neutral-800 p-6 text-white sm:p-8">
+              <div className="absolute -top-5 -right-4 rounded-sm border border-neutral-500 bg-neutral-700 px-2 py-1 font-medium text-neutral-100 text-xs">
                 Verification: Liveness + ID Match
               </div>
-              <p className="text-stone-300 text-xs uppercase tracking-widest">
+              <p className="text-neutral-300 text-xs uppercase tracking-widest">
                 Trust & Privacy Rules
               </p>
               <p className="mt-2 font-semibold text-3xl">Robust Verification Enabled</p>
-              <p className="mt-1 text-sm text-stone-300">
+              <p className="mt-1 text-neutral-300 text-sm">
                 Search by face, QR code, email, and profile fields
               </p>
 
-              <div className="mt-5 rounded-sm border border-stone-600/80 bg-stone-900/40 p-2">
-                <Image
-                  src="/marketing/hero-network.svg"
-                  alt="Directory network visualization"
-                  width={720}
-                  height={420}
-                  className="h-auto w-full rounded-sm"
-                />
-              </div>
+              <Image
+                src="/marketing/hero-network.svg"
+                alt="Directory network visualization"
+                width={720}
+                height={420}
+                className="mt-5 block h-auto w-full rounded-sm"
+              />
 
               <div className="mt-8 space-y-3">
                 {[
@@ -165,9 +169,9 @@ export default function MarketingPage() {
                 ].map((row) => (
                   <div
                     key={row.name}
-                    className="flex items-center justify-between rounded-sm border border-stone-500/60 bg-stone-700/80 px-4 py-3"
+                    className="flex items-center justify-between rounded-sm border border-neutral-500/60 bg-neutral-700/80 px-4 py-3"
                   >
-                    <span className="text-sm text-stone-200">{row.name}</span>
+                    <span className="text-neutral-200 text-sm">{row.name}</span>
                     <span className="font-semibold text-sm text-white">{row.value}</span>
                   </div>
                 ))}
@@ -176,10 +180,10 @@ export default function MarketingPage() {
           </div>
         </section>
 
-        <section id="features" className="mx-auto max-w-6xl px-4 pb-16 lg:px-6 lg:pb-20">
-          <div className="flex items-end justify-between gap-6">
+        <section id="features" className="mx-auto max-w-6xl px-4 pb-28 lg:px-6 lg:pb-40">
+          <div className="flex items-end justify-between gap-6 lg:mx-auto lg:w-fit">
             <div>
-              <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em]">
+              <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em] lg:text-center">
                 Features
               </p>
               <h2 className="mt-2 font-bold text-2xl text-neutral-900 sm:text-3xl">
@@ -188,29 +192,26 @@ export default function MarketingPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2">
             {highlights.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-sm border border-neutral-200 bg-neutral-50 p-6"
-              >
+              <article key={item.title}>
                 <Image
                   src={item.image}
                   alt={item.title}
                   width={360}
                   height={220}
-                  className="mb-4 h-32 w-full rounded-sm border border-neutral-200 object-cover"
+                  className="block h-auto w-full rounded-md"
                 />
-                <h3 className="font-semibold text-neutral-900 text-xl">{item.title}</h3>
-                <p className="mt-3 text-neutral-700 text-sm leading-relaxed">{item.description}</p>
+                <h3 className="mt-4 font-semibold text-neutral-900 text-xl">{item.title}</h3>
+                <p className="text-neutral-700 text-sm leading-relaxed">{item.description}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section id="how-it-works" className="bg-stone-900 py-16 text-white sm:py-20">
+        <section id="how-it-works" className="bg-neutral-900 py-28 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 lg:px-6">
-            <p className="font-semibold text-stone-300 text-xs uppercase tracking-[0.15em]">
+            <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.15em]">
               How It Works
             </p>
             <h2 className="mt-2 max-w-2xl font-bold text-2xl leading-tight sm:text-3xl">
@@ -218,39 +219,23 @@ export default function MarketingPage() {
             </h2>
 
             <div className="mt-10 grid gap-5 md:grid-cols-3">
-              {[
-                {
-                  step: '01',
-                  title: 'Register Your Profile',
-                  body: 'People create their own public profile with searchable personal details.',
-                },
-                {
-                  step: '02',
-                  title: 'Verify for Full Access',
-                  body: 'Verification runs face liveness checks and compares captured data with submitted ID details.',
-                },
-                {
-                  step: '03',
-                  title: 'Find Anyone Quickly',
-                  body: 'Use face, QR code, email, and other fields to locate profiles fast.',
-                },
-              ].map((card) => (
+              {steps.map((card) => (
                 <article
                   key={card.step}
-                  className="rounded-sm border border-stone-600 bg-stone-800 p-6"
+                  className="rounded-sm border border-neutral-600 bg-neutral-800 p-6"
                 >
-                  <p className="font-semibold text-stone-300 text-xs uppercase tracking-[0.16em]">
+                  <p className="font-semibold text-neutral-300 text-xs uppercase tracking-[0.16em]">
                     Step {card.step}
                   </p>
                   <h3 className="mt-2 font-semibold text-white text-xl">{card.title}</h3>
-                  <p className="mt-3 text-sm text-stone-300 leading-relaxed">{card.body}</p>
+                  <p className="mt-3 text-neutral-300 text-sm leading-relaxed">{card.body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="testimonials" className="mx-auto max-w-6xl px-4 py-16 lg:px-6 lg:py-20">
+        <section id="testimonials" className="mx-auto max-w-6xl px-4 py-28 lg:px-6 lg:py-40">
           <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div>
               <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">
@@ -278,17 +263,17 @@ export default function MarketingPage() {
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
-                  <Link href="/register">Create Account</Link>
+                  <Link href="/register">Create account</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href="/login">Sign In</Link>
+                  <Link href="/login">Sign in</Link>
                 </Button>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="faqs" className="mx-auto max-w-6xl px-4 pb-16 lg:px-6 lg:pb-20">
+        <section id="faqs" className="mx-auto max-w-6xl px-4 pb-28 lg:px-6 lg:pb-40">
           <div className="max-w-3xl">
             <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.15em]">
               FAQs
@@ -298,7 +283,7 @@ export default function MarketingPage() {
             </h2>
           </div>
 
-          <div className="mt-10 rounded-sm border border-neutral-200 bg-neutral-50">
+          <div className="mt-10 rounded-sm border border-neutral-200 bg-white">
             {faqs.map((item) => (
               <details
                 key={item.question}
@@ -317,15 +302,16 @@ export default function MarketingPage() {
           </div>
         </section>
       </main>
+
       <footer className="border-neutral-800 border-t bg-neutral-900 text-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:px-6">
           <div>
             <Image
-              src="/branding/logo-people.svg"
+              src="/branding/logo-people-dark.svg"
               alt="People logo"
-              width={64}
-              height={64}
-              className="block size-8"
+              width={50}
+              height={44}
+              className="block h-8 w-auto"
             />
             <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
               Let people register themselves and be found publicly while keeping sensitive contact

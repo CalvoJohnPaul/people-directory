@@ -43,7 +43,8 @@
         }
       },
       "complexity": {
-        "noImportantStyles": "off"
+        "noImportantStyles": "off",
+        "noUselessFragments": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off"

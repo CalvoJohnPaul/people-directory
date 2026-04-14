@@ -1,14 +1,14 @@
 <svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="360" height="220" rx="12" fill="#EFF6FF"/>
-  <rect x="28" y="24" width="304" height="172" rx="10" fill="#F8FAFC" stroke="#BFDBFE"/>
-  <rect x="48" y="44" width="84" height="124" rx="8" fill="#1D4ED8"/>
+  <rect width="360" height="220" fill="#EFF6FF"/>
+  <rect x="28" y="24" width="304" height="172" rx="4" fill="#F8FAFC" stroke="#BFDBFE" stroke-width="1"/>
+  <rect x="48" y="44" width="84" height="124" rx="4" fill="#1D4ED8"/>
   <circle cx="90" cy="84" r="16" fill="#DBEAFE"/>
   <path d="M90 106C78.9543 106 70 114.954 70 126V131H110V126C110 114.954 101.046 106 90 106Z" fill="#DBEAFE"/>
-  <rect x="150" y="56" width="160" height="10" rx="5" fill="#1E3A8A"/>
-  <rect x="150" y="76" width="120" height="10" rx="5" fill="#2563EB"/>
-  <rect x="150" y="104" width="98" height="8" rx="4" fill="#60A5FA"/>
-  <rect x="150" y="120" width="98" height="8" rx="4" fill="#60A5FA"/>
-  <rect x="150" y="136" width="98" height="8" rx="4" fill="#60A5FA"/>
-  <rect x="150" y="154" width="95" height="26" rx="6" fill="#1D4ED8"/>
-  <text x="197" y="171" text-anchor="middle" fill="#DBEAFE" font-family="Arial, sans-serif" font-size="11">Public Profile</text>
+  <rect x="150" y="56" width="160" height="10" rx="2" fill="#1E3A8A"/>
+  <rect x="150" y="76" width="120" height="10" rx="2" fill="#2563EB"/>
+  <rect x="150" y="104" width="98" height="8" rx="2" fill="#60A5FA"/>
+  <rect x="150" y="120" width="98" height="8" rx="2" fill="#60A5FA"/>
+  <rect x="150" y="136" width="98" height="8" rx="2" fill="#60A5FA"/>
+  <rect x="150" y="154" width="95" height="26" rx="4" fill="#1D4ED8"/>
+  <text x="197" y="171" text-anchor="middle" fill="#DBEAFE" font-family="'Open Sans', Arial, sans-serif" font-size="11">Public Profile</text>
 </svg>

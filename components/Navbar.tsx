@@ -4,7 +4,7 @@ import {Portal} from '@ark-ui/react';
 import {FolderOpenIcon, LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
 import {Button} from '~/components/ui/Button';
 import {Menu} from '~/components/ui/Menu';
 import {getClient} from '~/config/client';
@@ -14,55 +14,76 @@ import {IconButton} from './ui/IconButton';
 
 export function Navbar() {
   const query = useMeQuery();
+  const pathname = usePathname();
 
   return (
     <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
+      <Link href="/" className="block" draggable={false}>
+        <Image
+          src="/branding/logo-people.svg"
+          alt="People logo"
+          width={50}
+          height={44}
+          className="h-8 w-auto"
+          priority
+        />
+      </Link>
       <div className="grow"></div>
       <div className="flex gap-3">
-        {query.isLoading ? (
-          <div className="size-11 animate-pulse bg-neutral-100" />
-        ) : query.data == null ? (
-          <>
-            <Button variant="outline" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
+        {pathname === '/' ? (
+          <div className="flex gap-3">
             <Button asChild>
-              <Link href="/register">Register</Link>
+              <Link href="/people">Get started</Link>
             </Button>
-          </>
+          </div>
         ) : (
           <>
-            <IconButton variant="outline" asChild>
-              <Link href="/people">
-                <FolderOpenIcon />
-              </Link>
-            </IconButton>
+            {query.isLoading ? (
+              <div className="size-11 animate-pulse bg-neutral-100" />
+            ) : query.data == null ? (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">Register</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <IconButton variant="outline" asChild>
+                  <Link href="/people">
+                    <FolderOpenIcon />
+                  </Link>
+                </IconButton>
 
-            <Menu.Root>
-              <Menu.Trigger>
-                <Image
-                  src={query.data.image}
-                  alt=""
-                  width={250}
-                  height={250}
-                  unoptimized
-                  className="size-11 object-cover"
-                />
-              </Menu.Trigger>
-              <Portal>
-                <Menu.Positioner>
-                  <Menu.Content>
-                    <Menu.Item value="profile" asChild>
-                      <Link href={`/people/${query.data.id}`}>
-                        <UserIcon />
-                        My profile
-                      </Link>
-                    </Menu.Item>
-                    <Logout />
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Portal>
-            </Menu.Root>
+                <Menu.Root>
+                  <Menu.Trigger>
+                    <Image
+                      src={query.data.image}
+                      alt=""
+                      width={250}
+                      height={250}
+                      unoptimized
+                      className="size-11 object-cover"
+                    />
+                  </Menu.Trigger>
+                  <Portal>
+                    <Menu.Positioner>
+                      <Menu.Content>
+                        <Menu.Item value="profile" asChild>
+                          <Link href={`/people/${query.data.id}`}>
+                            <UserIcon />
+                            My profile
+                          </Link>
+                        </Menu.Item>
+                        <Logout />
+                      </Menu.Content>
+                    </Menu.Positioner>
+                  </Portal>
+                </Menu.Root>
+              </>
+            )}
           </>
         )}
       </div>

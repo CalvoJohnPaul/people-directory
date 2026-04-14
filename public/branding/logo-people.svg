@@ -1,17 +1,16 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="10" fill="#EFF6FF"/>
-  <rect x="7" y="10" width="50" height="44" rx="8" fill="#1D4ED8"/>
-  <rect x="11" y="14" width="42" height="36" rx="6" fill="#DBEAFE"/>
+<svg width="50" height="44" viewBox="0 0 50 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="50" height="44" rx="4" fill="#1D4ED8"/>
+  <rect x="2" y="2" width="46" height="40" rx="3" fill="#DBEAFE"/>
 
-  <rect x="14" y="17" width="14" height="18" rx="4" fill="#1E40AF"/>
-  <circle cx="21" cy="23" r="3" fill="#DBEAFE"/>
-  <path d="M21 27C18.7909 27 17 28.7909 17 31V32H25V31C25 28.7909 23.2091 27 21 27Z" fill="#DBEAFE"/>
+  <rect x="7" y="7" width="14" height="18" rx="2" fill="#1E40AF"/>
+  <circle cx="14" cy="13" r="3" fill="#DBEAFE"/>
+  <path d="M14 17C11.7909 17 10 18.7909 10 21V22H18V21C18 18.7909 16.2091 17 14 17Z" fill="#DBEAFE"/>
 
-  <rect x="31" y="19" width="19" height="3" rx="1.5" fill="#1E3A8A"/>
-  <rect x="31" y="25" width="14" height="3" rx="1.5" fill="#3B82F6"/>
-  <rect x="31" y="31" width="17" height="3" rx="1.5" fill="#60A5FA"/>
+  <rect x="24" y="9" width="19" height="3" rx="1" fill="#1E3A8A"/>
+  <rect x="24" y="15" width="14" height="3" rx="1" fill="#3B82F6"/>
+  <rect x="24" y="21" width="17" height="3" rx="1" fill="#60A5FA"/>
 
-  <rect x="14" y="39" width="36" height="8" rx="3" fill="#BFDBFE"/>
-  <path d="M18 43H30" stroke="#1E40AF" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M34 43H46" stroke="#1E40AF" stroke-width="1.5" stroke-linecap="round"/>
+  <rect x="7" y="29" width="36" height="8" rx="2" fill="#BFDBFE"/>
+  <path d="M11 33H23" stroke="#1E40AF" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M27 33H39" stroke="#1E40AF" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
