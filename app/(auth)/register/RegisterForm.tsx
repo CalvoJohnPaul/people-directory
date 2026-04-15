@@ -111,7 +111,12 @@ export function RegisterForm() {
 
       <Field.Root size="lg" className="mt-4" invalid={!!form.formState.errors.emailAddress}>
         <Field.Label>Email address</Field.Label>
-        <Field.Input placeholder="Enter email address" {...form.register('emailAddress')} />
+        <Field.Input
+          type="email"
+          autoComplete="email"
+          placeholder="Enter email address"
+          {...form.register('emailAddress')}
+        />
         <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
 

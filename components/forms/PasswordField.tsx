@@ -38,6 +38,7 @@ export function PasswordField(props: PasswordFieldProps) {
             setValue(e.target.value);
           }}
           placeholder={props.placeholder || 'Enter password'}
+          suppressHydrationWarning
         />
         <PasswordInput.VisibilityTrigger>
           <PasswordInput.Indicator />

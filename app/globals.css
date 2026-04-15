@@ -33,7 +33,6 @@
   --font-*: initial;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-heading);
 
   --z-dropdown: 1000;
   --z-sticky: 1100;

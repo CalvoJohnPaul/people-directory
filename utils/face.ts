@@ -16,7 +16,7 @@ let $vision: Awaited<ReturnType<(typeof FilesetResolver)['forVisionTasks']>> | n
 async function $getVision() {
   if (!$vision) {
     $vision = await FilesetResolver.forVisionTasks(
-      `${process.env.NEXT_PUBLIC_URL}/@mediapipe/wasm`,
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm',
     );
   }
 
@@ -39,7 +39,8 @@ async function $getFaceDetector(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
     minDetectionConfidence: 0.5,
     baseOptions: {
       delegate: 'GPU',
-      modelAssetPath: `${process.env.NEXT_PUBLIC_URL}/@mediapipe/models/blaze_face_short_range.tflite`,
+      modelAssetPath:
+        'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
     },
   });
 
@@ -66,7 +67,8 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
     numFaces: 1,
     baseOptions: {
       delegate: 'GPU',
-      modelAssetPath: `${process.env.NEXT_PUBLIC_URL}/@mediapipe/models/face_landmarker.task`,
+      modelAssetPath:
+        'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
     },
   });
 

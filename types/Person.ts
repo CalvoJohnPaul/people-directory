@@ -7,6 +7,7 @@ export const PersonDefinition = z.object({
   firstName: z.string(),
   lastName: z.string(),
   middleName: z.string().optional().nullable(),
+  fullName: z.string(),
   emailAddress: z.string(),
   emailAddressVerifiedAt: DateDefinition.optional().nullable(),
   mobileNumber: z.string().optional().nullable(),

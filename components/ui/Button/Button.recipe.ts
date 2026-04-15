@@ -4,6 +4,7 @@ export const buttonRecipe = tv({
   base: 'inline-flex items-center justify-center rounded-sm font-semibold outline-none disabled:opacity-50',
   variants: {
     size: {
+      sm: 'h-10 gap-1 px-3 text-sm',
       md: 'h-11 gap-1.5 px-4 text-base',
       lg: 'h-12 gap-2 px-4.5 text-base',
     },

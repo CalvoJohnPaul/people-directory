@@ -97,6 +97,7 @@ function OtpLoginForm() {
         <div className="flex gap-3">
           <Field.Input
             type="email"
+            autoComplete="email"
             placeholder="eg. john.doe@example.com"
             {...form.register('emailAddress')}
             className="grow"

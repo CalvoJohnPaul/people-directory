@@ -103,23 +103,21 @@ export function People() {
           </div>
 
           <div>
-            <p role="alert" aria-live="polite" className="mb-4 text-neutral-500 text-sm">
-              {query.isLoading
-                ? 'Crunching latest data. Please wait...'
-                : searched
-                  ? people.length <= 0
-                    ? 'No matching records'
-                    : people.length > 1
-                      ? `Showing ${people.length} matches`
-                      : `Showing ${people.length} match`
-                  : people.length <= 0
-                    ? 'No records to show'
-                    : 'Showing latest records'}
-            </p>
+            {query.isLoading ? (
+              <p className="mb-4 text-neutral-500 text-sm">Crunching latest data. Please wait...</p>
+            ) : searched ? (
+              people.length > 1 ? (
+                <p className="mb-4 text-neutral-500 text-sm">Showing {people.length} matches</p>
+              ) : people.length > 0 ? (
+                <p className="mb-4 text-neutral-500 text-sm">Showing {people.length} match</p>
+              ) : null
+            ) : people.length > 0 ? (
+              <p className="mb-4 text-neutral-500 text-sm">Showing latest records</p>
+            ) : null}
 
             {query.isLoading && <SpinnerIcon className="block size-6 text-blue-500" />}
             {!query.isLoading && people.length > 0 && <PeopleList />}
-            {!query.isLoading && people.length <= 0 && <Loader />}
+            {!query.isLoading && people.length <= 0 && <Empty />}
           </div>
         </div>
       </div>
@@ -127,8 +125,13 @@ export function People() {
   );
 }
 
-function Loader() {
-  return null;
+function Empty() {
+  return (
+    <div className="flex flex-col items-center py-12">
+      <h2 className="font-semibold text-neutral-700 text-xl">No records to show</h2>
+      <p className="text-neutral-500 text-sm">Try adjusting your filters or check back later.</p>
+    </div>
+  );
 }
 
 function Reload() {
