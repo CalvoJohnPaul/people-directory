@@ -7,7 +7,7 @@ export function Hero() {
     <section className="mx-auto flex max-w-6xl flex-col px-4 pt-4 pb-28 lg:px-6 lg:pt-6 lg:pb-40">
       <div className="mt-16 grid items-end gap-10 lg:mt-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
         <div>
-          <p className="inline-flex items-center rounded-sm border border-neutral-300 bg-white px-2.5 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-[0.12em]">
+          <p className="inline-flex items-center rounded-sm border border-neutral-300 bg-white px-2.5 py-1.5 font-semibold text-neutral-700 text-xs uppercase tracking-wide">
             Public directory with privacy controls
           </p>
           <h1 className="mt-6 text-balance font-bold text-4xl text-neutral-900 leading-tight tracking-tight sm:text-5xl lg:text-6xl">
