@@ -9,6 +9,7 @@ import {useReducer, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useTimeout} from 'usehooks-ts';
 import {SearchField} from '~/components/forms/SearchField';
+import {SpinnerIcon} from '~/components/icons/SpinnerIcon';
 import {IconButton} from '~/components/ui/IconButton';
 import {Swap} from '~/components/ui/Swap';
 import {Tooltip} from '~/components/ui/Tooltip';
@@ -109,16 +110,23 @@ export function People() {
                   ? people.length <= 0
                     ? 'No matching records'
                     : `Showing ${people.length} matches`
-                  : 'Showing latest records'}
-              .
+                  : people.length <= 0
+                    ? 'No records to show'
+                    : 'Showing latest records'}
             </p>
 
-            <PeopleList />
+            {query.isLoading && <SpinnerIcon className="block size-6 text-blue-500" />}
+            {!query.isLoading && people.length > 0 && <PeopleList />}
+            {!query.isLoading && people.length <= 0 && <Loader />}
           </div>
         </div>
       </div>
     </PeopleProvider>
   );
+}
+
+function Loader() {
+  return null;
 }
 
 function Reload() {
