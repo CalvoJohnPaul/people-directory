@@ -6,28 +6,39 @@ import type {Prisma} from '~/prisma/generated/prisma/client';
 import type {CreatePersonInput, PeopleInput, Person, UpdatePersonDataInput} from '~/types/Person';
 
 export const getPerson = cache(async (id: number): Promise<Person | null> => {
-  return await prisma.person.findUnique({
-    where: {id},
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  return await prisma.person
+    .findUnique({
+      where: {id},
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        gender: true,
+        dateOfBirth: true,
+        emailAddress: true,
+        emailAddressVerifiedAt: true,
+        mobileNumber: true,
+        mobileNumberVerifiedAt: true,
+        currentAddress: true,
+        permanentAddress: true,
+        image: true,
+        idDocument: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+    .then((person) =>
+      person
+        ? {
+            ...person,
+            fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
+              .filter(Boolean)
+              .join(' '),
+          }
+        : null,
+    );
 });
 
 export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> => {
@@ -99,32 +110,41 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
     }),
   };
 
-  return await prisma.person.findMany({
-    take,
-    where,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      id: 'desc',
-    },
-  });
+  return await prisma.person
+    .findMany({
+      take,
+      where,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        gender: true,
+        dateOfBirth: true,
+        emailAddress: true,
+        emailAddressVerifiedAt: true,
+        mobileNumber: true,
+        mobileNumberVerifiedAt: true,
+        currentAddress: true,
+        permanentAddress: true,
+        image: true,
+        idDocument: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    })
+    .then((people) =>
+      people.map((person) => ({
+        ...person,
+        fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
+          .filter(Boolean)
+          .join(' '),
+      })),
+    );
 });
 
 export async function createPerson(input: CreatePersonInput): Promise<Person> {
@@ -132,28 +152,35 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
 
   data.password = await hash(input.password, 8);
 
-  return await prisma.person.create({
-    data,
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  return await prisma.person
+    .create({
+      data,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        gender: true,
+        dateOfBirth: true,
+        emailAddress: true,
+        emailAddressVerifiedAt: true,
+        mobileNumber: true,
+        mobileNumberVerifiedAt: true,
+        currentAddress: true,
+        permanentAddress: true,
+        image: true,
+        idDocument: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+    .then((person) => ({
+      ...person,
+      fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
+        .filter(Boolean)
+        .join(' '),
+    }));
 }
 
 export async function updatePerson(
@@ -164,27 +191,34 @@ export async function updatePerson(
 
   if (data.password) data.password = await hash(data.password, 10);
 
-  return await prisma.person.update({
-    data,
-    where: {id},
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      middleName: true,
-      gender: true,
-      dateOfBirth: true,
-      emailAddress: true,
-      emailAddressVerifiedAt: true,
-      mobileNumber: true,
-      mobileNumberVerifiedAt: true,
-      currentAddress: true,
-      permanentAddress: true,
-      image: true,
-      idDocument: true,
-      verifiedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  return await prisma.person
+    .update({
+      data,
+      where: {id},
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        gender: true,
+        dateOfBirth: true,
+        emailAddress: true,
+        emailAddressVerifiedAt: true,
+        mobileNumber: true,
+        mobileNumberVerifiedAt: true,
+        currentAddress: true,
+        permanentAddress: true,
+        image: true,
+        idDocument: true,
+        verifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+    .then((person) => ({
+      ...person,
+      fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
+        .filter(Boolean)
+        .join(' '),
+    }));
 }
