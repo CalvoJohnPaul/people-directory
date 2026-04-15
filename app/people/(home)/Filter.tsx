@@ -5,10 +5,9 @@
 
 import {Portal} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
-import {capitalize, uniq} from 'es-toolkit';
+import {capitalize} from 'es-toolkit';
 import {QrCodeIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
-import {parseAsInteger, parseAsNativeArrayOf, useQueryState} from 'nuqs';
 import {useRef, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useDebouncedCallback} from 'use-debounce';
@@ -28,6 +27,7 @@ import {useCamera} from '~/hooks/useCamera';
 import {useDisclosure} from '~/hooks/useDisclosure';
 import {usePeopleByFaceEmbeddingQuery} from '~/hooks/usePeopleByFaceEmbeddingQuery';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
+import {usePersonQuery} from '~/hooks/usePersonQuery';
 import type {DateRange, NumberRange} from '~/types/common';
 import {type Gender, GenderDefinition} from '~/types/Person';
 import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
@@ -158,7 +158,12 @@ export function Filter(props: FilterProps) {
             }}
           />
         </Field.Root>
-        <SearchByQrCode />
+        <SearchByQrCode
+          onChange={(qrCode) => {
+            setValue__internal((prev) => ({...prev, qrCode}));
+            setValue__debounced((prev) => ({...prev, qrCode}));
+          }}
+        />
         <SearchByPhoto
           onChange={(image) => {
             setValue__internal((prev) => ({...prev, image}));
@@ -170,40 +175,52 @@ export function Filter(props: FilterProps) {
   );
 }
 
-function SearchByQrCode() {
-  const [, setQueryState] = useQueryState(
-    'id',
-    parseAsNativeArrayOf(parseAsInteger).withDefault([]),
-  );
-
+function SearchByQrCode({onChange}: {onChange?: (id: number | null) => void}) {
   const camera = useCamera();
   const disclosure = useDisclosure();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
 
-  const [value, setValue] = useState<number | null>(null);
+  const parseId = async (code: string): Promise<number | null> => {
+    setParsing(true);
 
-  const parseId = (code: string): number | null => {
     const segments = code.split('/');
     const segment = segments.at(-1);
+
     const id = Number.parseInt(segment ?? '', 10);
-    if (Number.isNaN(id) || id < 0) return null;
-    return id;
+
+    if (Number.isNaN(id) || id < 0) {
+      return null;
+    }
+
+    try {
+      const person = await client.fetchQuery({
+        queryKey: usePersonQuery.getQueryKey(id),
+        queryFn: usePersonQuery.getQueryFn(id),
+      });
+
+      return person?.id ?? null;
+    } catch {
+      return null;
+    } finally {
+      setParsing(false);
+    }
   };
 
   useInterval(
     async () => {
+      if (parsing) return;
       if (!camera.videoRef.current) return;
       const code = await parseQrCode(camera.videoRef.current);
       if (!code) return;
-      const id = parseId(code);
+      const id = await parseId(code);
       if (id === null) return;
-      setValue(id);
-      setQueryState((prev) => uniq([id, ...prev]));
       disclosure.setOpen(false);
+      onChange?.(id);
     },
     disclosure.open && camera.opened ? 1000 : null,
   );
-
-  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <Dialog.Root
@@ -211,25 +228,71 @@ function SearchByQrCode() {
       onOpenChange={(details) => {
         disclosure.setOpen(details.open);
       }}
+      closeOnEscape
+      closeOnInteractOutside
       onExitComplete={() => {
         camera.close();
       }}
-      closeOnEscape
-      closeOnInteractOutside
     >
+      <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Label>QR Code</Field.Label>
+        <button
+          type="button"
+          onClick={() => {
+            disclosure.setOpen(true);
+          }}
+          className="relative block aspect-video w-full rounded-sm border bg-white outline-none"
+        >
+          {file && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onChange?.(null);
+                setFile(null);
+              }}
+              className="absolute top-2 right-2 grid size-7 place-items-center self-end rounded-sm border bg-white"
+            >
+              <XIcon className="size-4.5 text-neutral-700" />
+            </span>
+          )}
+
+          {file && (
+            <div className="flex size-full flex-col justify-center">
+              <Image
+                src={URL.createObjectURL(file)}
+                alt=""
+                width={400}
+                height={400}
+                unoptimized
+                className="mx-auto max-h-[80%] w-auto max-w-[80%] object-cover"
+              />
+            </div>
+          )}
+
+          {!file && (
+            <QrCodeIcon
+              className="absolute top-1/2 left-1/2 block size-14 -translate-x-1/2 -translate-y-1/2 text-gray-300"
+              strokeWidth={1.66667}
+            />
+          )}
+        </button>
+      </Field.Root>
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
           <Dialog.Content className="h-auto w-96 p-6 lg:min-w-100 lg:max-w-100">
-            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
+            <Dialog.CloseTrigger className="absolute -top-8 right-0 size-6 rounded-sm bg-white/8 text-white hover:text-white lg:top-0 lg:-right-8">
               <XIcon className="size-5" />
             </Dialog.CloseTrigger>
-            <div className="relative block aspect-square w-full bg-neutral-50">
+            <div className="relative block aspect-square w-full rounded-sm bg-neutral-50">
               <div
                 hidden={camera.opened}
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-neutral-300"
               >
-                <QrCodeIcon className="size-15" strokeWidth={1.33333} />
+                <QrCodeIcon className="size-15" strokeWidth={1.66667} />
               </div>
               <video {...camera.getVideoProps()} />
             </div>
@@ -237,7 +300,7 @@ function SearchByQrCode() {
               <Button
                 fullWidth
                 variant="outline"
-                disabled={camera.opened}
+                disabled={camera.opened || parsing}
                 onClick={() => {
                   inputRef.current?.click();
                 }}
@@ -265,26 +328,28 @@ function SearchByQrCode() {
                     return;
                   }
 
-                  const id = parseId(code);
+                  const id = await parseId(code);
 
                   if (id === null) {
                     toaster.error({
                       title: 'Invalid QR code',
-                      description: 'The QR code does not contain a valid ID.',
+                      description: 'The uploaded image does not contain a valid QR code.',
                     });
 
                     if (inputRef.current) inputRef.current.value = '';
+
                     return;
                   }
 
-                  setValue(id);
-                  setQueryState((prev) => uniq([id, ...prev]));
+                  setFile(file);
+                  onChange?.(id);
                   disclosure.setOpen(false);
                   if (inputRef.current) inputRef.current.value = '';
                 }}
                 className="hidden"
               />
               <Button
+                disabled={parsing}
                 fullWidth
                 onClick={() => {
                   if (camera.opened) {
@@ -304,7 +369,7 @@ function SearchByQrCode() {
   );
 }
 
-function SearchByPhoto({onChange}: {onChange?: (ids: number[]) => void}) {
+function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [photo, setPhoto] = useState<File | null>(null);
@@ -315,7 +380,7 @@ function SearchByPhoto({onChange}: {onChange?: (ids: number[]) => void}) {
   });
 
   useTimeout(
-    () => onChange?.(query.data?.map((person) => person.id) ?? []),
+    () => onChange?.(query.data?.map((person) => person.id) ?? null),
     query.dataUpdatedAt && query.data ? 1 : null,
   );
 
@@ -339,7 +404,7 @@ function SearchByPhoto({onChange}: {onChange?: (ids: number[]) => void}) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onChange?.([]);
+                onChange?.(null);
                 setPhoto(null);
                 setVector('');
               }}
