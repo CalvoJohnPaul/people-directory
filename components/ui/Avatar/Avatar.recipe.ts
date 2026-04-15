@@ -6,6 +6,7 @@ export const avatarRecipe = tv({
   slots: anatomyToRecipeSlots(avatarAnatomy, {
     root: 'relative flex aspect-square items-center justify-center bg-neutral-50',
     image: 'size-full rounded-sm object-cover',
+    fallback: 'flex icon:size-1/2 size-full items-center justify-center rounded-sm bg-gray-50',
   }),
   variants: {
     size: {
@@ -14,7 +15,10 @@ export const avatarRecipe = tv({
       lg: {root: 'w-12'},
     },
     round: {
-      true: {root: 'rounded-full'},
+      true: {
+        image: 'rounded-full',
+        fallback: 'rounded-full',
+      },
     },
   },
   defaultVariants: {

@@ -6,5 +6,9 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  return <People />;
+  return (
+    <main className="mx-auto max-w-7xl p-4 lg:px-6 lg:py-12">
+      <People />
+    </main>
+  );
 }

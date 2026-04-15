@@ -38,6 +38,7 @@ export function Profile({id}: ProfileProps) {
       <section className="gap-3 lg:flex">
         <Avatar.Root className="w-56 shrink-0">
           <Avatar.Image src={query.data.image} />
+          <Avatar.Fallback />
         </Avatar.Root>
         <div className="hidden grow lg:block"></div>
         <div className="mt-4 flex gap-3 self-start lg:mt-0">

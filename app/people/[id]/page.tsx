@@ -62,7 +62,11 @@ export default async function Page(props: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(client)}>
-      <Profile id={id} />
+      <div className="relative">
+        <main className="mx-auto max-w-7xl p-4 lg:px-6 lg:py-12">
+          <Profile id={id} />
+        </main>
+      </div>
     </HydrationBoundary>
   );
 }

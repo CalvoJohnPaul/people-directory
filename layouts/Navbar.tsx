@@ -5,6 +5,7 @@ import {LogOutIcon, UserIcon} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
+import {PasscodeLockIcon} from '~/components/icons/PasscodeLockIcon';
 import {Avatar} from '~/components/ui/Avatar';
 import {Button} from '~/components/ui/Button';
 import {IconButton} from '~/components/ui/IconButton';
@@ -73,6 +74,7 @@ export function Navbar() {
                   <Menu.Trigger>
                     <Avatar.Root>
                       <Avatar.Image src={query.data.image} />
+                      <Avatar.Fallback />
                     </Avatar.Root>
                   </Menu.Trigger>
                   <Portal>
@@ -84,6 +86,8 @@ export function Navbar() {
                             My profile
                           </Link>
                         </Menu.Item>
+                        <ChangePassword />
+                        <Menu.Separator />
                         <Logout />
                       </Menu.Content>
                     </Menu.Positioner>
@@ -95,6 +99,15 @@ export function Navbar() {
         )}
       </div>
     </header>
+  );
+}
+
+function ChangePassword() {
+  return (
+    <Menu.Item value="change-password">
+      <PasscodeLockIcon />
+      Change password
+    </Menu.Item>
   );
 }
 
@@ -118,7 +131,7 @@ function Logout() {
       disabled={mutation.isPending}
     >
       <LogOutIcon />
-      Log out
+      Sign out
     </Menu.Item>
   );
 }

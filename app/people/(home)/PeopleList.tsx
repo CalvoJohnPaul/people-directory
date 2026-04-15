@@ -26,6 +26,7 @@ function Person() {
     <Link href={`/people/${person.id}`} className="block w-full">
       <Avatar.Root className="w-full">
         <Avatar.Image src={person.image} />
+        <Avatar.Fallback />
       </Avatar.Root>
       <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">
         {person.firstName} {person.lastName}

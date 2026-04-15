@@ -122,7 +122,7 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
       updatedAt: true,
     },
     orderBy: {
-      id: 'asc',
+      id: 'desc',
     },
   });
 });

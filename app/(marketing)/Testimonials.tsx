@@ -143,6 +143,7 @@ function Item(props: TestimonialProps) {
       <div className="mt-4 flex items-center gap-2">
         <Avatar.Root size="sm" round>
           <Avatar.Image src={author.photo} />
+          <Avatar.Fallback />
         </Avatar.Root>
         <div>
           <div className="font-medium text-sm">{author.name}</div>

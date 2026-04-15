@@ -109,7 +109,9 @@ export function People() {
                 : searched
                   ? people.length <= 0
                     ? 'No matching records'
-                    : `Showing ${people.length} matches`
+                    : people.length > 1
+                      ? `Showing ${people.length} matches`
+                      : `Showing ${people.length} match`
                   : people.length <= 0
                     ? 'No records to show'
                     : 'Showing latest records'}

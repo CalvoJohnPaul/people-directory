@@ -9,7 +9,7 @@ export const buttonRecipe = tv({
     },
     variant: {
       solid: 'bg-indigo-500 text-white',
-      outline: 'border text-neutral-800',
+      outline: 'border bg-white text-neutral-800',
     },
     fullWidth: {
       true: 'flex w-full',
