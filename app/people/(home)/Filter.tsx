@@ -8,7 +8,7 @@ import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {capitalize} from 'es-toolkit';
 import {QrCodeIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
-import {useRef, useState} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useDebouncedCallback} from 'use-debounce';
 import {useInterval, useTimeout} from 'usehooks-ts';
@@ -68,7 +68,7 @@ export function Filter(props: FilterProps) {
         <h2 className="font-medium">Filters</h2>
       </div>
       <div className="space-y-3 p-4">
-        <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Email address</Field.Label>
           <AsyncComboboxField
             options={async (emailAddress) => {
@@ -94,7 +94,7 @@ export function Filter(props: FilterProps) {
             placeholder="Search email address"
           />
         </Field.Root>
-        <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Mobile number</Field.Label>
           <AsyncComboboxField
             options={async (mobileNumber) => {
@@ -120,7 +120,7 @@ export function Filter(props: FilterProps) {
             placeholder="Search mobile number"
           />
         </Field.Root>
-        <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Gender</Field.Label>
           <SelectField
             options={GenderDefinition.options.map((option) => ({
@@ -137,7 +137,7 @@ export function Filter(props: FilterProps) {
             placeholder="Select gender"
           />
         </Field.Root>
-        <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Age</Field.Label>
           <NumberRangeField
             value={value__internal.age ?? null}
@@ -147,7 +147,7 @@ export function Filter(props: FilterProps) {
             }}
           />
         </Field.Root>
-        <Field.Root className="rounded-md bg-neutral-50 p-3">
+        <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Date registered</Field.Label>
           <DateRangeField
             placeholder="Select date"
@@ -182,7 +182,7 @@ function SearchByQrCode({onChange}: {onChange?: (id: number | null) => void}) {
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
 
-  const parseId = async (code: string): Promise<number | null> => {
+  const parseId = useCallback(async (code: string): Promise<number | null> => {
     setParsing(true);
 
     const segments = code.split('/');
@@ -206,7 +206,7 @@ function SearchByQrCode({onChange}: {onChange?: (id: number | null) => void}) {
     } finally {
       setParsing(false);
     }
-  };
+  }, []);
 
   useInterval(
     async () => {
@@ -234,7 +234,7 @@ function SearchByQrCode({onChange}: {onChange?: (id: number | null) => void}) {
         camera.close();
       }}
     >
-      <Field.Root className="rounded-md bg-neutral-50 p-3">
+      <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
         <Field.Label>QR Code</Field.Label>
         <button
           type="button"
@@ -371,9 +371,11 @@ function SearchByQrCode({onChange}: {onChange?: (id: number | null) => void}) {
 
 function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [vector, setVector] = useState<string>('');
+  const [dragging, setDragging] = useState(false);
 
   const query = usePeopleByFaceEmbeddingQuery(vector, {
     enabled: !!vector,
@@ -384,9 +386,46 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
     query.dataUpdatedAt && query.data ? 1 : null,
   );
 
+  const processFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        toaster.error({
+          title: 'Invalid image',
+          description: 'Only image files can be used for photo search.',
+        });
+
+        return;
+      }
+
+      const faceFound = await detectFace(file, 5);
+
+      if (!faceFound) {
+        toaster.error({
+          title: 'No face detected',
+          description: 'The uploaded image does not contain a detectable face.',
+        });
+
+        return;
+      }
+
+      const face = await cropFace(file);
+      const embedding = await getFaceEmbedding(file);
+
+      if (embedding) {
+        setPhoto(face);
+        setVector(embedding.vector);
+      } else {
+        setPhoto(face);
+        setVector('');
+        onChange?.([-1]);
+      }
+    },
+    [onChange],
+  );
+
   return (
     <>
-      <Field.Root className="rounded-md bg-neutral-50 p-3">
+      <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
         <Field.Label>Image</Field.Label>
 
         <button
@@ -394,7 +433,34 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
           onClick={() => {
             inputRef.current?.click();
           }}
-          className="relative block aspect-video w-full rounded-sm border bg-white"
+          onDragEnter={(e) => {
+            e.preventDefault();
+            if (query.isLoading) return;
+            dragDepthRef.current += 1;
+            setDragging(true);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            if (query.isLoading) return;
+            dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+            if (dragDepthRef.current === 0) {
+              setDragging(false);
+            }
+          }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            if (query.isLoading) return;
+            dragDepthRef.current = 0;
+            setDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (!file) return;
+            await processFile(file);
+          }}
+          className="relative block aspect-video w-full rounded-sm border ui-dragging:border-dashed bg-white transition-colors"
+          data-draging={dragging ? '' : undefined}
           disabled={query.isLoading}
         >
           {photo && (
@@ -438,33 +504,8 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
         accept="image/*"
         onChange={async (e) => {
           const file = e.target.files?.[0];
-
           if (!file) return;
-
-          const faceFound = await detectFace(file, 5);
-
-          if (!faceFound) {
-            toaster.error({
-              title: 'No face detected',
-              description: 'The uploaded image does not contain a detectable face.',
-            });
-
-            if (inputRef.current) inputRef.current.value = '';
-            return;
-          }
-
-          const face = await cropFace(file);
-          const embedding = await getFaceEmbedding(file);
-
-          if (embedding) {
-            setPhoto(face);
-            setVector(embedding.vector);
-          } else {
-            setPhoto(face);
-            setVector('');
-            onChange?.([-1]);
-          }
-
+          await processFile(file);
           if (inputRef.current) inputRef.current.value = '';
         }}
         className="hidden"

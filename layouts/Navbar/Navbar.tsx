@@ -21,14 +21,15 @@ export function Navbar() {
 
   return (
     <header className="flex items-center border-b p-4 lg:px-6 lg:py-4">
-      <Link href={index ? '/' : '/people'} className="block" draggable={false}>
+      <Link href={index ? '/' : '/people'} className="block">
         <Image
           src="/images/logo.svg"
           alt=""
           width={50}
           height={44}
-          className="h-8 w-auto"
+          draggable={false}
           priority
+          className="h-8 w-auto"
         />
       </Link>
       <div className="grow"></div>

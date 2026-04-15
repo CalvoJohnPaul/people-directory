@@ -21,6 +21,7 @@ export function Footer() {
             alt=""
             width={50}
             height={44}
+            draggable={false}
             className="block h-8 w-auto"
           />
           <p className="mt-3 max-w-md text-neutral-300 text-sm leading-relaxed">
@@ -44,6 +45,7 @@ export function Footer() {
                       d="M3.677 13.107a3.166 3.166 0 0 1-2.783-2.79C.78 9.242.682 8.138.682 7.013s.097-2.23.212-3.304A3.166 3.166 0 0 1 3.677.919C4.758.799 5.868.695 7 .695s2.242.103 3.323.224a3.166 3.166 0 0 1 2.783 2.79c.115 1.075.212 2.179.212 3.304s-.097 2.229-.212 3.304a3.166 3.166 0 0 1-2.783 2.79q-.63.071-1.273.127a.493.493 0 0 1-.534-.494v-2.695h1.522a.5.5 0 0 0 .5-.5V8.018a.5.5 0 0 0-.5-.5H8.516v-1.01a1.01 1.01 0 0 1 1.011-1.011h.511a.5.5 0 0 0 .5-.5V3.98a1.01 1.01 0 0 0-1.01-1.01h-.506a3.033 3.033 0 0 0-3.033 3.032v1.516H4.467a.5.5 0 0 0-.5.5v1.527a.5.5 0 0 0 .5.5H5.99v2.735a.49.49 0 0 1-.524.494a42 42 0 0 1-1.788-.167"
                     />
                   </svg>
+                  <span className="sr-only">Facebook</span>
                 </a>
               </li>
             </ul>
@@ -63,7 +65,13 @@ export function Footer() {
 
         <div className="w-80 shrink-0">
           <p className="font-semibold text-neutral-200 text-sm uppercase">Newsletter</p>
-          <form className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+            }}
+            noValidate
+            className="mt-4 flex flex-col gap-3 sm:flex-row"
+          >
             <input
               type="email"
               name="email"

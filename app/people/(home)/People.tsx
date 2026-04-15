@@ -26,6 +26,9 @@ interface PageState extends FilterValue {
   q?: string;
 }
 
+const currentDate = new Date();
+const currentYear = currentDate.getFullYear();
+
 export function People() {
   const [state, setState] = useReducer(
     (prev: PageState, next: Partial<PageState>) => ({
@@ -37,14 +40,16 @@ export function People() {
 
   const disclosure = useDisclosure();
 
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-  const dateOfBirth__from = state.age?.to
-    ? new Date(currentYear - state.age.to, 0, 1, 0, 0, 0, 0)
-    : null;
-  const dateOfBirth__to = state.age?.from
-    ? new Date(currentYear - state.age.from, 11, 31, 23, 59, 59, 999)
-    : null;
+  const dateOfBirth__from = useMemo(
+    () => (state.age?.to ? new Date(currentYear - state.age.to, 0, 1, 0, 0, 0, 0) : null),
+    [state.age?.to],
+  );
+
+  const dateOfBirth__to = useMemo(
+    () =>
+      state.age?.from ? new Date(currentYear - state.age.from, 11, 31, 23, 59, 59, 999) : null,
+    [state.age?.from],
+  );
 
   const id = useMemo(() => {
     const l: number[] = [];
@@ -64,23 +69,35 @@ export function People() {
     return l.length > 0 ? l : null;
   }, [state.id, state.image, state.qrCode]);
 
-  const input: PeopleInput = omitBy(
-    {
-      q: state.q,
+  const input: PeopleInput = useMemo(
+    () =>
+      omitBy(
+        {
+          q: state.q,
+          id,
+          gender: state.gender,
+          dateOfBirth__from,
+          dateOfBirth__to,
+          createdAt__from: state.createdAt?.from,
+          createdAt__to: state.createdAt?.to,
+        },
+        (v) => isNil(v) || v === '' || (Array.isArray(v) && v.length <= 0),
+      ),
+    [
       id,
-      gender: state.gender,
+      state.q,
+      state.gender,
       dateOfBirth__from,
       dateOfBirth__to,
-      createdAt__from: state.createdAt?.from,
-      createdAt__to: state.createdAt?.to,
-    },
-    (v) => isNil(v) || v === '' || (Array.isArray(v) && v.length <= 0),
+      state.createdAt?.from,
+      state.createdAt?.to,
+    ],
   );
 
   const query = usePeopleQuery(input);
   const people = query.data ?? [];
-  const filtered = size(omit(input, ['q'])) > 0;
-  const searched = size(input) > 0;
+  const filtered = useMemo(() => size(omit(input, ['q'])) > 0, [input]);
+  const searched = useMemo(() => size(input) > 0, [input]);
 
   return (
     <PeopleProvider value={query.data ?? []}>

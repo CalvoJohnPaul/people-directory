@@ -20,6 +20,7 @@ export const toastRecipe = tv({
       'duration-300',
       '[translate:var(--x)_var(--y)_0]',
       'rounded-md',
+      'bg-blue-500',
       'ui-type-success:bg-emerald-500',
       'ui-type-error:bg-rose-500',
       'group',

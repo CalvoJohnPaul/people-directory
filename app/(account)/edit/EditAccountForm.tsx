@@ -44,18 +44,20 @@ export function EditAccountForm() {
         (arr) => arr?.map((p) => (p.id === data.id ? data : p)),
       );
 
-      if (photoRef.current) {
-        getFaceEmbedding(photoRef.current)
-          .then((embedding) => {
-            if (embedding) {
-              addFaceEmbeddingMutation.mutate({
-                person: data.id,
-                vector: embedding.vector,
-              });
-            }
-          })
-          .catch(console.error);
-      }
+      setTimeout(() => {
+        if (photoRef.current) {
+          getFaceEmbedding(photoRef.current)
+            .then((embedding) => {
+              if (embedding) {
+                addFaceEmbeddingMutation.mutate({
+                  person: data.id,
+                  vector: embedding.vector,
+                });
+              }
+            })
+            .catch(console.error);
+        }
+      }, 1);
 
       form.reset();
       router.push(`/people/${data.id}`);

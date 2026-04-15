@@ -1,7 +1,7 @@
 import {Portal} from '@ark-ui/react';
 import {differenceInYears} from 'date-fns';
 import {DownloadIcon} from 'lucide-react';
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {uid} from 'uid';
 import * as XLSX from 'xlsx';
 import {IconButton} from '~/components/ui/IconButton';
@@ -17,7 +17,8 @@ export function ExportPeople() {
   const people = usePeopleContext();
 
   const [exporting, setExporting] = useState(false);
-  const handleExport = () => {
+
+  const handleExport = useCallback(() => {
     if (people.length <= 0) {
       return;
     }
@@ -100,7 +101,7 @@ export function ExportPeople() {
     } finally {
       setExporting(false);
     }
-  };
+  }, [people]);
 
   if (query.data == null) return null;
 
