@@ -17,7 +17,7 @@ import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
-import {useUpdateFaceEmbedding} from '~/hooks/useCreateFaceEmbeddingMutation';
+import {useAddFaceEmbeddingMutation} from '~/hooks/useAddFaceEmbeddingMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
 import {usePersonQuery} from '~/hooks/usePersonQuery';
@@ -30,7 +30,7 @@ export function EditAccountForm() {
   const query = useMeQuery();
   const client = getClient();
   const photoRef = useRef<File | null>(null);
-  const updateFaceEmbeddingMutation = useUpdateFaceEmbedding();
+  const addFaceEmbeddingMutation = useAddFaceEmbeddingMutation();
   const updatePersonMutation = useUpdatePersonMutation({
     onSuccess(data) {
       client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
@@ -48,9 +48,9 @@ export function EditAccountForm() {
         getFaceEmbedding(photoRef.current)
           .then((embedding) => {
             if (embedding) {
-              updateFaceEmbeddingMutation.mutate({
-                id: data.id,
-                embedding,
+              addFaceEmbeddingMutation.mutate({
+                person: data.id,
+                vector: embedding.vector,
               });
             }
           })
