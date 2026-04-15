@@ -79,14 +79,15 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
 
 export async function detectFace(
   subject: HTMLImageElement | HTMLVideoElement | File,
+  max = 1,
 ): Promise<number> {
   try {
     if (subject instanceof File) {
-      return $detectFaceFromFile(subject);
+      return $detectFaceFromFile(subject, max);
     } else if (subject instanceof HTMLImageElement) {
-      return $detectFaceFromImage(subject);
+      return $detectFaceFromImage(subject, max);
     } else if (subject instanceof HTMLVideoElement) {
-      return $detectFaceFromVideo(subject);
+      return $detectFaceFromVideo(subject, max);
     } else {
       const error = new Error();
       error.name = 'InvalidSubjectError';
@@ -100,11 +101,11 @@ export async function detectFace(
   }
 }
 
-async function $detectFaceFromImage(image: HTMLImageElement): Promise<number> {
+async function $detectFaceFromImage(image: HTMLImageElement, max = 1): Promise<number> {
   const detector = await $getFaceDetector('IMAGE');
   const result = detector.detect(image);
   const detections = result.detections;
-  if (detections.length < 1 || detections.length > 1) return 0;
+  if (detections.length < 1 || detections.length > max) return 0;
   const detection = detections[0];
   const score = detection.categories.at(0)?.score;
   return score ?? 0;
@@ -129,16 +130,16 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-async function $detectFaceFromFile(file: File): Promise<number> {
+async function $detectFaceFromFile(file: File, max = 1): Promise<number> {
   const image = await $loadImage(file);
-  return $detectFaceFromImage(image);
+  return $detectFaceFromImage(image, max);
 }
 
-async function $detectFaceFromVideo(video: HTMLVideoElement): Promise<number> {
+async function $detectFaceFromVideo(video: HTMLVideoElement, max = 1): Promise<number> {
   const detector = await $getFaceDetector('VIDEO');
   const result = detector.detectForVideo(video, performance.now());
   const detections = result.detections;
-  if (detections.length < 1 || detections.length > 1) return 0;
+  if (detections.length < 1 || detections.length > max) return 0;
   const detection = detections[0];
   const score = detection.categories.at(0)?.score;
   return score ?? 0;
@@ -219,33 +220,61 @@ async function $detectHeadTurnFromVideo(
   return 'CENTER';
 }
 
-export async function getFaceEmbedding(file: File): Promise<number[] | null> {
+export interface FaceEmbedding {
+  data: number[];
+  vector: string;
+}
+
+export async function getFaceEmbedding(file: File): Promise<FaceEmbedding | null> {
   try {
     const image = await $loadImage(file);
-    const baseCanvas = document.createElement('canvas');
-    const baseContext = baseCanvas.getContext('2d');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
-    invariant(baseContext, 'Could not get base canvas context');
+    invariant(context, 'Could not get canvas context');
 
-    baseCanvas.width = image.naturalWidth || image.width;
-    baseCanvas.height = image.naturalHeight || image.height;
-    baseContext.drawImage(image, 0, 0, baseCanvas.width, baseCanvas.height);
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    const direct = await $extractEmbeddingFromCanvas(baseCanvas);
-    if (direct) return direct;
+    const embedding_0 = await $extractEmbeddingFromCanvas(canvas);
 
-    const enhanced = $enhanceCanvas(baseCanvas, 1.35, 1.28);
-    const fromEnhanced = await $extractEmbeddingFromCanvas(enhanced);
-    if (fromEnhanced) return fromEnhanced;
+    if (embedding_0) {
+      return {
+        data: embedding_0,
+        vector: $embeddingToVector(embedding_0),
+      };
+    }
 
-    const cropped = await $cropFaceFromCanvas(baseCanvas);
-    if (cropped) {
-      const fromCropped = await $extractEmbeddingFromCanvas(cropped);
-      if (fromCropped) return fromCropped;
+    const embedding_1 = await $extractEmbeddingFromCanvas($enhanceCanvas(canvas, 1.35, 1.28));
 
-      const croppedEnhanced = $enhanceCanvas(cropped, 1.25, 1.22);
-      const fromCroppedEnhanced = await $extractEmbeddingFromCanvas(croppedEnhanced);
-      if (fromCroppedEnhanced) return fromCroppedEnhanced;
+    if (embedding_1) {
+      return {
+        data: embedding_1,
+        vector: $embeddingToVector(embedding_1),
+      };
+    }
+
+    const cropped_0 = await $cropFaceFromCanvas(canvas);
+
+    if (cropped_0) {
+      const embedding_2 = await $extractEmbeddingFromCanvas(cropped_0);
+
+      if (embedding_2) {
+        return {
+          data: embedding_2,
+          vector: $embeddingToVector(embedding_2),
+        };
+      }
+
+      const cropped_1 = $enhanceCanvas(cropped_0, 1.25, 1.22);
+      const embedding_3 = await $extractEmbeddingFromCanvas(cropped_1);
+
+      if (embedding_3)
+        return {
+          data: embedding_3,
+          vector: $embeddingToVector(embedding_3),
+        };
     }
 
     return null;
@@ -253,6 +282,10 @@ export async function getFaceEmbedding(file: File): Promise<number[] | null> {
     console.error(error);
     return null;
   }
+}
+
+function $embeddingToVector(value: number[]): string {
+  return `[${value.join(',')}]`;
 }
 
 async function $extractEmbeddingFromCanvas(canvas: HTMLCanvasElement): Promise<number[] | null> {

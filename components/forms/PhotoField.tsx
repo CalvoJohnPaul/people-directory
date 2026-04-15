@@ -98,7 +98,7 @@ export function PhotoField(props: PhotoFieldProps) {
               props.onFileChange?.(null);
             }}
             tabIndex={-1}
-            className="absolute top-2 right-2 size-7 place-items-center self-end rounded-sm border bg-white"
+            className="absolute top-2 right-2 grid size-7 place-items-center self-end rounded-sm border bg-white"
             aria-label="Clear photo"
           >
             <XIcon className="size-4.5 text-neutral-700" />

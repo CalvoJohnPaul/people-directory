@@ -1,14 +1,10 @@
 import {type UseMutationOptions, useMutation} from '@tanstack/react-query';
 import {HttpVoidResponseDefinition} from '~/types/common';
+import type {AddFaceEmbeddingInput} from '~/types/FaceEmbedding';
 
-interface UpdateFaceEmbeddingInput {
-  id: number;
-  embedding: number[];
-}
-
-export function useUpdateFaceEmbedding(
+export function useAddFaceEmbeddingMutation(
   opts?: Pick<
-    UseMutationOptions<void, Error, UpdateFaceEmbeddingInput>,
+    UseMutationOptions<void, Error, AddFaceEmbeddingInput>,
     | 'gcTime'
     | 'onError'
     | 'onMutate'
@@ -20,11 +16,11 @@ export function useUpdateFaceEmbedding(
   >,
 ) {
   return useMutation({
-    mutationKey: ['updateFaceEmbedding'],
+    mutationKey: ['addFaceEmbedding'],
     mutationFn: async (input) => {
-      const res = await fetch(`/api/people/${input.id}/embeddings/face`, {
-        body: JSON.stringify({embedding: input.embedding}),
-        method: 'PUT',
+      const res = await fetch('/api/embeddings/face', {
+        body: JSON.stringify(input),
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',

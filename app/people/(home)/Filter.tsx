@@ -1,3 +1,6 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: "" */
+/** biome-ignore-all lint/a11y/useSemanticElements: "" */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: "" */
 'use client';
 
 import {Portal} from '@ark-ui/react';
@@ -9,7 +12,7 @@ import {parseAsInteger, parseAsNativeArrayOf, useQueryState} from 'nuqs';
 import {useRef, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useDebouncedCallback} from 'use-debounce';
-import {useInterval} from 'usehooks-ts';
+import {useInterval, useTimeout} from 'usehooks-ts';
 import z from 'zod';
 import {AsyncComboboxField} from '~/components/forms/AsyncComboboxField';
 import {DateRangeField} from '~/components/forms/DateRangeField';
@@ -23,6 +26,7 @@ import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
 import {useCamera} from '~/hooks/useCamera';
 import {useDisclosure} from '~/hooks/useDisclosure';
+import {usePeopleByFaceEmbeddingQuery} from '~/hooks/usePeopleByFaceEmbeddingQuery';
 import {usePeopleQuery} from '~/hooks/usePeopleQuery';
 import type {DateRange, NumberRange} from '~/types/common';
 import {type Gender, GenderDefinition} from '~/types/Person';
@@ -33,6 +37,8 @@ export interface FilterValue {
   id?: number[] | null;
   gender?: Gender[] | null;
   age?: NumberRange | null;
+  image?: number[] | null;
+  qrCode?: number | null;
   createdAt?: DateRange | null;
 }
 
@@ -153,7 +159,12 @@ export function Filter(props: FilterProps) {
           />
         </Field.Root>
         <SearchByQrCode />
-        <SearchByPhoto />
+        <SearchByPhoto
+          onChange={(image) => {
+            setValue__internal((prev) => ({...prev, image}));
+            setValue__debounced((prev) => ({...prev, image}));
+          }}
+        />
       </div>
     </div>
   );
@@ -293,10 +304,20 @@ function SearchByQrCode() {
   );
 }
 
-function SearchByPhoto() {
+function SearchByPhoto({onChange}: {onChange?: (ids: number[]) => void}) {
   const inputRef = useRef<HTMLInputElement>(null);
+
   const [photo, setPhoto] = useState<File | null>(null);
-  const [embedding, setEmbedding] = useState<number[] | null>(null);
+  const [vector, setVector] = useState<string>('');
+
+  const query = usePeopleByFaceEmbeddingQuery(vector, {
+    enabled: !!vector,
+  });
+
+  useTimeout(
+    () => onChange?.(query.data?.map((person) => person.id) ?? []),
+    query.dataUpdatedAt && query.data ? 1 : null,
+  );
 
   return (
     <>
@@ -309,19 +330,41 @@ function SearchByPhoto() {
             inputRef.current?.click();
           }}
           className="relative block aspect-video w-full rounded-sm border bg-white"
+          disabled={query.isLoading}
         >
           {photo && (
-            <Image
-              src={URL.createObjectURL(photo)}
-              alt=""
-              width={400}
-              height={400}
-              unoptimized
-              className="size-full object-cover"
-            />
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onChange?.([]);
+                setPhoto(null);
+                setVector('');
+              }}
+              className="absolute top-2 right-2 grid size-7 place-items-center self-end rounded-sm border bg-white"
+            >
+              <XIcon className="size-4.5 text-neutral-700" />
+            </span>
           )}
 
-          <ImagePlaceholderIcon className="absolute top-1/2 left-1/2 block size-14 -translate-x-1/2 -translate-y-1/2 text-gray-400" />
+          {photo && (
+            <div className="flex size-full flex-col justify-center">
+              <Image
+                src={URL.createObjectURL(photo)}
+                alt=""
+                width={400}
+                height={400}
+                unoptimized
+                className="mx-auto max-h-[80%] w-auto max-w-[80%] object-cover"
+              />
+            </div>
+          )}
+
+          {!photo && (
+            <ImagePlaceholderIcon className="absolute top-1/2 left-1/2 block size-14 -translate-x-1/2 -translate-y-1/2 text-gray-400" />
+          )}
         </button>
       </Field.Root>
       <input
@@ -333,7 +376,7 @@ function SearchByPhoto() {
 
           if (!file) return;
 
-          const faceFound = await detectFace(file);
+          const faceFound = await detectFace(file, 5);
 
           if (!faceFound) {
             toaster.error({
@@ -348,8 +391,14 @@ function SearchByPhoto() {
           const face = await cropFace(file);
           const embedding = await getFaceEmbedding(file);
 
-          setPhoto(face);
-          setEmbedding(embedding);
+          if (embedding) {
+            setPhoto(face);
+            setVector(embedding.vector);
+          } else {
+            setPhoto(face);
+            setVector('');
+            onChange?.([-1]);
+          }
 
           if (inputRef.current) inputRef.current.value = '';
         }}

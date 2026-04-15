@@ -5,7 +5,7 @@ import {useIsFetching} from '@tanstack/react-query';
 import {isNil, omit, omitBy} from 'es-toolkit';
 import {size} from 'es-toolkit/compat';
 import {RefreshCcwIcon, Settings2Icon, XIcon} from 'lucide-react';
-import {useReducer, useState} from 'react';
+import {useMemo, useReducer, useState} from 'react';
 import {cx} from 'tailwind-variants';
 import {useTimeout} from 'usehooks-ts';
 import {SearchField} from '~/components/forms/SearchField';
@@ -46,10 +46,28 @@ export function People() {
     ? new Date(currentYear - state.age.from, 11, 31, 23, 59, 59, 999)
     : null;
 
+  const id = useMemo(() => {
+    const l: number[] = [];
+
+    if (state.id?.length) {
+      l.push(...state.id);
+    }
+
+    if (state.image?.length) {
+      l.push(...state.image);
+    }
+
+    if (state.qrCode) {
+      l.push(state.qrCode);
+    }
+
+    return l.length > 0 ? l : null;
+  }, [state.id, state.image, state.qrCode]);
+
   const input: PeopleInput = omitBy(
     {
       q: state.q,
-      id: state.id,
+      id,
       gender: state.gender,
       dateOfBirth__from,
       dateOfBirth__to,

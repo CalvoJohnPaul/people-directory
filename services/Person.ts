@@ -133,9 +133,6 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
         createdAt: true,
         updatedAt: true,
       },
-      orderBy: {
-        id: 'desc',
-      },
     })
     .then((people) =>
       people.map((person) => ({

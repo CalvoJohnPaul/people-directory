@@ -12,9 +12,9 @@ import {Button} from '~/components/ui/Button';
 import {Field} from '~/components/ui/Field';
 import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
+import {useAddFaceEmbeddingMutation} from '~/hooks/useAddFaceEmbeddingMutation';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {useUpdateFaceEmbedding} from '~/hooks/useUpdateFaceEmbedding';
 import {CreatePersonInputDefinition} from '~/types/Person';
 import {getFaceEmbedding} from '~/utils/face';
 
@@ -22,7 +22,7 @@ export function RegisterForm() {
   const client = getClient();
   const query = useMeQuery();
   const photoRef = useRef<File | null>(null);
-  const updateFaceEmbeddingMutation = useUpdateFaceEmbedding();
+  const addFaceEmbeddingMutation = useAddFaceEmbeddingMutation();
   const createPersonMutation = useCreatePersonMutation({
     onError(error) {
       toaster.error({
@@ -40,9 +40,9 @@ export function RegisterForm() {
           getFaceEmbedding(photoRef.current)
             .then((embedding) => {
               if (embedding) {
-                updateFaceEmbeddingMutation.mutate({
-                  id: person.id,
-                  embedding,
+                addFaceEmbeddingMutation.mutate({
+                  person: person.id,
+                  vector: embedding.vector,
                 });
               }
             })
