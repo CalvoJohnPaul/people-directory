@@ -81,7 +81,7 @@ export function Filter(props: FilterProps) {
 
               return data.map((person) => ({
                 value: `${person.id}`,
-                label: `${person.firstName} ${person.lastName}`,
+                label: `${person.fullName}`,
               }));
             }}
             value={value__internal.id?.map((v) => v.toString()) ?? []}
@@ -107,7 +107,7 @@ export function Filter(props: FilterProps) {
 
               return data.map((person) => ({
                 value: `${person.id}`,
-                label: `${person.firstName} ${person.lastName}`,
+                label: `${person.fullName}`,
               }));
             }}
             value={value__internal.id?.map((v) => v.toString()) ?? []}

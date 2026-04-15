@@ -28,9 +28,7 @@ function Person() {
         <Avatar.Image src={person.image} />
         <Avatar.Fallback />
       </Avatar.Root>
-      <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">
-        {person.firstName} {person.lastName}
-      </h2>
+      <h2 className="mt-2 line-clamp-1 font-medium text-sm leading-tight">{person.fullName}</h2>
       <div className="line-clamp-1 text-neutral-600 text-xs leading-tight">
         {person.emailAddress.split('').map((char, idx) => (
           <span key={idx} className={cx(char === '*' && 'font-mono opacity-75')}>

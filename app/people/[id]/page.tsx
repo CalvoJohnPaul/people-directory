@@ -18,12 +18,25 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const id = Number(params.id);
   const person = Number.isNaN(id) || id < 0 ? null : await getPerson(id);
 
-  if (!person) {
-    throw new Error('Person not found');
-  }
+  if (!person) return {};
+
+  const description = `${person.fullName}'s profile in People Directory. View contact details and identity information.`;
 
   return {
-    title: `${person.firstName} ${person.lastName}`,
+    title: person.fullName,
+    description,
+    openGraph: {
+      type: 'profile',
+      title: person.fullName,
+      description,
+      images: [person.image],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: person.fullName,
+      description,
+      images: [person.image],
+    },
   };
 }
 

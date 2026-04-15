@@ -33,9 +33,7 @@ export const getPerson = cache(async (id: number): Promise<Person | null> => {
       person
         ? {
             ...person,
-            fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
-              .filter(Boolean)
-              .join(' '),
+            fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
           }
         : null,
     );
@@ -137,9 +135,7 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
     .then((people) =>
       people.map((person) => ({
         ...person,
-        fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
-          .filter(Boolean)
-          .join(' '),
+        fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
       })),
     );
 });
@@ -174,9 +170,7 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
     })
     .then((person) => ({
       ...person,
-      fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
-        .filter(Boolean)
-        .join(' '),
+      fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
     }));
 }
 
@@ -214,8 +208,6 @@ export async function updatePerson(
     })
     .then((person) => ({
       ...person,
-      fullName: [person.firstName, person.middleName?.charAt(0).concat('.'), person.lastName]
-        .filter(Boolean)
-        .join(' '),
+      fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
     }));
 }
