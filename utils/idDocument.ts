@@ -24,60 +24,73 @@ export interface IdDocumentDetectionResult {
   file: File;
 }
 
-const BLUR_THRESHOLD = 200;
+/* Higher means stricter blur validation (more images flagged as blurry). */
+const BLUR_THRESHOLD = 110;
+/* Higher means less strict glare validation (allow more glare before failing). */
 const GLARE_THRESHOLD = 22;
+/* Higher means less strict glare pixel detection (only very bright pixels count as glare). */
 const GLARE_VALUE_THRESHOLD = 253;
+/* Lower means stricter low-light validation (more images flagged as too dark). */
 const BRIGHTNESS_MIN = 40;
+/* Lower means stricter bright-light validation (more images flagged as too bright). */
 const BRIGHTNESS_MAX = 230;
+/* Expected width/height ratio of the ID card. */
 const CARD_ASPECT_RATIO = 1.586;
+/* Higher means less strict aspect ratio matching for card candidates. */
 const CARD_ASPECT_TOLERANCE = 0.32;
+/* Higher means stricter final card confidence requirement. */
 const CONFIDENCE_THRESHOLD = 0.48;
+/* Higher means stricter distance check for being too far. */
 const TOO_FAR_AREA_RATIO = 0.25;
+/* Lower means stricter distance check for being too close. */
 const TOO_CLOSE_AREA_RATIO = 0.85;
+/* Lower means stricter tilt validation (more images flagged as tilted). */
 const MAX_SKEW_ANGLE = 5;
+/* JPEG quality for generated output files (0-1). */
 const OUTPUT_IMAGE_QUALITY = 0.92;
+/* Processing downscale factor for detection speed and stability. */
 const PROCESS_SCALE = 0.6;
 
-const cv: typeof OpenCV | null = null;
+const $cv: typeof OpenCV | null = null;
 
-async function getCv(): Promise<typeof OpenCV> {
-  if (!cv) return await loadOpenCV();
-  return cv;
+async function $getCv(): Promise<typeof OpenCV> {
+  if (!$cv) return await loadOpenCV();
+  return $cv;
 }
 
-function createPoint(x: number, y: number): OpenCV.Point {
+function $createPoint(x: number, y: number): OpenCV.Point {
   return {x, y} as OpenCV.Point;
 }
 
-function sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
+function $sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
   const sum = points.map((p) => p.x + p.y);
   const diff = points.map((p) => p.y - p.x);
 
   return [
-    createPoint(points[sum.indexOf(Math.min(...sum))].x, points[sum.indexOf(Math.min(...sum))].y),
-    createPoint(
+    $createPoint(points[sum.indexOf(Math.min(...sum))].x, points[sum.indexOf(Math.min(...sum))].y),
+    $createPoint(
       points[diff.indexOf(Math.min(...diff))].x,
       points[diff.indexOf(Math.min(...diff))].y,
     ),
-    createPoint(points[sum.indexOf(Math.max(...sum))].x, points[sum.indexOf(Math.max(...sum))].y),
-    createPoint(
+    $createPoint(points[sum.indexOf(Math.max(...sum))].x, points[sum.indexOf(Math.max(...sum))].y),
+    $createPoint(
       points[diff.indexOf(Math.max(...diff))].x,
       points[diff.indexOf(Math.max(...diff))].y,
     ),
   ];
 }
 
-function pointsFromQuadMat(quad: OpenCV.Mat): QuadPoints {
+function $pointsFromQuadMat(quad: OpenCV.Mat): QuadPoints {
   const pts = quad.data32S as Int32Array;
   return [
-    createPoint(pts[0], pts[1]),
-    createPoint(pts[2], pts[3]),
-    createPoint(pts[4], pts[5]),
-    createPoint(pts[6], pts[7]),
+    $createPoint(pts[0], pts[1]),
+    $createPoint(pts[2], pts[3]),
+    $createPoint(pts[4], pts[5]),
+    $createPoint(pts[6], pts[7]),
   ];
 }
 
-function pointsFromRotatedRect(rect: {
+function $pointsFromRotatedRect(rect: {
   center: {x: number; y: number};
   size: {width: number; height: number};
   angle: number;
@@ -96,14 +109,14 @@ function pointsFromRotatedRect(rect: {
   const p3 = {x: 2 * cx - p1.x, y: 2 * cy - p1.y};
 
   return [
-    createPoint(p0.x, p0.y),
-    createPoint(p1.x, p1.y),
-    createPoint(p2.x, p2.y),
-    createPoint(p3.x, p3.y),
+    $createPoint(p0.x, p0.y),
+    $createPoint(p1.x, p1.y),
+    $createPoint(p2.x, p2.y),
+    $createPoint(p3.x, p3.y),
   ];
 }
 
-function normalizeCardAngle(angle: number, width: number, height: number): number {
+function $normalizeCardAngle(angle: number, width: number, height: number): number {
   let normalized = angle;
 
   if (width < height) {
@@ -116,7 +129,7 @@ function normalizeCardAngle(angle: number, width: number, height: number): numbe
   return normalized;
 }
 
-function toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
+function $toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
   return {
     topLeft: corners[0],
     topRight: corners[1],
@@ -125,8 +138,8 @@ function toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
   };
 }
 
-async function detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
-  const cv = await getCv();
+async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
+  const cv = await $getCv();
   const blurred = new cv.Mat();
   const edges = new cv.Mat();
   const binary = new cv.Mat();
@@ -203,8 +216,8 @@ async function detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: n
 
         if (looksLikeCard && confidence > bestConfidence) {
           const points = isValidQuad
-            ? sortPoints(pointsFromQuadMat(approx))
-            : sortPoints(pointsFromRotatedRect(rect));
+            ? $sortPoints($pointsFromQuadMat(approx))
+            : $sortPoints($pointsFromRotatedRect(rect));
 
           const xs = points.map((point) => point.x);
           const ys = points.map((point) => point.y);
@@ -216,7 +229,7 @@ async function detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: n
             width: Math.max(...xs) - Math.min(...xs),
             height: Math.max(...ys) - Math.min(...ys),
           };
-          bestAngle = normalizeCardAngle(rect.angle, rect.size.width, rect.size.height);
+          bestAngle = $normalizeCardAngle(rect.angle, rect.size.width, rect.size.height);
           bestConfidence = confidence;
         }
 
@@ -255,8 +268,8 @@ async function detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: n
   }
 }
 
-async function detectCardBlur(gray: OpenCV.Mat, corners: QuadPoints) {
-  const cv = await getCv();
+async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
+  const cv = await $getCv();
   const cardWidth = 320;
   const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
 
@@ -324,8 +337,8 @@ async function detectCardBlur(gray: OpenCV.Mat, corners: QuadPoints) {
   }
 }
 
-async function detectGlare(hsv: OpenCV.Mat) {
-  const cv = await getCv();
+async function $detectGlare(hsv: OpenCV.Mat) {
+  const cv = await $getCv();
   const channels = new cv.MatVector();
   const thresholded = new cv.Mat();
 
@@ -350,8 +363,8 @@ async function detectGlare(hsv: OpenCV.Mat) {
   }
 }
 
-async function analyzeBrightness(hsv: OpenCV.Mat) {
-  const cv = await getCv();
+async function $analyzeBrightness(hsv: OpenCV.Mat) {
+  const cv = await $getCv();
   const channels = new cv.MatVector();
   const mean = new cv.Mat();
   const stddev = new cv.Mat();
@@ -362,12 +375,12 @@ async function analyzeBrightness(hsv: OpenCV.Mat) {
     cv.meanStdDev(valueChannel, mean, stddev);
     const brightnessMean = mean.doubleAt(0, 0);
 
-    let brightnessStatus: 'dark' | 'ok' | 'bright' = 'ok';
+    let brightnessStatus: 'DARK' | 'BRIGHT' | null = null;
 
     if (brightnessMean < BRIGHTNESS_MIN) {
-      brightnessStatus = 'dark';
+      brightnessStatus = 'DARK';
     } else if (brightnessMean > BRIGHTNESS_MAX) {
-      brightnessStatus = 'bright';
+      brightnessStatus = 'BRIGHT';
     }
 
     return {
@@ -384,24 +397,24 @@ async function analyzeBrightness(hsv: OpenCV.Mat) {
   }
 }
 
-function isTilted(angle: number): boolean {
+function $isTilted(angle: number): boolean {
   return Math.abs(angle) > MAX_SKEW_ANGLE;
 }
 
-function getBoundsArea(
+function $getBoundsArea(
   bounds: {x: number; y: number; width: number; height: number} | null,
 ): number {
   if (!bounds) return 0;
   return bounds.width * bounds.height;
 }
 
-function pointDistance(a: OpenCV.Point, b: OpenCV.Point): number {
+function $pointDistance(a: OpenCV.Point, b: OpenCV.Point): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   return Math.hypot(dx, dy);
 }
 
-async function fileToImageData(file: File): Promise<ImageData> {
+async function $fileToImageData(file: File): Promise<ImageData> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const img = new Image();
@@ -432,7 +445,7 @@ async function fileToImageData(file: File): Promise<ImageData> {
   return context.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-async function canvasToFile(canvas: HTMLCanvasElement, filename: string): Promise<File> {
+async function $canvasToFile(canvas: HTMLCanvasElement, filename: string): Promise<File> {
   const blob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, 'image/jpeg', OUTPUT_IMAGE_QUALITY);
   });
@@ -455,7 +468,7 @@ async function canvasToFile(canvas: HTMLCanvasElement, filename: string): Promis
 }
 
 export async function detectIdDocument(imageData: ImageData): Promise<IdDocumentDetectionResult> {
-  const cv = await getCv();
+  const cv = await $getCv();
   const src = cv.matFromImageData(imageData);
   const scaled = new cv.Mat();
   const scaledWidth = Math.max(1, Math.round(src.cols * PROCESS_SCALE));
@@ -472,31 +485,31 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
     outputCanvas.width = scaledWidth;
     outputCanvas.height = scaledHeight;
     cv.imshow(outputCanvas, scaled);
-    const filePromise = canvasToFile(outputCanvas, 'id-document-tested.jpg');
+    const filePromise = $canvasToFile(outputCanvas, `id-document-${Date.now()}.jpg`);
 
     cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
     cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
     cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
 
-    const card = await detectCard(gray, scaledWidth, scaledHeight);
-    const cropPoints = card.detected && card.corners ? toCropPoints(card.corners) : null;
+    const card = await $detectCard(gray, scaledWidth, scaledHeight);
+    const cropPoints = card.detected && card.corners ? $toCropPoints(card.corners) : null;
 
     let blurry = true;
 
     if (card.detected && card.corners) {
-      const blurScore = await detectCardBlur(gray, card.corners);
+      const blurScore = await $detectBlur(gray, card.corners);
       blurry = blurScore < BLUR_THRESHOLD;
     }
 
-    const [glare, brightness] = await Promise.all([detectGlare(hsv), analyzeBrightness(hsv)]);
+    const [glare, brightness] = await Promise.all([$detectGlare(hsv), $analyzeBrightness(hsv)]);
 
-    const cardArea = getBoundsArea(card.bounds);
+    const cardArea = $getBoundsArea(card.bounds);
     const frameArea = Math.max(1, scaledWidth * scaledHeight);
     const areaRatio = card.detected ? cardArea / frameArea : 0;
 
-    const tilted = card.detected && isTilted(card.angle);
-    const tooDark = brightness.brightnessStatus === 'dark';
-    const tooBright = brightness.brightnessStatus === 'bright';
+    const tilted = card.detected && $isTilted(card.angle);
+    const tooDark = brightness.brightnessStatus === 'DARK';
+    const tooBright = brightness.brightnessStatus === 'BRIGHT';
     const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
     const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
     const file = await filePromise;
@@ -524,14 +537,14 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
 
 export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoints): Promise<File> {
   try {
-    const cv = await getCv();
-    const imageData = await fileToImageData(file);
+    const cv = await $getCv();
+    const imageData = await $fileToImageData(file);
     const src = cv.matFromImageData(imageData);
 
-    const topWidth = pointDistance(cropPoints.topLeft, cropPoints.topRight);
-    const bottomWidth = pointDistance(cropPoints.bottomLeft, cropPoints.bottomRight);
-    const leftHeight = pointDistance(cropPoints.topLeft, cropPoints.bottomLeft);
-    const rightHeight = pointDistance(cropPoints.topRight, cropPoints.bottomRight);
+    const topWidth = $pointDistance(cropPoints.topLeft, cropPoints.topRight);
+    const bottomWidth = $pointDistance(cropPoints.bottomLeft, cropPoints.bottomRight);
+    const leftHeight = $pointDistance(cropPoints.topLeft, cropPoints.bottomLeft);
+    const rightHeight = $pointDistance(cropPoints.topRight, cropPoints.bottomRight);
 
     const targetWidth = Math.max(1, Math.round(Math.max(topWidth, bottomWidth)));
     const targetHeight = Math.max(1, Math.round(Math.max(leftHeight, rightHeight)));
@@ -577,7 +590,7 @@ export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoint
       outputCanvas.height = targetHeight;
       cv.imshow(outputCanvas, warped);
 
-      return await canvasToFile(outputCanvas, 'id-document-cropped.jpg');
+      return await $canvasToFile(outputCanvas, 'id-document-cropped.jpg');
     } finally {
       srcPoints.delete();
       dstPoints.delete();
