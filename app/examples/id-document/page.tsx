@@ -14,6 +14,8 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.clear();
+
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -24,11 +26,9 @@ export default function Page() {
 
     try {
       const detection = await detectIdDocument(file);
-
-      console.clear();
-      console.log(detection);
-
       const result = explainIdDocumentDetection(detection);
+
+      console.log(detection);
 
       if (!result.ok) {
         setData(URL.createObjectURL(file));

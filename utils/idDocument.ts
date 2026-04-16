@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: "" */
-
 import {loadOpenCV, type OpenCV} from '@opencvjs/web';
 
 type QuadPoints = [OpenCV.Point, OpenCV.Point, OpenCV.Point, OpenCV.Point];
@@ -57,11 +55,20 @@ const OUTPUT_IMAGE_QUALITY = 0.92;
 /* Processing downscale factor for detection speed and stability. */
 const PROCESS_SCALE = 0.6;
 
-const $cv: typeof OpenCV | null = null;
+let $cvPromise: Promise<typeof OpenCV> | null = null;
 
 async function $getCv(): Promise<typeof OpenCV> {
-  if (!$cv) return await loadOpenCV();
-  return $cv;
+  if ($cvPromise) {
+    return await $cvPromise;
+  }
+
+  $cvPromise = loadOpenCV();
+  return await $cvPromise;
+}
+
+function $logPerformance(label: string, startedAt: number): void {
+  const elapsed = performance.now() - startedAt;
+  console.log(`[ID Document] ${label} took ${elapsed.toFixed(2)}ms`);
 }
 
 function $createPoint(x: number, y: number): OpenCV.Point {
@@ -343,7 +350,7 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
   }
 }
 
-async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null) {
+async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null): Promise<boolean> {
   const cv = await $getCv();
   const region = new cv.Mat();
   const channels = new cv.MatVector();
@@ -442,9 +449,7 @@ async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null) {
     const extremeRatio = (cv.countNonZero(extremeMask) / totalPixels) * 100;
     const glareScore = specularRatio * 0.8 + extremeRatio * 0.2;
 
-    return {
-      glare: glareScore > GLARE_THRESHOLD,
-    };
+    return glareScore > GLARE_THRESHOLD;
   } finally {
     for (let i = 0; i < channels.size(); i++) {
       channels.get(i).delete();
@@ -596,78 +601,86 @@ async function $fileToImageData(file: File): Promise<ImageData> {
 export async function detectIdDocument(
   subject: ImageData | File,
 ): Promise<IdDocumentDetectionResult> {
-  const cv = await $getCv();
-  const imageData = subject instanceof File ? await $fileToImageData(subject) : subject;
-  const src = cv.matFromImageData(imageData);
-  const scaled = new cv.Mat();
-  const scaledWidth = Math.max(1, Math.round(src.cols * PROCESS_SCALE));
-  const scaledHeight = Math.max(1, Math.round(src.rows * PROCESS_SCALE));
-
-  const gray = new cv.Mat();
-  const rgb = new cv.Mat();
-  const hsv = new cv.Mat();
+  const startedAt = performance.now();
 
   try {
-    cv.resize(src, scaled, new cv.Size(scaledWidth, scaledHeight));
+    const cv = await $getCv();
+    const imageData = subject instanceof File ? await $fileToImageData(subject) : subject;
+    const src = cv.matFromImageData(imageData);
+    const scaled = new cv.Mat();
+    const scaledWidth = Math.max(1, Math.round(src.cols * PROCESS_SCALE));
+    const scaledHeight = Math.max(1, Math.round(src.rows * PROCESS_SCALE));
 
-    const outputCanvas = document.createElement('canvas');
-    outputCanvas.width = scaledWidth;
-    outputCanvas.height = scaledHeight;
-    cv.imshow(outputCanvas, scaled);
-    const filePromise = $canvasToFile(outputCanvas, `id-document-${Date.now()}.jpg`);
+    const gray = new cv.Mat();
+    const rgb = new cv.Mat();
+    const hsv = new cv.Mat();
 
-    cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
-    cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
-    cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+    try {
+      cv.resize(src, scaled, new cv.Size(scaledWidth, scaledHeight));
 
-    const card = await $detectCard(gray, scaledWidth, scaledHeight);
-    const cropPoints = card.detected && card.corners ? $toCropPoints(card.corners) : null;
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = scaledWidth;
+      outputCanvas.height = scaledHeight;
+      cv.imshow(outputCanvas, scaled);
+      const filePromise = $canvasToFile(outputCanvas, `id-document-${Date.now()}.jpg`);
 
-    let blurry = true;
+      cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
+      cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
+      cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
 
-    if (card.detected && card.corners) {
-      const blurScore = await $detectBlur(gray, card.corners);
-      blurry = blurScore < BLUR_THRESHOLD;
+      const card = await $detectCard(gray, scaledWidth, scaledHeight);
+      const cropPoints = card.detected && card.corners ? $toCropPoints(card.corners) : null;
+
+      let blurry = true;
+
+      if (card.detected && card.corners) {
+        const blurScore = await $detectBlur(gray, card.corners);
+        blurry = blurScore < BLUR_THRESHOLD;
+      }
+
+      const [glare, brightness] = await Promise.all([
+        $detectGlare(hsv, card.corners),
+        $analyzeBrightness(hsv),
+      ]);
+
+      const cardArea = $getBoundsArea(card.bounds);
+      const frameArea = Math.max(1, scaledWidth * scaledHeight);
+      const areaRatio = card.detected ? cardArea / frameArea : 0;
+
+      const tilted = card.detected && $isTilted(card.angle);
+      const tooDark = brightness.brightnessStatus === 'DARK';
+      const tooBright = brightness.brightnessStatus === 'BRIGHT';
+      const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
+      const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
+      const file = await filePromise;
+
+      return {
+        detected: card.detected,
+        blurry,
+        tooDark,
+        tooBright,
+        tooFar,
+        tooClose,
+        glare,
+        cropPoints,
+        tilted,
+        file,
+      };
+    } finally {
+      src.delete();
+      scaled.delete();
+      gray.delete();
+      rgb.delete();
+      hsv.delete();
     }
-
-    const [glare, brightness] = await Promise.all([
-      $detectGlare(hsv, card.corners),
-      $analyzeBrightness(hsv),
-    ]);
-
-    const cardArea = $getBoundsArea(card.bounds);
-    const frameArea = Math.max(1, scaledWidth * scaledHeight);
-    const areaRatio = card.detected ? cardArea / frameArea : 0;
-
-    const tilted = card.detected && $isTilted(card.angle);
-    const tooDark = brightness.brightnessStatus === 'DARK';
-    const tooBright = brightness.brightnessStatus === 'BRIGHT';
-    const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
-    const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
-    const file = await filePromise;
-
-    return {
-      detected: card.detected,
-      blurry,
-      tooDark,
-      tooBright,
-      tooFar,
-      tooClose,
-      glare: glare.glare,
-      cropPoints,
-      tilted,
-      file,
-    };
   } finally {
-    src.delete();
-    scaled.delete();
-    gray.delete();
-    rgb.delete();
-    hsv.delete();
+    $logPerformance('detectIdDocument', startedAt);
   }
 }
 
 export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoints): Promise<File> {
+  const startedAt = performance.now();
+
   try {
     const cv = await $getCv();
     const imageData = await $fileToImageData(file);
@@ -733,6 +746,8 @@ export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoint
     }
   } catch {
     return file;
+  } finally {
+    $logPerformance('cropIdDocument', startedAt);
   }
 }
 
