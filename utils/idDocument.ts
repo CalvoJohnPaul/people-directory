@@ -1,553 +1,481 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: "" */
+
 import {loadOpenCV, type OpenCV} from '@opencvjs/web';
 
+type QuadPoints = [OpenCV.Point, OpenCV.Point, OpenCV.Point, OpenCV.Point];
+
+export interface IdDocumentCropPoints {
+  topLeft: OpenCV.Point;
+  topRight: OpenCV.Point;
+  bottomRight: OpenCV.Point;
+  bottomLeft: OpenCV.Point;
+}
+
+export interface IdDocumentDetectionResult {
+  detected: boolean;
+  blurry: boolean;
+  tooDark: boolean;
+  tooBright: boolean;
+  tooFar: boolean;
+  tooClose: boolean;
+  glare: boolean;
+  cropPoints: IdDocumentCropPoints | null;
+  tilted: boolean;
+}
+
 const BLUR_THRESHOLD = 200;
-const GLARE_THRESHOLD = 12;
-const DARKNESS_THRESHOLD = 40;
-const BRIGHTNESS_THRESHOLD = 200;
-const TILT_THRESHOLD = 8; /* in degrees */
-const ASPECT_RATIO = 1.586;
-const ASPECT_RATIO_TOLERANCE = 0.2;
-const MIN_DOCUMENT_AREA_RATIO = 0.15;
+const GLARE_THRESHOLD = 22;
+const GLARE_VALUE_THRESHOLD = 253;
+const BRIGHTNESS_MIN = 40;
+const BRIGHTNESS_MAX = 230;
+const CARD_ASPECT_RATIO = 1.586;
+const CARD_ASPECT_TOLERANCE = 0.32;
+const CONFIDENCE_THRESHOLD = 0.48;
 const TOO_FAR_AREA_RATIO = 0.25;
 const TOO_CLOSE_AREA_RATIO = 0.85;
-const GLARE_BRIGHTNESS_THRESHOLD = 245;
+const MAX_SKEW_ANGLE = 5;
 
-let $opencv: typeof OpenCV;
+const PROCESS_SCALE = 0.6;
 
-async function $getOpenCV() {
-  if (!$opencv) {
-    $opencv = await loadOpenCV();
-  }
+const cv: typeof OpenCV | null = null;
 
-  return $opencv;
+async function getCv(): Promise<typeof OpenCV> {
+  if (!cv) return await loadOpenCV();
+  return cv;
 }
 
-function $loadImage(subject: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(subject);
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(img);
-    };
-    img.onerror = (err) => {
-      URL.revokeObjectURL(objectUrl);
-      reject(err);
-    };
-    img.src = objectUrl;
-  });
+function createPoint(x: number, y: number): OpenCV.Point {
+  return {x, y} as OpenCV.Point;
 }
 
-async function $getImageData(subject: File): Promise<ImageData> {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Could not get canvas context');
-  const img = await $loadImage(subject);
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx.drawImage(img, 0, 0);
-  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+function sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
+  const sum = points.map((p) => p.x + p.y);
+  const diff = points.map((p) => p.y - p.x);
+
+  return [
+    createPoint(points[sum.indexOf(Math.min(...sum))].x, points[sum.indexOf(Math.min(...sum))].y),
+    createPoint(
+      points[diff.indexOf(Math.min(...diff))].x,
+      points[diff.indexOf(Math.min(...diff))].y,
+    ),
+    createPoint(points[sum.indexOf(Math.max(...sum))].x, points[sum.indexOf(Math.max(...sum))].y),
+    createPoint(
+      points[diff.indexOf(Math.max(...diff))].x,
+      points[diff.indexOf(Math.max(...diff))].y,
+    ),
+  ];
 }
 
-function $deleteAll(...values: Array<{delete(): void} | null | undefined>) {
-  for (const value of values) {
-    value?.delete();
-  }
+function pointsFromQuadMat(quad: OpenCV.Mat): QuadPoints {
+  const pts = quad.data32S as Int32Array;
+  return [
+    createPoint(pts[0], pts[1]),
+    createPoint(pts[2], pts[3]),
+    createPoint(pts[4], pts[5]),
+    createPoint(pts[6], pts[7]),
+  ];
 }
 
-function $getMatValue(subject: {
-  data64F?: ArrayLike<number>;
-  data32F?: ArrayLike<number>;
-  data?: ArrayLike<number>;
-}) {
-  return subject.data64F?.[0] ?? subject.data32F?.[0] ?? subject.data?.[0] ?? 0;
+function pointsFromRotatedRect(rect: {
+  center: {x: number; y: number};
+  size: {width: number; height: number};
+  angle: number;
+}): QuadPoints {
+  const theta = (rect.angle * Math.PI) / 180;
+  const a = Math.sin(theta) * 0.5;
+  const b = Math.cos(theta) * 0.5;
+  const cx = rect.center.x;
+  const cy = rect.center.y;
+  const w = rect.size.width;
+  const h = rect.size.height;
+
+  const p0 = {x: cx - a * h - b * w, y: cy + b * h - a * w};
+  const p1 = {x: cx + a * h - b * w, y: cy - b * h - a * w};
+  const p2 = {x: 2 * cx - p0.x, y: 2 * cy - p0.y};
+  const p3 = {x: 2 * cx - p1.x, y: 2 * cy - p1.y};
+
+  return [
+    createPoint(p0.x, p0.y),
+    createPoint(p1.x, p1.y),
+    createPoint(p2.x, p2.y),
+    createPoint(p3.x, p3.y),
+  ];
 }
 
-function $normalizeAngle(angle: number) {
+function normalizeCardAngle(angle: number, width: number, height: number): number {
   let normalized = angle;
 
-  while (normalized <= -45) {
+  if (width < height) {
     normalized += 90;
   }
 
-  while (normalized > 45) {
-    normalized -= 90;
-  }
+  if (normalized > 45) normalized -= 90;
+  if (normalized < -45) normalized += 90;
 
   return normalized;
 }
 
-function $getAspectRatio(rect: {size: {width: number; height: number}}) {
-  const width = rect.size.width;
-  const height = rect.size.height;
-
-  if (width <= 0 || height <= 0) {
-    return 0;
-  }
-
-  return Math.max(width, height) / Math.min(width, height);
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
-function $getTilt(rect: {size: {width: number; height: number}; angle: number}) {
-  const normalizedAngle = rect.size.width >= rect.size.height ? rect.angle : rect.angle + 90;
-  return Math.abs($normalizeAngle(normalizedAngle));
+function toSourceSpacePoints(
+  corners: QuadPoints,
+  sourceWidth: number,
+  sourceHeight: number,
+  scaledWidth: number,
+  scaledHeight: number,
+): QuadPoints {
+  const scaleX = sourceWidth / scaledWidth;
+  const scaleY = sourceHeight / scaledHeight;
+
+  return corners.map((point) =>
+    createPoint(
+      clamp(point.x * scaleX, 0, sourceWidth - 1),
+      clamp(point.y * scaleY, 0, sourceHeight - 1),
+    ),
+  ) as QuadPoints;
 }
 
-async function $getMaskPixelCount(mask: InstanceType<typeof OpenCV.Mat>) {
-  const opencv = await $getOpenCV();
-  return Math.max(opencv.countNonZero(mask), 1);
+function toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
+  return {
+    topLeft: corners[0],
+    topRight: corners[1],
+    bottomRight: corners[2],
+    bottomLeft: corners[3],
+  };
 }
 
-async function $getMeanBrightness(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const opencv = await $getOpenCV();
-  return opencv.mean(gray, mask)[0] ?? 0;
-}
-
-async function $isBlurry(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const opencv = await $getOpenCV();
-  const laplacian = new opencv.Mat();
-  const mean = new opencv.Mat();
-  const stddev = new opencv.Mat();
+async function detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
+  const cv = await getCv();
+  const blurred = new cv.Mat();
+  const edges = new cv.Mat();
+  const binary = new cv.Mat();
+  const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(5, 5));
+  const contoursEdges = new cv.MatVector();
+  const hierarchyEdges = new cv.Mat();
+  const contoursBinary = new cv.MatVector();
+  const hierarchyBinary = new cv.Mat();
 
   try {
-    opencv.Laplacian(gray, laplacian, opencv.CV_64F);
-    opencv.meanStdDev(laplacian, mean, stddev, mask);
-    const variance = $getMatValue(stddev) ** 2;
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+    cv.Canny(blurred, edges, 50, 150);
+    cv.morphologyEx(edges, edges, cv.MORPH_CLOSE, kernel);
+    cv.dilate(edges, edges, kernel);
 
-    return variance < BLUR_THRESHOLD;
-  } finally {
-    $deleteAll(laplacian, mean, stddev);
-  }
-}
+    cv.threshold(blurred, binary, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+    cv.morphologyEx(binary, binary, cv.MORPH_CLOSE, kernel);
 
-async function $hasGlare(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const opencv = await $getOpenCV();
-  const glareMask = new opencv.Mat();
+    cv.findContours(edges, contoursEdges, hierarchyEdges, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
 
-  try {
-    opencv.threshold(gray, glareMask, GLARE_BRIGHTNESS_THRESHOLD, 255, opencv.THRESH_BINARY);
-    opencv.bitwise_and(glareMask, mask, glareMask);
+    cv.findContours(binary, contoursBinary, hierarchyBinary, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
 
-    const glareRatio = (opencv.countNonZero(glareMask) / (await $getMaskPixelCount(mask))) * 100;
+    let bestPoints: QuadPoints | null = null;
+    let bestRect: {x: number; y: number; width: number; height: number} | null = null;
+    let bestAngle = 0;
+    let bestConfidence = 0;
 
-    return glareRatio > GLARE_THRESHOLD;
-  } finally {
-    $deleteAll(glareMask);
-  }
-}
+    const imageArea = sourceWidth * sourceHeight;
+    const minArea = imageArea * 0.03;
+    const borderMargin = Math.max(6, Math.round(Math.min(sourceWidth, sourceHeight) * 0.02));
 
-async function $isTooDark(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const meanBrightness = await $getMeanBrightness(gray, mask);
-  return meanBrightness < DARKNESS_THRESHOLD;
-}
+    function consumeContours(container: OpenCV.MatVector) {
+      for (let i = 0; i < container.size(); i++) {
+        const cnt = container.get(i);
+        const area = cv.contourArea(cnt);
 
-async function $isTooBright(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const meanBrightness = await $getMeanBrightness(gray, mask);
-  return meanBrightness > BRIGHTNESS_THRESHOLD;
-}
-
-async function $getDocumentAreaRatio(
-  gray: InstanceType<typeof OpenCV.Mat>,
-  mask: InstanceType<typeof OpenCV.Mat>,
-) {
-  const imageArea = Math.max(gray.rows * gray.cols, 1);
-  const documentArea = await $getMaskPixelCount(mask);
-  return documentArea / imageArea;
-}
-
-function $isTilted(tilt: number) {
-  return tilt > TILT_THRESHOLD;
-}
-
-async function $getDeskewAngle(mask: InstanceType<typeof OpenCV.Mat>) {
-  const opencv = await $getOpenCV();
-  const maskClone = mask.clone();
-  const contours = new opencv.MatVector();
-  const hierarchy = new opencv.Mat();
-
-  let bestContour: InstanceType<typeof OpenCV.Mat> | null = null;
-  let bestArea = 0;
-
-  try {
-    opencv.findContours(
-      maskClone,
-      contours,
-      hierarchy,
-      opencv.RETR_EXTERNAL,
-      opencv.CHAIN_APPROX_SIMPLE,
-    );
-
-    if (!contours.size()) {
-      return 0;
-    }
-
-    for (let index = 0; index < contours.size(); index += 1) {
-      const contour = contours.get(index);
-
-      try {
-        const area = opencv.contourArea(contour);
-        if (area > bestArea) {
-          bestArea = area;
-          bestContour?.delete();
-          bestContour = contour.clone();
+        if (area < minArea) {
+          cnt.delete();
+          continue;
         }
-      } finally {
-        contour.delete();
+
+        const bounds = cv.boundingRect(cnt);
+        const touchesBorder =
+          bounds.x <= borderMargin ||
+          bounds.y <= borderMargin ||
+          bounds.x + bounds.width >= sourceWidth - borderMargin ||
+          bounds.y + bounds.height >= sourceHeight - borderMargin;
+
+        const peri = cv.arcLength(cnt, true);
+        const approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+        const isValidQuad = approx.rows === 4 && cv.isContourConvex(approx);
+
+        const rect = cv.minAreaRect(cnt);
+        const rw = Math.max(rect.size.width, rect.size.height);
+        const rh = Math.min(rect.size.width, rect.size.height);
+        const rectArea = rw * rh;
+        const aspect = rh > 0 ? rw / rh : 0;
+        const fill = rectArea > 0 ? area / rectArea : 0;
+
+        const aspectScore = Math.max(0, 1 - Math.abs(aspect - CARD_ASPECT_RATIO) / 0.65);
+        const areaScore = Math.min(1, rectArea / (imageArea * 0.65));
+        const fillScore = Math.max(0, Math.min(1, (fill - 0.3) / 0.7));
+        const borderScore = touchesBorder ? 0.8 : 1;
+        const confidence =
+          (aspectScore * 0.45 + areaScore * 0.3 + fillScore * 0.25) * borderScore +
+          (isValidQuad ? 0.05 : 0);
+
+        const looksLikeCard =
+          aspect >= CARD_ASPECT_RATIO - CARD_ASPECT_TOLERANCE &&
+          aspect <= CARD_ASPECT_RATIO + CARD_ASPECT_TOLERANCE &&
+          fill >= 0.4 &&
+          !touchesBorder;
+
+        if (looksLikeCard && confidence > bestConfidence) {
+          const points = isValidQuad
+            ? sortPoints(pointsFromQuadMat(approx))
+            : sortPoints(pointsFromRotatedRect(rect));
+
+          const xs = points.map((point) => point.x);
+          const ys = points.map((point) => point.y);
+
+          bestPoints = points;
+          bestRect = {
+            x: Math.min(...xs),
+            y: Math.min(...ys),
+            width: Math.max(...xs) - Math.min(...xs),
+            height: Math.max(...ys) - Math.min(...ys),
+          };
+          bestAngle = normalizeCardAngle(rect.angle, rect.size.width, rect.size.height);
+          bestConfidence = confidence;
+        }
+
+        approx.delete();
+        cnt.delete();
       }
     }
 
-    if (!bestContour || !bestArea) {
-      return 0;
-    }
+    consumeContours(contoursEdges);
+    consumeContours(contoursBinary);
 
-    const rect = opencv.minAreaRect(bestContour);
-    const normalizedAngle = rect.size.width >= rect.size.height ? rect.angle : rect.angle + 90;
-
-    return $normalizeAngle(normalizedAngle);
-  } finally {
-    $deleteAll(bestContour, hierarchy, contours, maskClone);
-  }
-}
-
-async function $rotateImage(
-  src: InstanceType<typeof OpenCV.Mat>,
-  angle: number,
-): Promise<InstanceType<typeof OpenCV.Mat>> {
-  const opencv = await $getOpenCV();
-  const center = new opencv.Point(src.cols / 2, src.rows / 2);
-  const rotationMatrix = opencv.getRotationMatrix2D(center, angle, 1);
-  const rotated = new opencv.Mat();
-
-  try {
-    opencv.warpAffine(
-      src,
-      rotated,
-      rotationMatrix,
-      new opencv.Size(src.cols, src.rows),
-      opencv.INTER_LINEAR,
-      opencv.BORDER_REPLICATE,
-      new opencv.Scalar(),
-    );
-
-    return rotated;
-  } finally {
-    $deleteAll(rotationMatrix);
-  }
-}
-
-interface DocumentRegion {
-  found: boolean;
-  aspectRatio: number;
-  tilt: number;
-  mask: InstanceType<typeof OpenCV.Mat> | null;
-}
-
-async function $detectDocumentRegion(
-  gray: InstanceType<typeof OpenCV.Mat>,
-): Promise<DocumentRegion> {
-  const opencv = await $getOpenCV();
-  const blurred = new opencv.Mat();
-  const edges = new opencv.Mat();
-  const closed = new opencv.Mat();
-  const contours = new opencv.MatVector();
-  const hierarchy = new opencv.Mat();
-  const kernel = opencv.getStructuringElement(opencv.MORPH_RECT, new opencv.Size(5, 5));
-
-  let bestIndex = -1;
-  let bestScore = Number.NEGATIVE_INFINITY;
-  let bestAspectRatio = 0;
-  let bestTilt = 0;
-
-  try {
-    opencv.GaussianBlur(gray, blurred, new opencv.Size(5, 5), 0, 0, opencv.BORDER_DEFAULT);
-    opencv.Canny(blurred, edges, 75, 200);
-    opencv.morphologyEx(edges, closed, opencv.MORPH_CLOSE, kernel);
-    opencv.findContours(
-      closed,
-      contours,
-      hierarchy,
-      opencv.RETR_EXTERNAL,
-      opencv.CHAIN_APPROX_SIMPLE,
-    );
-
-    const imageArea = gray.rows * gray.cols;
-    const imageCenter = new opencv.Point(gray.cols / 2, gray.rows / 2);
-
-    for (let index = 0; index < contours.size(); index += 1) {
-      const contour = contours.get(index);
-      const approx = new opencv.Mat();
-
-      try {
-        const area = opencv.contourArea(contour);
-        if (area <= 0) {
-          continue;
-        }
-
-        const areaRatio = area / imageArea;
-        if (areaRatio < MIN_DOCUMENT_AREA_RATIO) {
-          continue;
-        }
-
-        const perimeter = opencv.arcLength(contour, true);
-        opencv.approxPolyDP(contour, approx, perimeter * 0.02, true);
-
-        const rect = opencv.minAreaRect(contour);
-        const aspectRatio = $getAspectRatio(rect);
-        if (!aspectRatio) {
-          continue;
-        }
-
-        const boundingArea = rect.size.width * rect.size.height;
-        if (boundingArea <= 0) {
-          continue;
-        }
-
-        const aspectDelta = Math.abs(aspectRatio - ASPECT_RATIO);
-        const aspectScore = Math.max(0, 1 - aspectDelta / (ASPECT_RATIO * ASPECT_RATIO_TOLERANCE));
-        const rectangularity = Math.min(area / boundingArea, 1);
-        const vertexBonus = approx.rows === 4 ? 0.25 : approx.rows <= 6 ? 0.1 : 0;
-        const centerBonus = opencv.pointPolygonTest(contour, imageCenter, false) >= 0 ? 0.2 : -0.2;
-        const score = areaRatio * 4 + rectangularity + aspectScore * 2 + vertexBonus + centerBonus;
-
-        if (score > bestScore) {
-          bestIndex = index;
-          bestScore = score;
-          bestAspectRatio = aspectRatio;
-          bestTilt = $getTilt(rect);
-        }
-      } finally {
-        $deleteAll(contour, approx);
-      }
-    }
-
-    const aspectMatches =
-      Math.abs(bestAspectRatio - ASPECT_RATIO) <= ASPECT_RATIO * ASPECT_RATIO_TOLERANCE;
-    if (bestIndex < 0 || !aspectMatches) {
+    if (!bestPoints || !bestRect || bestConfidence < CONFIDENCE_THRESHOLD) {
       return {
-        found: false,
-        aspectRatio: bestAspectRatio,
-        tilt: bestTilt,
-        mask: null,
+        detected: false,
+        corners: null,
+        bounds: null,
+        angle: 0,
       };
     }
 
-    const mask = opencv.Mat.zeros(gray.rows, gray.cols, opencv.CV_8UC1);
-    opencv.drawContours(mask, contours, bestIndex, new opencv.Scalar(255), opencv.FILLED);
-
     return {
-      found: true,
-      aspectRatio: bestAspectRatio,
-      tilt: bestTilt,
-      mask,
+      detected: true,
+      corners: bestPoints,
+      bounds: bestRect,
+      angle: bestAngle,
     };
   } finally {
-    $deleteAll(blurred, edges, closed, contours, hierarchy, kernel);
+    blurred.delete();
+    edges.delete();
+    binary.delete();
+    kernel.delete();
+    contoursEdges.delete();
+    hierarchyEdges.delete();
+    contoursBinary.delete();
+    hierarchyBinary.delete();
   }
 }
 
-export interface IdDocumentDetection {
-  found: boolean;
-  blurry: boolean;
-  glare: boolean;
-  tooDark: boolean;
-  tooBright: boolean;
-  tilted: boolean;
-  tooFar: boolean;
-  tooClose: boolean;
-}
+async function detectCardBlur(gray: OpenCV.Mat, corners: QuadPoints) {
+  const cv = await getCv();
+  const cardWidth = 320;
+  const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
 
-async function $analyzeIdDocument(imageData: ImageData): Promise<IdDocumentDetection> {
-  const opencv = await $getOpenCV();
-  const result: IdDocumentDetection = {
-    found: false,
-    blurry: false,
-    glare: false,
-    tooDark: false,
-    tooBright: false,
-    tilted: false,
-    tooFar: false,
-    tooClose: false,
-  };
+  const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+    corners[0].x,
+    corners[0].y,
+    corners[1].x,
+    corners[1].y,
+    corners[2].x,
+    corners[2].y,
+    corners[3].x,
+    corners[3].y,
+  ]);
 
-  let src: InstanceType<typeof OpenCV.Mat> | null = null;
-  let gray: InstanceType<typeof OpenCV.Mat> | null = null;
-  let mask: InstanceType<typeof OpenCV.Mat> | null = null;
+  const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+    0,
+    0,
+    cardWidth,
+    0,
+    cardWidth,
+    cardHeight,
+    0,
+    cardHeight,
+  ]);
+
+  const transform = cv.getPerspectiveTransform(srcPts, dstPts);
+  const warped = new cv.Mat();
+
+  const marginX = Math.round(cardWidth * 0.2);
+  const marginY = Math.round(cardHeight * 0.2);
+
+  const laplacian = new cv.Mat();
+  const mean = new cv.Mat();
+  const stddev = new cv.Mat();
 
   try {
-    src = opencv.matFromImageData(imageData);
-    gray = new opencv.Mat();
-    opencv.cvtColor(src, gray, opencv.COLOR_RGBA2GRAY);
+    cv.warpPerspective(
+      gray,
+      warped,
+      transform,
+      new cv.Size(cardWidth, cardHeight),
+      cv.INTER_LINEAR,
+      cv.BORDER_CONSTANT,
+      new cv.Scalar(),
+    );
 
-    const region = await $detectDocumentRegion(gray);
-    result.found = region.found;
-    result.tilted = $isTilted(region.tilt);
+    const textRegion = warped.roi(
+      new cv.Rect(marginX, marginY, cardWidth - 2 * marginX, cardHeight - 2 * marginY),
+    );
 
-    mask = region.mask;
-    if (!mask) {
-      return result;
-    }
+    cv.Laplacian(textRegion, laplacian, cv.CV_64F);
+    cv.meanStdDev(laplacian, mean, stddev);
 
-    const documentAreaRatio = await $getDocumentAreaRatio(gray, mask);
-    result.tooFar = documentAreaRatio < TOO_FAR_AREA_RATIO;
-    result.tooClose = documentAreaRatio > TOO_CLOSE_AREA_RATIO;
-
-    result.blurry = await $isBlurry(gray, mask);
-    result.glare = await $hasGlare(gray, mask);
-    result.tooDark = await $isTooDark(gray, mask);
-    result.tooBright = await $isTooBright(gray, mask);
-
-    return result;
+    const score = stddev.doubleAt(0, 0) ** 2;
+    textRegion.delete();
+    return score;
   } finally {
-    $deleteAll(mask, gray, src);
+    srcPts.delete();
+    dstPts.delete();
+    transform.delete();
+    warped.delete();
+    laplacian.delete();
+    mean.delete();
+    stddev.delete();
   }
 }
 
-export async function detectIdDocument(file: File): Promise<IdDocumentDetection> {
+async function detectGlare(hsv: OpenCV.Mat) {
+  const cv = await getCv();
+  const channels = new cv.MatVector();
+  const thresholded = new cv.Mat();
+
   try {
-    const imageData = await $getImageData(file);
-    return await $analyzeIdDocument(imageData);
-  } catch (error) {
-    console.error(error);
+    cv.split(hsv, channels);
+    const valueChannel = channels.get(2);
+    cv.threshold(valueChannel, thresholded, GLARE_VALUE_THRESHOLD, 255, cv.THRESH_BINARY);
+    const overexposed = cv.countNonZero(thresholded);
+    const totalPixels = valueChannel.rows * valueChannel.cols;
+    const glareRatio = totalPixels > 0 ? (overexposed / totalPixels) * 100 : 0;
+
     return {
-      found: false,
-      blurry: false,
-      glare: false,
-      tooDark: false,
-      tooBright: false,
-      tilted: false,
-      tooFar: false,
-      tooClose: false,
+      glare: glareRatio > GLARE_THRESHOLD,
     };
+  } finally {
+    for (let i = 0; i < channels.size(); i++) {
+      channels.get(i).delete();
+    }
+
+    channels.delete();
+    thresholded.delete();
   }
 }
 
-export async function cropIdDocument(file: File): Promise<File> {
+async function analyzeBrightness(hsv: OpenCV.Mat) {
+  const cv = await getCv();
+  const channels = new cv.MatVector();
+  const mean = new cv.Mat();
+  const stddev = new cv.Mat();
+
   try {
-    const opencv = await $getOpenCV();
-    const imageData = await $getImageData(file);
+    cv.split(hsv, channels);
+    const valueChannel = channels.get(2);
+    cv.meanStdDev(valueChannel, mean, stddev);
+    const brightnessMean = mean.doubleAt(0, 0);
 
-    const src = opencv.matFromImageData(imageData);
-    const gray = new opencv.Mat();
-    let region: DocumentRegion | null = null;
-    let rotatedSrc: InstanceType<typeof OpenCV.Mat> | null = null;
-    let rotatedGray: InstanceType<typeof OpenCV.Mat> | null = null;
-    let rotatedRegion: DocumentRegion | null = null;
-    let cropped: InstanceType<typeof OpenCV.Mat> | null = null;
-    let croppedGray: InstanceType<typeof OpenCV.Mat> | null = null;
-    let croppedRegion: DocumentRegion | null = null;
-    let deskewedCropped: InstanceType<typeof OpenCV.Mat> | null = null;
+    let brightnessStatus: 'dark' | 'ok' | 'bright' = 'ok';
 
-    try {
-      opencv.cvtColor(src, gray, opencv.COLOR_RGBA2GRAY);
-      region = await $detectDocumentRegion(gray);
-
-      if (!region.found || !region.mask) {
-        return file;
-      }
-
-      const deskewAngle = await $getDeskewAngle(region.mask);
-
-      let workingSrc = src;
-      let workingRegion = region;
-
-      if (Math.abs(deskewAngle) > 0.5) {
-        rotatedSrc = await $rotateImage(src, -deskewAngle);
-        rotatedGray = new opencv.Mat();
-        opencv.cvtColor(rotatedSrc, rotatedGray, opencv.COLOR_RGBA2GRAY);
-
-        rotatedRegion = await $detectDocumentRegion(rotatedGray);
-        if (rotatedRegion.found && rotatedRegion.mask) {
-          workingSrc = rotatedSrc;
-          workingRegion = rotatedRegion;
-        }
-      }
-
-      if (!workingRegion.mask) {
-        return file;
-      }
-
-      const boundingRect = opencv.boundingRect(workingRegion.mask);
-      if (boundingRect.width <= 0 || boundingRect.height <= 0) {
-        return file;
-      }
-
-      cropped = workingSrc.roi(boundingRect);
-
-      let outputMat = cropped;
-      croppedGray = new opencv.Mat();
-      opencv.cvtColor(cropped, croppedGray, opencv.COLOR_RGBA2GRAY);
-      croppedRegion = await $detectDocumentRegion(croppedGray);
-
-      if (croppedRegion.found && croppedRegion.mask) {
-        const cropDeskewAngle = await $getDeskewAngle(croppedRegion.mask);
-        if (Math.abs(cropDeskewAngle) > 0.5) {
-          deskewedCropped = await $rotateImage(cropped, -cropDeskewAngle);
-          outputMat = deskewedCropped;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = outputMat.cols;
-      canvas.height = outputMat.rows;
-      opencv.imshow(canvas, outputMat);
-
-      let outputCanvas = canvas;
-      if (canvas.height > canvas.width) {
-        const rotatedCanvas = document.createElement('canvas');
-        rotatedCanvas.width = canvas.height;
-        rotatedCanvas.height = canvas.width;
-
-        const rotatedCtx = rotatedCanvas.getContext('2d');
-        if (rotatedCtx) {
-          rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
-          rotatedCtx.rotate(-Math.PI / 2);
-          rotatedCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
-          outputCanvas = rotatedCanvas;
-        }
-      }
-
-      return await new Promise((resolve) => {
-        outputCanvas.toBlob((blob) => {
-          if (blob) {
-            const croppedFile = new File([blob], file.name, {type: file.type});
-            resolve(croppedFile);
-          } else {
-            resolve(file);
-          }
-        });
-      });
-    } finally {
-      $deleteAll(
-        deskewedCropped,
-        croppedRegion?.mask,
-        croppedGray,
-        cropped,
-        rotatedRegion?.mask,
-        rotatedGray,
-        rotatedSrc,
-        region?.mask,
-        gray,
-        src,
-      );
+    if (brightnessMean < BRIGHTNESS_MIN) {
+      brightnessStatus = 'dark';
+    } else if (brightnessMean > BRIGHTNESS_MAX) {
+      brightnessStatus = 'bright';
     }
-  } catch (error) {
-    console.error(error);
-    return file;
+
+    return {
+      brightnessStatus,
+    };
+  } finally {
+    for (let i = 0; i < channels.size(); i++) {
+      channels.get(i).delete();
+    }
+
+    channels.delete();
+    mean.delete();
+    stddev.delete();
+  }
+}
+
+function isTilted(angle: number): boolean {
+  return Math.abs(angle) > MAX_SKEW_ANGLE;
+}
+
+function getBoundsArea(
+  bounds: {x: number; y: number; width: number; height: number} | null,
+): number {
+  if (!bounds) return 0;
+  return bounds.width * bounds.height;
+}
+
+export async function detectIdDocument(imageData: ImageData): Promise<IdDocumentDetectionResult> {
+  const cv = await getCv();
+  const src = cv.matFromImageData(imageData);
+  const scaled = new cv.Mat();
+  const scaledWidth = Math.max(1, Math.round(src.cols * PROCESS_SCALE));
+  const scaledHeight = Math.max(1, Math.round(src.rows * PROCESS_SCALE));
+
+  const gray = new cv.Mat();
+  const rgb = new cv.Mat();
+  const hsv = new cv.Mat();
+
+  try {
+    cv.resize(src, scaled, new cv.Size(scaledWidth, scaledHeight));
+    cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
+    cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
+    cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
+
+    const card = await detectCard(gray, scaledWidth, scaledHeight);
+    const cropPoints =
+      card.detected && card.corners
+        ? toCropPoints(
+            toSourceSpacePoints(card.corners, src.cols, src.rows, scaledWidth, scaledHeight),
+          )
+        : null;
+
+    let blurry = true;
+
+    if (card.detected && card.corners) {
+      const blurScore = await detectCardBlur(gray, card.corners);
+      blurry = blurScore < BLUR_THRESHOLD;
+    }
+
+    const [glare, brightness] = await Promise.all([detectGlare(hsv), analyzeBrightness(hsv)]);
+
+    const cardArea = getBoundsArea(card.bounds);
+    const frameArea = Math.max(1, scaledWidth * scaledHeight);
+    const areaRatio = card.detected ? cardArea / frameArea : 0;
+
+    const tilted = card.detected && isTilted(card.angle);
+    const tooDark = brightness.brightnessStatus === 'dark';
+    const tooBright = brightness.brightnessStatus === 'bright';
+    const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
+    const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
+
+    return {
+      detected: card.detected,
+      blurry,
+      tooDark,
+      tooBright,
+      tooFar,
+      tooClose,
+      glare: glare.glare,
+      cropPoints,
+      tilted,
+    };
+  } finally {
+    src.delete();
+    scaled.delete();
+    gray.delete();
+    rgb.delete();
+    hsv.delete();
   }
 }
