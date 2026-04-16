@@ -2,6 +2,7 @@
 
 import {Portal, useListCollection} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
+import {useRef} from 'react';
 import type {Option} from '~/types/common';
 import {Select} from '../ui/Select';
 import {Tags} from '../ui/Tags';
@@ -74,6 +75,8 @@ function SelectField__single(props: SelectField__singleProps) {
     </Select.Positioner>
   );
 
+  const controlRef = useRef<HTMLDivElement>(null);
+
   return (
     <Select.Root
       size={props.size}
@@ -90,8 +93,13 @@ function SelectField__single(props: SelectField__singleProps) {
       invalid={props.invalid}
       deselectable={props.clearable ?? true}
       className={props.className}
+      positioning={{
+        getAnchorElement() {
+          return controlRef.current;
+        },
+      }}
     >
-      <Select.Control>
+      <Select.Control ref={controlRef}>
         <Select.Trigger>
           <Select.ValueText placeholder={props.placeholder || 'Select'} />
           <Select.Indicator />
@@ -117,6 +125,8 @@ function SelectField__multi(props: SelectField__multiProps) {
     itemToValue: (item) => item.value,
     isItemDisabled: (item) => item.disabled ?? false,
   });
+
+  const controlRef = useRef<HTMLDivElement>(null);
 
   const content = (
     <Select.Positioner>
@@ -147,9 +157,16 @@ function SelectField__multi(props: SelectField__multiProps) {
       invalid={props.invalid}
       deselectable={props.clearable ?? true}
       className={props.className}
+      positioning={{
+        sameWidth: true,
+        placement: 'bottom',
+        getAnchorElement() {
+          return controlRef.current;
+        },
+      }}
     >
       <Select.Label />
-      <Select.Control>
+      <Select.Control ref={controlRef}>
         <Select.Trigger>
           <Select.Context>
             {(api) => (

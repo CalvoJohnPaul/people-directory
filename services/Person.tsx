@@ -1,9 +1,12 @@
+import {render} from '@react-email/components';
 import {hash} from 'bcrypt';
 import {clamp, isNil, omitBy} from 'es-toolkit';
 import {cache} from 'react';
 import {prisma} from '~/config/prisma';
+import Welcome from '~/emails/Welcome';
 import type {Prisma} from '~/prisma/generated/prisma/client';
 import type {CreatePersonInput, PeopleInput, Person, UpdatePersonDataInput} from '~/types/Person';
+import {mailto} from '~/utils/mailto';
 
 export const getPerson = cache(async (id: number): Promise<Person | null> => {
   return await prisma.person
@@ -145,33 +148,47 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
 
   data.password = await hash(input.password, 8);
 
-  return await prisma.person
-    .create({
-      data,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
-        gender: true,
-        dateOfBirth: true,
-        emailAddress: true,
-        emailAddressVerifiedAt: true,
-        mobileNumber: true,
-        mobileNumberVerifiedAt: true,
-        currentAddress: true,
-        permanentAddress: true,
-        image: true,
-        idDocument: true,
-        verifiedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
-    .then((person) => ({
-      ...person,
-      fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
-    }));
+  const [person] = await Promise.all([
+    prisma.person
+      .create({
+        data,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          gender: true,
+          dateOfBirth: true,
+          emailAddress: true,
+          emailAddressVerifiedAt: true,
+          mobileNumber: true,
+          mobileNumberVerifiedAt: true,
+          currentAddress: true,
+          permanentAddress: true,
+          image: true,
+          idDocument: true,
+          verifiedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      .then((person) => ({
+        ...person,
+        fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
+      })),
+    mailto({
+      recipient: input.emailAddress,
+      subject: 'Welcome to People Directory',
+      html: await render(
+        <Welcome
+          name={input.firstName}
+          redirectUrl={process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}
+        />,
+      ),
+    }),
+  ]);
+
+  return person;
 }
 
 export async function updatePerson(

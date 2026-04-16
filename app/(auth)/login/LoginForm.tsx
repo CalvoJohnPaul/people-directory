@@ -43,6 +43,7 @@ function OtpLoginForm() {
   const generateOtpMutation = useGenerateOtpMutation();
   const createSessionMutation = useCreateSessionMutation({
     onError() {
+      toaster.dismiss();
       toaster.error({
         title: 'Login failed',
         description: 'Invalid email address or OTP code',
@@ -177,6 +178,7 @@ function PasswordLoginForm() {
   const query = useMeQuery();
   const mutation = useCreateSessionMutation({
     onError() {
+      toaster.dismiss();
       toaster.error({
         title: 'Login failed',
         description: 'Invalid email address or password',

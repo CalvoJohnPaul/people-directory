@@ -33,6 +33,7 @@ export function EditAccountForm() {
   const addFaceEmbeddingMutation = useAddFaceEmbeddingMutation();
   const updatePersonMutation = useUpdatePersonMutation({
     onSuccess(data) {
+      toaster.dismiss();
       client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
       client.setQueryData<Person>(usePersonQuery.getQueryKey(data.id), data);
       client.setQueriesData<Person[]>(

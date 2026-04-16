@@ -1,5 +1,10 @@
+import type {Metadata} from 'next';
 import {Navbar} from '~/layouts/Navbar';
 import {EditAccountForm} from './EditAccountForm';
+
+export const metadata: Metadata = {
+  title: 'Edit Account ',
+};
 
 export default function Page() {
   return (
