@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:db": "pnpm prisma studio --port 4000",
     "dev:email": "email dev --port 5000",
     "build": "next build",
     "start": "next start",
@@ -50,6 +51,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.11",
+    "@prisma/studio": "^0.511.0",
     "@react-email/preview-server": "^5.2.10",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query-devtools": "^5.98.0",
