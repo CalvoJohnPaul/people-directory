@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {HomeIcon} from '~/components/icons/HomeIcon';
-import {UsersIcon} from '~/components/icons/UssersIcon';
+import {UsersIcon} from '~/components/icons/UsersIcon';
 import {Avatar} from '~/components/ui/Avatar';
 import {Button} from '~/components/ui/Button';
 import {IconButton} from '~/components/ui/IconButton';
