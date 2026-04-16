@@ -21,6 +21,7 @@ export interface IdDocumentDetectionResult {
   glare: boolean;
   cropPoints: IdDocumentCropPoints | null;
   tilted: boolean;
+  file: File;
 }
 
 const BLUR_THRESHOLD = 200;
@@ -34,7 +35,7 @@ const CONFIDENCE_THRESHOLD = 0.48;
 const TOO_FAR_AREA_RATIO = 0.25;
 const TOO_CLOSE_AREA_RATIO = 0.85;
 const MAX_SKEW_ANGLE = 5;
-
+const OUTPUT_IMAGE_QUALITY = 0.92;
 const PROCESS_SCALE = 0.6;
 
 const cv: typeof OpenCV | null = null;
@@ -113,28 +114,6 @@ function normalizeCardAngle(angle: number, width: number, height: number): numbe
   if (normalized < -45) normalized += 90;
 
   return normalized;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function toSourceSpacePoints(
-  corners: QuadPoints,
-  sourceWidth: number,
-  sourceHeight: number,
-  scaledWidth: number,
-  scaledHeight: number,
-): QuadPoints {
-  const scaleX = sourceWidth / scaledWidth;
-  const scaleY = sourceHeight / scaledHeight;
-
-  return corners.map((point) =>
-    createPoint(
-      clamp(point.x * scaleX, 0, sourceWidth - 1),
-      clamp(point.y * scaleY, 0, sourceHeight - 1),
-    ),
-  ) as QuadPoints;
 }
 
 function toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
@@ -416,6 +395,65 @@ function getBoundsArea(
   return bounds.width * bounds.height;
 }
 
+function pointDistance(a: OpenCV.Point, b: OpenCV.Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return Math.hypot(dx, dy);
+}
+
+async function fileToImageData(file: File): Promise<ImageData> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image file for cropping.'));
+    };
+
+    img.src = objectUrl;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth || image.width;
+  canvas.height = image.naturalHeight || image.height;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Failed to create canvas context for cropping.');
+  }
+
+  context.drawImage(image, 0, 0);
+  return context.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+async function canvasToFile(canvas: HTMLCanvasElement, filename: string): Promise<File> {
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, 'image/jpeg', OUTPUT_IMAGE_QUALITY);
+  });
+
+  if (blob) {
+    return new File([blob], filename, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  }
+
+  const dataUrl = canvas.toDataURL('image/jpeg', OUTPUT_IMAGE_QUALITY);
+  const response = await fetch(dataUrl);
+  const fallbackBlob = await response.blob();
+
+  return new File([fallbackBlob], filename, {
+    type: 'image/jpeg',
+    lastModified: Date.now(),
+  });
+}
+
 export async function detectIdDocument(imageData: ImageData): Promise<IdDocumentDetectionResult> {
   const cv = await getCv();
   const src = cv.matFromImageData(imageData);
@@ -429,17 +467,19 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
 
   try {
     cv.resize(src, scaled, new cv.Size(scaledWidth, scaledHeight));
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = scaledWidth;
+    outputCanvas.height = scaledHeight;
+    cv.imshow(outputCanvas, scaled);
+    const filePromise = canvasToFile(outputCanvas, 'id-document-tested.jpg');
+
     cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
     cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
     cv.cvtColor(rgb, hsv, cv.COLOR_RGB2HSV);
 
     const card = await detectCard(gray, scaledWidth, scaledHeight);
-    const cropPoints =
-      card.detected && card.corners
-        ? toCropPoints(
-            toSourceSpacePoints(card.corners, src.cols, src.rows, scaledWidth, scaledHeight),
-          )
-        : null;
+    const cropPoints = card.detected && card.corners ? toCropPoints(card.corners) : null;
 
     let blurry = true;
 
@@ -459,6 +499,7 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
     const tooBright = brightness.brightnessStatus === 'bright';
     const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
     const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
+    const file = await filePromise;
 
     return {
       detected: card.detected,
@@ -470,6 +511,7 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
       glare: glare.glare,
       cropPoints,
       tilted,
+      file,
     };
   } finally {
     src.delete();
@@ -477,5 +519,73 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
     gray.delete();
     rgb.delete();
     hsv.delete();
+  }
+}
+
+export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoints): Promise<File> {
+  try {
+    const cv = await getCv();
+    const imageData = await fileToImageData(file);
+    const src = cv.matFromImageData(imageData);
+
+    const topWidth = pointDistance(cropPoints.topLeft, cropPoints.topRight);
+    const bottomWidth = pointDistance(cropPoints.bottomLeft, cropPoints.bottomRight);
+    const leftHeight = pointDistance(cropPoints.topLeft, cropPoints.bottomLeft);
+    const rightHeight = pointDistance(cropPoints.topRight, cropPoints.bottomRight);
+
+    const targetWidth = Math.max(1, Math.round(Math.max(topWidth, bottomWidth)));
+    const targetHeight = Math.max(1, Math.round(Math.max(leftHeight, rightHeight)));
+
+    const srcPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
+      cropPoints.topLeft.x,
+      cropPoints.topLeft.y,
+      cropPoints.topRight.x,
+      cropPoints.topRight.y,
+      cropPoints.bottomRight.x,
+      cropPoints.bottomRight.y,
+      cropPoints.bottomLeft.x,
+      cropPoints.bottomLeft.y,
+    ]);
+
+    const dstPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
+      0,
+      0,
+      targetWidth - 1,
+      0,
+      targetWidth - 1,
+      targetHeight - 1,
+      0,
+      targetHeight - 1,
+    ]);
+
+    const transform = cv.getPerspectiveTransform(srcPoints, dstPoints);
+    const warped = new cv.Mat();
+
+    try {
+      cv.warpPerspective(
+        src,
+        warped,
+        transform,
+        new cv.Size(targetWidth, targetHeight),
+        cv.INTER_LINEAR,
+        cv.BORDER_REPLICATE,
+        new cv.Scalar(),
+      );
+
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = targetWidth;
+      outputCanvas.height = targetHeight;
+      cv.imshow(outputCanvas, warped);
+
+      return await canvasToFile(outputCanvas, 'id-document-cropped.jpg');
+    } finally {
+      srcPoints.delete();
+      dstPoints.delete();
+      transform.delete();
+      warped.delete();
+      src.delete();
+    }
+  } catch {
+    return file;
   }
 }
