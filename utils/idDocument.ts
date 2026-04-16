@@ -22,38 +22,22 @@ export interface IdDocumentDetectionResult {
   file: File;
 }
 
-/* Higher means stricter blur validation (more images flagged as blurry). */
-const BLUR_THRESHOLD = 120;
-/* Higher means less strict glare validation (allow more glare before failing). */
+const BLUR_THRESHOLD = 110;
 const GLARE_THRESHOLD = 1.6;
-/* Higher means stricter base bright-pixel detection for glare candidates. */
 const GLARE_VALUE_THRESHOLD = 245;
-/* Higher means stricter clipped-highlight detection. */
 const GLARE_EXTREME_VALUE_THRESHOLD = 252;
-/* Lower means stricter low-saturation requirement for specular glare. */
 const GLARE_SATURATION_THRESHOLD = 85;
-/* Higher gives more dynamic thresholding for bright scenes before glare is flagged. */
 const GLARE_STD_MULTIPLIER = 1.35;
-/* Lower means stricter low-light validation (more images flagged as too dark). */
 const BRIGHTNESS_MIN = 40;
-/* Lower means stricter bright-light validation (more images flagged as too bright). */
 const BRIGHTNESS_MAX = 230;
-/* Expected width/height ratio of the ID card. */
 const CARD_ASPECT_RATIO = 1.586;
-/* Higher means less strict aspect ratio matching for card candidates. */
 const CARD_ASPECT_TOLERANCE = 0.32;
-/* Higher means stricter final card confidence requirement. */
 const CONFIDENCE_THRESHOLD = 0.48;
-/* Higher means stricter distance check for being too far. */
 const TOO_FAR_AREA_RATIO = 0.25;
-/* Lower means stricter distance check for being too close. */
 const TOO_CLOSE_AREA_RATIO = 0.85;
-/* Lower means stricter tilt validation (more images flagged as tilted). */
 const MAX_SKEW_ANGLE = 5;
-/* JPEG quality for generated output files (0-1). */
 const OUTPUT_IMAGE_QUALITY = 0.92;
-/* Processing downscale factor for detection speed and stability. */
-const PROCESS_SCALE = 0.6;
+const PROCESS_SCALE = 0.5;
 
 let $cvPromise: Promise<typeof OpenCV> | null = null;
 
@@ -350,7 +334,10 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
   }
 }
 
-async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null): Promise<boolean> {
+async function $detectGlareAndBrightness(
+  hsv: OpenCV.Mat,
+  corners: QuadPoints | null,
+): Promise<{glare: boolean; brightnessStatus: 'DARK' | 'BRIGHT' | null}> {
   const cv = await $getCv();
   const region = new cv.Mat();
   const channels = new cv.MatVector();
@@ -449,7 +436,17 @@ async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null): Promis
     const extremeRatio = (cv.countNonZero(extremeMask) / totalPixels) * 100;
     const glareScore = specularRatio * 0.8 + extremeRatio * 0.2;
 
-    return glareScore > GLARE_THRESHOLD;
+    let brightnessStatus: 'DARK' | 'BRIGHT' | null = null;
+    if (valueMean < BRIGHTNESS_MIN) {
+      brightnessStatus = 'DARK';
+    } else if (valueMean > BRIGHTNESS_MAX) {
+      brightnessStatus = 'BRIGHT';
+    }
+
+    return {
+      glare: glareScore > GLARE_THRESHOLD,
+      brightnessStatus,
+    };
   } finally {
     for (let i = 0; i < channels.size(); i++) {
       channels.get(i).delete();
@@ -470,40 +467,6 @@ async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null): Promis
     stddevV.delete();
     meanS.delete();
     stddevS.delete();
-  }
-}
-
-async function $analyzeBrightness(hsv: OpenCV.Mat) {
-  const cv = await $getCv();
-  const channels = new cv.MatVector();
-  const mean = new cv.Mat();
-  const stddev = new cv.Mat();
-
-  try {
-    cv.split(hsv, channels);
-    const valueChannel = channels.get(2);
-    cv.meanStdDev(valueChannel, mean, stddev);
-    const brightnessMean = mean.doubleAt(0, 0);
-
-    let brightnessStatus: 'DARK' | 'BRIGHT' | null = null;
-
-    if (brightnessMean < BRIGHTNESS_MIN) {
-      brightnessStatus = 'DARK';
-    } else if (brightnessMean > BRIGHTNESS_MAX) {
-      brightnessStatus = 'BRIGHT';
-    }
-
-    return {
-      brightnessStatus,
-    };
-  } finally {
-    for (let i = 0; i < channels.size(); i++) {
-      channels.get(i).delete();
-    }
-
-    channels.delete();
-    mean.delete();
-    stddev.delete();
   }
 }
 
@@ -638,18 +601,16 @@ export async function detectIdDocument(
         blurry = blurScore < BLUR_THRESHOLD;
       }
 
-      const [glare, brightness] = await Promise.all([
-        $detectGlare(hsv, card.corners),
-        $analyzeBrightness(hsv),
-      ]);
+      const glareAndBrightness = await $detectGlareAndBrightness(hsv, card.corners);
+      const glare = glareAndBrightness.glare;
+      const tooDark = glareAndBrightness.brightnessStatus === 'DARK';
+      const tooBright = glareAndBrightness.brightnessStatus === 'BRIGHT';
 
       const cardArea = $getBoundsArea(card.bounds);
       const frameArea = Math.max(1, scaledWidth * scaledHeight);
       const areaRatio = card.detected ? cardArea / frameArea : 0;
 
       const tilted = card.detected && $isTilted(card.angle);
-      const tooDark = brightness.brightnessStatus === 'DARK';
-      const tooBright = brightness.brightnessStatus === 'BRIGHT';
       const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
       const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
       const file = await filePromise;
