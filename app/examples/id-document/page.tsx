@@ -2,93 +2,50 @@
 'use client';
 
 import Image from 'next/image';
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {Button} from '~/components/ui/Button';
-import {cropIdDocument, detectIdDocument, type IdDocumentDetectionResult} from '~/utils/idDocument';
-
-async function fileToImageData(file: File): Promise<ImageData> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new window.Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(img);
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('Failed to load selected file.'));
-    };
-
-    img.src = objectUrl;
-  });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = image.naturalWidth || image.width;
-  canvas.height = image.naturalHeight || image.height;
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    throw new Error('Failed to create canvas context.');
-  }
-
-  context.drawImage(image, 0, 0);
-  return context.getImageData(0, 0, canvas.width, canvas.height);
-}
+import {cropIdDocument, detectIdDocument, explainIdDocumentDetection} from '~/utils/idDocument';
 
 export default function Page() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<IdDocumentDetectionResult | null>(null);
+
+  const [data, setData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [file]);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    if (!selected) return;
+    const file = event.target.files?.[0];
 
+    if (!file) return;
+
+    setData(null);
     setError(null);
-    setIsProcessing(true);
+    setLoading(true);
 
     try {
-      const imageData = await fileToImageData(selected);
-      const detection = await detectIdDocument(imageData);
-      setResult(detection);
+      const detection = await detectIdDocument(file);
 
-      let outputFile = detection.file;
+      console.clear();
+      console.log(detection);
 
-      if (detection.detected && detection.cropPoints) {
-        outputFile = await cropIdDocument(detection.file, detection.cropPoints);
+      const result = explainIdDocumentDetection(detection);
+
+      if (!result.ok) {
+        setData(URL.createObjectURL(file));
+        setError(result.error.message);
+        return;
       }
 
-      setFile(outputFile);
-    } catch (caught) {
-      setResult(null);
-      setFile(null);
+      const cropped = result.data.cropPoints
+        ? await cropIdDocument(result.data.file, result.data.cropPoints)
+        : result.data.file;
 
-      if (caught instanceof Error) {
-        setError(caught.message);
-      } else {
-        setError('Failed to process the selected file.');
-      }
+      setData(URL.createObjectURL(cropped));
+    } catch (error) {
+      console.warn(error);
+      setError('Failed to process the selected file.');
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
 
       if (inputRef.current) {
         inputRef.current.value = '';
@@ -100,12 +57,12 @@ export default function Page() {
     <div className="p-4">
       <Button
         variant="outline"
-        disabled={isProcessing}
+        disabled={loading}
         onClick={() => {
           inputRef.current?.click();
         }}
       >
-        {isProcessing ? 'Processing...' : 'Upload'}
+        {loading ? 'Processing...' : 'Upload'}
       </Button>
 
       <input
@@ -116,25 +73,18 @@ export default function Page() {
         className="hidden"
       />
 
-      {error && <p className="mt-3 text-red-600 text-sm">{error}</p>}
-
-      <div>
-        {previewUrl && (
+      {error && <p className="mt-4 text-red-500 text-sm">{error}</p>}
+      {data && (
+        <div className="mt-4">
           <Image
-            src={previewUrl}
+            src={data}
             alt=""
             width={250}
             height={250}
             className="mt-4 block h-auto w-40"
             unoptimized
           />
-        )}
-      </div>
-
-      {result && (
-        <pre className="mt-4 rounded-md border p-3 text-xs leading-relaxed">
-          <code>{JSON.stringify(result, null, 2)}</code>
-        </pre>
+        </div>
       )}
     </div>
   );

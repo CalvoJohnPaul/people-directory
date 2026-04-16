@@ -27,9 +27,15 @@ export interface IdDocumentDetectionResult {
 /* Higher means stricter blur validation (more images flagged as blurry). */
 const BLUR_THRESHOLD = 120;
 /* Higher means less strict glare validation (allow more glare before failing). */
-const GLARE_THRESHOLD = 22;
-/* Higher means less strict glare pixel detection (only very bright pixels count as glare). */
-const GLARE_VALUE_THRESHOLD = 253;
+const GLARE_THRESHOLD = 1.6;
+/* Higher means stricter base bright-pixel detection for glare candidates. */
+const GLARE_VALUE_THRESHOLD = 245;
+/* Higher means stricter clipped-highlight detection. */
+const GLARE_EXTREME_VALUE_THRESHOLD = 252;
+/* Lower means stricter low-saturation requirement for specular glare. */
+const GLARE_SATURATION_THRESHOLD = 85;
+/* Higher gives more dynamic thresholding for bright scenes before glare is flagged. */
+const GLARE_STD_MULTIPLIER = 1.35;
 /* Lower means stricter low-light validation (more images flagged as too dark). */
 const BRIGHTNESS_MIN = 40;
 /* Lower means stricter bright-light validation (more images flagged as too bright). */
@@ -337,29 +343,128 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
   }
 }
 
-async function $detectGlare(hsv: OpenCV.Mat) {
+async function $detectGlare(hsv: OpenCV.Mat, corners: QuadPoints | null) {
   const cv = await $getCv();
+  const region = new cv.Mat();
   const channels = new cv.MatVector();
-  const thresholded = new cv.Mat();
+  const brightMask = new cv.Mat();
+  const lowSatMask = new cv.Mat();
+  const specularMask = new cv.Mat();
+  const extremeMask = new cv.Mat();
+  const meanV = new cv.Mat();
+  const stddevV = new cv.Mat();
+  const meanS = new cv.Mat();
+  const stddevS = new cv.Mat();
+
+  let srcPts: OpenCV.Mat | null = null;
+  let dstPts: OpenCV.Mat | null = null;
+  let transform: OpenCV.Mat | null = null;
+  let kernel: OpenCV.Mat | null = null;
 
   try {
-    cv.split(hsv, channels);
+    if (corners) {
+      const cardWidth = 320;
+      const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
+
+      srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        corners[0].x,
+        corners[0].y,
+        corners[1].x,
+        corners[1].y,
+        corners[2].x,
+        corners[2].y,
+        corners[3].x,
+        corners[3].y,
+      ]);
+
+      dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        0,
+        0,
+        cardWidth,
+        0,
+        cardWidth,
+        cardHeight,
+        0,
+        cardHeight,
+      ]);
+
+      transform = cv.getPerspectiveTransform(srcPts, dstPts);
+      cv.warpPerspective(
+        hsv,
+        region,
+        transform,
+        new cv.Size(cardWidth, cardHeight),
+        cv.INTER_LINEAR,
+        cv.BORDER_REPLICATE,
+        new cv.Scalar(),
+      );
+    } else {
+      hsv.copyTo(region);
+    }
+
+    cv.split(region, channels);
+    const saturationChannel = channels.get(1);
     const valueChannel = channels.get(2);
-    cv.threshold(valueChannel, thresholded, GLARE_VALUE_THRESHOLD, 255, cv.THRESH_BINARY);
-    const overexposed = cv.countNonZero(thresholded);
-    const totalPixels = valueChannel.rows * valueChannel.cols;
-    const glareRatio = totalPixels > 0 ? (overexposed / totalPixels) * 100 : 0;
+
+    cv.meanStdDev(valueChannel, meanV, stddevV);
+    cv.meanStdDev(saturationChannel, meanS, stddevS);
+
+    const valueMean = meanV.doubleAt(0, 0);
+    const valueStd = stddevV.doubleAt(0, 0);
+    const adaptiveValueThreshold = Math.min(
+      255,
+      Math.max(GLARE_VALUE_THRESHOLD, valueMean + valueStd * GLARE_STD_MULTIPLIER),
+    );
+
+    const saturationMean = meanS.doubleAt(0, 0);
+    const adaptiveSaturationThreshold = Math.max(
+      20,
+      Math.min(GLARE_SATURATION_THRESHOLD, saturationMean * 0.9),
+    );
+
+    cv.threshold(valueChannel, brightMask, adaptiveValueThreshold, 255, cv.THRESH_BINARY);
+    cv.threshold(valueChannel, extremeMask, GLARE_EXTREME_VALUE_THRESHOLD, 255, cv.THRESH_BINARY);
+    cv.threshold(
+      saturationChannel,
+      lowSatMask,
+      adaptiveSaturationThreshold,
+      255,
+      cv.THRESH_BINARY_INV,
+    );
+    cv.bitwise_and(brightMask, lowSatMask, specularMask);
+
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3, 3));
+    cv.morphologyEx(specularMask, specularMask, cv.MORPH_OPEN, kernel);
+    cv.morphologyEx(specularMask, specularMask, cv.MORPH_CLOSE, kernel);
+
+    const totalPixels = Math.max(1, valueChannel.rows * valueChannel.cols);
+    const specularRatio = (cv.countNonZero(specularMask) / totalPixels) * 100;
+    const extremeRatio = (cv.countNonZero(extremeMask) / totalPixels) * 100;
+    const glareScore = specularRatio * 0.8 + extremeRatio * 0.2;
 
     return {
-      glare: glareRatio > GLARE_THRESHOLD,
+      glare: glareScore > GLARE_THRESHOLD,
     };
   } finally {
     for (let i = 0; i < channels.size(); i++) {
       channels.get(i).delete();
     }
 
+    if (srcPts) srcPts.delete();
+    if (dstPts) dstPts.delete();
+    if (transform) transform.delete();
+    if (kernel) kernel.delete();
+
+    region.delete();
     channels.delete();
-    thresholded.delete();
+    brightMask.delete();
+    lowSatMask.delete();
+    specularMask.delete();
+    extremeMask.delete();
+    meanV.delete();
+    stddevV.delete();
+    meanS.delete();
+    stddevS.delete();
   }
 }
 
@@ -414,37 +519,6 @@ function $pointDistance(a: OpenCV.Point, b: OpenCV.Point): number {
   return Math.hypot(dx, dy);
 }
 
-async function $fileToImageData(file: File): Promise<ImageData> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(img);
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('Failed to load image file for cropping.'));
-    };
-
-    img.src = objectUrl;
-  });
-
-  const canvas = document.createElement('canvas');
-  canvas.width = image.naturalWidth || image.width;
-  canvas.height = image.naturalHeight || image.height;
-
-  const context = canvas.getContext('2d');
-  if (!context) {
-    throw new Error('Failed to create canvas context for cropping.');
-  }
-
-  context.drawImage(image, 0, 0);
-  return context.getImageData(0, 0, canvas.width, canvas.height);
-}
-
 async function $canvasToFile(canvas: HTMLCanvasElement, filename: string): Promise<File> {
   const blob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, 'image/jpeg', OUTPUT_IMAGE_QUALITY);
@@ -488,8 +562,42 @@ function $toLandscapeCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
   return rotated;
 }
 
-export async function detectIdDocument(imageData: ImageData): Promise<IdDocumentDetectionResult> {
+async function $fileToImageData(file: File): Promise<ImageData> {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load selected file.'));
+    };
+
+    img.src = objectUrl;
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth || image.width;
+  canvas.height = image.naturalHeight || image.height;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('Failed to create canvas context.');
+  }
+
+  context.drawImage(image, 0, 0);
+  return context.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+export async function detectIdDocument(
+  subject: ImageData | File,
+): Promise<IdDocumentDetectionResult> {
   const cv = await $getCv();
+  const imageData = subject instanceof File ? await $fileToImageData(subject) : subject;
   const src = cv.matFromImageData(imageData);
   const scaled = new cv.Mat();
   const scaledWidth = Math.max(1, Math.round(src.cols * PROCESS_SCALE));
@@ -522,7 +630,10 @@ export async function detectIdDocument(imageData: ImageData): Promise<IdDocument
       blurry = blurScore < BLUR_THRESHOLD;
     }
 
-    const [glare, brightness] = await Promise.all([$detectGlare(hsv), $analyzeBrightness(hsv)]);
+    const [glare, brightness] = await Promise.all([
+      $detectGlare(hsv, card.corners),
+      $analyzeBrightness(hsv),
+    ]);
 
     const cardArea = $getBoundsArea(card.bounds);
     const frameArea = Math.max(1, scaledWidth * scaledHeight);
@@ -623,4 +734,114 @@ export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoint
   } catch {
     return file;
   }
+}
+
+export type IdDocumentDetectionExplanation =
+  | {
+      ok: false;
+      error: {
+        name: string;
+        message: string;
+      };
+    }
+  | {
+      ok: true;
+      data: {
+        file: File;
+        cropPoints: IdDocumentCropPoints | null;
+      };
+    };
+
+export function explainIdDocumentDetection(
+  result: IdDocumentDetectionResult,
+): IdDocumentDetectionExplanation {
+  if (!result.detected) {
+    if (result.tooDark) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTooDarkError',
+          message: 'The image is too dark. Please retake the photo in better lighting.',
+        },
+      };
+    }
+
+    if (result.tooBright) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTooBrightError',
+          message: 'The image is too bright. Please retake the photo in better lighting.',
+        },
+      };
+    }
+
+    if (result.glare) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageGlareError',
+          message:
+            'There is glare on the document. Please retake the photo and try to minimize reflections.',
+        },
+      };
+    }
+
+    if (result.blurry) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTooBlurredError',
+          message: 'The image is too blurry. Please retake the photo and ensure it is in focus.',
+        },
+      };
+    }
+
+    if (result.tooFar) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTooSmallError',
+          message: 'The document appears too small. Please retake the photo and move closer.',
+        },
+      };
+    }
+
+    if (result.tooClose) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTooLargeError',
+          message: 'The document appears too large. Please retake the photo and move farther away.',
+        },
+      };
+    }
+
+    if (result.tilted) {
+      return {
+        ok: false,
+        error: {
+          name: 'ImageTiltedError',
+          message: 'The document is tilted. Please retake the photo and hold the camera level.',
+        },
+      };
+    }
+
+    return {
+      ok: false,
+      error: {
+        name: 'NoIdDocumentDetectedError',
+        message:
+          'No ID document was detected. Please retake the photo and ensure the entire document is visible.',
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      file: result.file,
+      cropPoints: result.cropPoints,
+    },
+  };
 }
