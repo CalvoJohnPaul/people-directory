@@ -25,7 +25,7 @@ export interface IdDocumentDetectionResult {
 }
 
 /* Higher means stricter blur validation (more images flagged as blurry). */
-const BLUR_THRESHOLD = 110;
+const BLUR_THRESHOLD = 120;
 /* Higher means less strict glare validation (allow more glare before failing). */
 const GLARE_THRESHOLD = 22;
 /* Higher means less strict glare pixel detection (only very bright pixels count as glare). */
@@ -467,6 +467,27 @@ async function $canvasToFile(canvas: HTMLCanvasElement, filename: string): Promi
   });
 }
 
+function $toLandscapeCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  if (canvas.width >= canvas.height) {
+    return canvas;
+  }
+
+  const rotated = document.createElement('canvas');
+  rotated.width = canvas.height;
+  rotated.height = canvas.width;
+
+  const context = rotated.getContext('2d');
+  if (!context) {
+    return canvas;
+  }
+
+  context.translate(rotated.width, 0);
+  context.rotate(Math.PI / 2);
+  context.drawImage(canvas, 0, 0);
+
+  return rotated;
+}
+
 export async function detectIdDocument(imageData: ImageData): Promise<IdDocumentDetectionResult> {
   const cv = await $getCv();
   const src = cv.matFromImageData(imageData);
@@ -590,7 +611,8 @@ export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoint
       outputCanvas.height = targetHeight;
       cv.imshow(outputCanvas, warped);
 
-      return await $canvasToFile(outputCanvas, 'id-document-cropped.jpg');
+      const normalizedCanvas = $toLandscapeCanvas(outputCanvas);
+      return await $canvasToFile(normalizedCanvas, 'id-document-cropped.jpg');
     } finally {
       srcPoints.delete();
       dstPoints.delete();

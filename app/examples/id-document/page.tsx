@@ -118,12 +118,6 @@ export default function Page() {
 
       {error && <p className="mt-3 text-red-600 text-sm">{error}</p>}
 
-      {result && (
-        <pre className="mt-4 rounded-md border p-3 text-xs leading-relaxed">
-          <code>{JSON.stringify(result, null, 2)}</code>
-        </pre>
-      )}
-
       <div>
         {previewUrl && (
           <Image
@@ -136,6 +130,12 @@ export default function Page() {
           />
         )}
       </div>
+
+      {result && (
+        <pre className="mt-4 rounded-md border p-3 text-xs leading-relaxed">
+          <code>{JSON.stringify(result, null, 2)}</code>
+        </pre>
+      )}
     </div>
   );
 }
