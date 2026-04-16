@@ -734,7 +734,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooDarkError',
-          message: 'The image is too dark. Please retake the photo in better lighting.',
+          message: 'The photo is too dark. Please take the photo in a brighter place.',
         },
       };
     }
@@ -744,7 +744,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooBrightError',
-          message: 'The image is too bright. Please retake the photo in better lighting.',
+          message: 'The photo is too bright. Please avoid strong light and try again.',
         },
       };
     }
@@ -754,8 +754,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageGlareError',
-          message:
-            'There is glare on the document. Please retake the photo and try to minimize reflections.',
+          message: 'There is light reflection on the ID. Please tilt the ID or move the light.',
         },
       };
     }
@@ -765,7 +764,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooBlurredError',
-          message: 'The image is too blurry. Please retake the photo and ensure it is in focus.',
+          message: 'The photo is blurry. Please hold your camera steady and try again.',
         },
       };
     }
@@ -775,7 +774,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooSmallError',
-          message: 'The document appears too small. Please retake the photo and move closer.',
+          message: 'The ID is too far. Please move your camera closer.',
         },
       };
     }
@@ -785,7 +784,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooLargeError',
-          message: 'The document appears too large. Please retake the photo and move farther away.',
+          message: 'The ID is too close. Please move your camera a little farther.',
         },
       };
     }
@@ -795,7 +794,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTiltedError',
-          message: 'The document is tilted. Please retake the photo and hold the camera level.',
+          message: 'The ID is not straight. Please hold it level.',
         },
       };
     }
@@ -804,8 +803,7 @@ export function explainIdDocumentDetection(
       ok: false,
       error: {
         name: 'NoIdDocumentDetectedError',
-        message:
-          'No ID document was detected. Please retake the photo and ensure the entire document is visible.',
+        message: 'No ID found. Please make sure your ID is clear and fully visible in the photo.',
       },
     };
   }

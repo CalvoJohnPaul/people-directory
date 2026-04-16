@@ -75,13 +75,13 @@ export default function Page() {
 
       {error && <p className="mt-4 text-red-500 text-sm">{error}</p>}
       {data && (
-        <div className="mt-4">
+        <div className="mt-4 w-fit border">
           <Image
             src={data}
             alt=""
             width={250}
             height={250}
-            className="mt-4 block h-auto w-40"
+            className="block h-auto w-40"
             unoptimized
           />
         </div>
