@@ -1,27 +1,5 @@
 import {loadOpenCV, type OpenCV} from '@opencvjs/web';
 
-type QuadPoints = [OpenCV.Point, OpenCV.Point, OpenCV.Point, OpenCV.Point];
-
-export interface IdDocumentCropPoints {
-  topLeft: OpenCV.Point;
-  topRight: OpenCV.Point;
-  bottomRight: OpenCV.Point;
-  bottomLeft: OpenCV.Point;
-}
-
-export interface IdDocumentDetectionResult {
-  detected: boolean;
-  blurry: boolean;
-  tooDark: boolean;
-  tooBright: boolean;
-  tooFar: boolean;
-  tooClose: boolean;
-  glare: boolean;
-  cropPoints: IdDocumentCropPoints | null;
-  tilted: boolean;
-  file: File;
-}
-
 const BLUR_THRESHOLD = 110;
 const GLARE_THRESHOLD = 1.6;
 const GLARE_VALUE_THRESHOLD = 245;
@@ -39,15 +17,12 @@ const MAX_SKEW_ANGLE = 5;
 const OUTPUT_IMAGE_QUALITY = 0.92;
 const PROCESS_SCALE = 0.5;
 
-let $cvPromise: Promise<typeof OpenCV> | null = null;
+let $cv__promise: Promise<typeof OpenCV> | null = null;
 
 async function $getCv(): Promise<typeof OpenCV> {
-  if ($cvPromise) {
-    return await $cvPromise;
-  }
-
-  $cvPromise = loadOpenCV();
-  return await $cvPromise;
+  if ($cv__promise) return await $cv__promise;
+  $cv__promise = loadOpenCV();
+  return await $cv__promise;
 }
 
 function $logPerformance(label: string, startedAt: number): void {
@@ -76,6 +51,8 @@ function $sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
     ),
   ];
 }
+
+type QuadPoints = [OpenCV.Point, OpenCV.Point, OpenCV.Point, OpenCV.Point];
 
 function $pointsFromQuadMat(quad: OpenCV.Mat): QuadPoints {
   const pts = quad.data32S as Int32Array;
@@ -124,15 +101,6 @@ function $normalizeCardAngle(angle: number, width: number, height: number): numb
   if (normalized < -45) normalized += 90;
 
   return normalized;
-}
-
-function $toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
-  return {
-    topLeft: corners[0],
-    topRight: corners[1],
-    bottomRight: corners[2],
-    bottomLeft: corners[3],
-  };
 }
 
 async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
@@ -559,6 +527,35 @@ async function $fileToImageData(file: File): Promise<ImageData> {
 
   context.drawImage(image, 0, 0);
   return context.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+export interface IdDocumentCropPoints {
+  topLeft: OpenCV.Point;
+  topRight: OpenCV.Point;
+  bottomRight: OpenCV.Point;
+  bottomLeft: OpenCV.Point;
+}
+
+function $toCropPoints(corners: QuadPoints): IdDocumentCropPoints {
+  return {
+    topLeft: corners[0],
+    topRight: corners[1],
+    bottomRight: corners[2],
+    bottomLeft: corners[3],
+  };
+}
+
+export interface IdDocumentDetectionResult {
+  detected: boolean;
+  blurry: boolean;
+  tooDark: boolean;
+  tooBright: boolean;
+  tooFar: boolean;
+  tooClose: boolean;
+  glare: boolean;
+  cropPoints: IdDocumentCropPoints | null;
+  tilted: boolean;
+  file: File;
 }
 
 export async function detectIdDocument(
