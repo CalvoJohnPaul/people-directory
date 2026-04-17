@@ -239,8 +239,8 @@ function Camera(props: {
 
       try {
         setFaceVerifying(true);
-        const result = await detectFace(camera.videoRef.current);
-        setFaceVerified((result?.score ?? 0) >= 0.8);
+        const score = await detectFace(camera.videoRef.current);
+        setFaceVerified(score >= 0.8);
       } catch (error) {
         console.error(error);
       } finally {
