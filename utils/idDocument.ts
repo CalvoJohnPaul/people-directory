@@ -1,11 +1,11 @@
 import {loadOpenCV, type OpenCV} from '@opencvjs/web';
 
-const BLUR_THRESHOLD = 120;
-const GLARE_THRESHOLD = 2.8;
-const GLARE_VALUE_THRESHOLD = 240;
-const GLARE_EXTREME_VALUE_THRESHOLD = 250;
-const GLARE_SATURATION_THRESHOLD = 75;
-const GLARE_STD_MULTIPLIER = 1.1;
+const BLUR_THRESHOLD = 110;
+const GLARE_THRESHOLD = 1.6;
+const GLARE_VALUE_THRESHOLD = 245;
+const GLARE_EXTREME_VALUE_THRESHOLD = 252;
+const GLARE_SATURATION_THRESHOLD = 85;
+const GLARE_STD_MULTIPLIER = 1.35;
 const BRIGHTNESS_MIN = 40;
 const BRIGHTNESS_MAX = 230;
 const CARD_ASPECT_RATIO = 1.586;
@@ -16,6 +16,14 @@ const TOO_CLOSE_AREA_RATIO = 0.85;
 const MAX_SKEW_ANGLE = 5;
 const OUTPUT_IMAGE_QUALITY = 0.92;
 const PROCESS_SCALE = 0.5;
+
+let $cv__promise: Promise<typeof OpenCV> | null = null;
+
+async function $getCv(): Promise<typeof OpenCV> {
+  if ($cv__promise) return await $cv__promise;
+  $cv__promise = loadOpenCV();
+  return await $cv__promise;
+}
 
 function $logPerformance(label: string, startedAt: number): void {
   const elapsed = performance.now() - startedAt;
@@ -96,7 +104,7 @@ function $normalizeCardAngle(angle: number, width: number, height: number): numb
 }
 
 async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
-  const cv = await loadOpenCV();
+  const cv = await $getCv();
   const blurred = new cv.Mat();
   const edges = new cv.Mat();
   const binary = new cv.Mat();
@@ -226,7 +234,7 @@ async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: 
 }
 
 async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
-  const cv = await loadOpenCV();
+  const cv = await $getCv();
   const cardWidth = 320;
   const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
 
@@ -298,7 +306,7 @@ async function $detectGlareAndBrightness(
   hsv: OpenCV.Mat,
   corners: QuadPoints | null,
 ): Promise<{glare: boolean; brightnessStatus: 'DARK' | 'BRIGHT' | null}> {
-  const cv = await loadOpenCV();
+  const cv = await $getCv();
   const region = new cv.Mat();
   const channels = new cv.MatVector();
   const brightMask = new cv.Mat();
@@ -556,7 +564,7 @@ export async function detectIdDocument(
   const startedAt = performance.now();
 
   try {
-    const cv = await loadOpenCV();
+    const cv = await $getCv();
     const imageData = subject instanceof File ? await $fileToImageData(subject) : subject;
     const src = cv.matFromImageData(imageData);
     const scaled = new cv.Mat();
@@ -628,19 +636,11 @@ export async function detectIdDocument(
   }
 }
 
-export async function cropIdDocument(
-  file: File,
-  cropPoints?: IdDocumentCropPoints | null,
-): Promise<File> {
-  if (!cropPoints) {
-    console.warn('No crop points found. Cropping skipped.');
-    return file;
-  }
-
+export async function cropIdDocument(file: File, cropPoints: IdDocumentCropPoints): Promise<File> {
   const startedAt = performance.now();
 
   try {
-    const cv = await loadOpenCV();
+    const cv = await $getCv();
     const imageData = await $fileToImageData(file);
     const src = cv.matFromImageData(imageData);
 
@@ -709,19 +709,21 @@ export async function cropIdDocument(
   }
 }
 
-export interface SuccessIdDocumentDetectionData {
-  file: File;
-  cropPoints: IdDocumentCropPoints | null;
-}
-
-export interface FailedIdDocumentDetectionError {
-  name: string;
-  message: string;
-}
-
 export type IdDocumentDetectionExplanation =
-  | {ok: false; data?: never; error: FailedIdDocumentDetectionError}
-  | {ok: true; data: SuccessIdDocumentDetectionData; error?: never};
+  | {
+      ok: false;
+      error: {
+        name: string;
+        message: string;
+      };
+    }
+  | {
+      ok: true;
+      data: {
+        file: File;
+        cropPoints: IdDocumentCropPoints | null;
+      };
+    };
 
 export function explainIdDocumentDetection(
   result: IdDocumentDetectionResult,
@@ -742,7 +744,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooBrightError',
-          message: 'The photo is too bright. Please avoid strong light.',
+          message: 'The photo is too bright. Please avoid strong light and try again.',
         },
       };
     }
@@ -752,7 +754,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageGlareError',
-          message: 'There is light reflection on the ID.',
+          message: 'There is light reflection on the ID. Please tilt the ID or move the light.',
         },
       };
     }
@@ -762,7 +764,7 @@ export function explainIdDocumentDetection(
         ok: false,
         error: {
           name: 'ImageTooBlurredError',
-          message: 'The photo is blurry. Please hold your camera steady.',
+          message: 'The photo is blurry. Please hold your camera steady and try again.',
         },
       };
     }
@@ -801,7 +803,7 @@ export function explainIdDocumentDetection(
       ok: false,
       error: {
         name: 'NoIdDocumentDetectedError',
-        message: 'Could not detect your ID. Please make sure your ID is fully visible',
+        message: 'No ID found. Please make sure your ID is clear and fully visible in the photo.',
       },
     };
   }

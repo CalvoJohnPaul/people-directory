@@ -26,6 +26,11 @@ export interface CropPoints {
 }
 
 export interface FaceDetectionResult {
+  cropPoints?: CropPoints;
+  score: number;
+}
+
+interface $FaceDetectionResult {
   cropPoints: CropPoints;
   file: File;
   score: number;
@@ -98,10 +103,12 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
 export async function detectFace(
   subject: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | File,
   max = 1,
-): Promise<FaceDetectionResult | null> {
+): Promise<FaceDetectionResult> {
   try {
+    let result: $FaceDetectionResult | null = null;
+
     if (subject instanceof File) {
-      return $detectFaceFromFile(subject, max);
+      result = await $detectFaceFromFile(subject, max);
     } else if (subject instanceof HTMLImageElement) {
       const canvas = $drawToCanvas(
         subject,
@@ -109,15 +116,19 @@ export async function detectFace(
         subject.naturalHeight || subject.height,
       );
 
-      return $detectFaceFromCanvas(canvas, await $canvasToFile(canvas, 'face-detection.jpg'), max);
+      result = await $detectFaceFromCanvas(
+        canvas,
+        await $canvasToFile(canvas, 'face-detection.jpg'),
+        max,
+      );
     } else if (subject instanceof HTMLCanvasElement) {
-      return $detectFaceFromCanvas(
+      result = await $detectFaceFromCanvas(
         subject,
         await $canvasToFile(subject, 'face-detection.jpg'),
         max,
       );
     } else if (subject instanceof HTMLVideoElement) {
-      return $detectFaceFromVideo(subject, max);
+      result = await $detectFaceFromVideo(subject, max);
     } else {
       const error = new Error();
       error.name = 'InvalidSubjectError';
@@ -125,9 +136,16 @@ export async function detectFace(
       Error.captureStackTrace?.(error, detectFace);
       throw error;
     }
+
+    if (!result) return {score: 0};
+
+    return {
+      cropPoints: result.cropPoints,
+      score: result.score,
+    };
   } catch (error) {
     console.error(error);
-    return null;
+    return {score: 0};
   }
 }
 
@@ -268,7 +286,7 @@ async function $detectFaceFromCanvas(
   canvas: HTMLCanvasElement,
   file: File,
   max = 1,
-): Promise<FaceDetectionResult | null> {
+): Promise<$FaceDetectionResult | null> {
   const detector = await $getFaceDetector('IMAGE');
   const result = detector.detect(canvas);
   const detections = result.detections;
@@ -289,7 +307,7 @@ async function $detectFaceFromImage(
   image: HTMLImageElement,
   file: File,
   max = 1,
-): Promise<FaceDetectionResult | null> {
+): Promise<$FaceDetectionResult | null> {
   const canvas = $drawToCanvas(
     image,
     image.naturalWidth || image.width,
@@ -317,7 +335,7 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-async function $detectFaceFromFile(file: File, max = 1): Promise<FaceDetectionResult | null> {
+async function $detectFaceFromFile(file: File, max = 1): Promise<$FaceDetectionResult | null> {
   const image = await $loadImage(file);
   return $detectFaceFromImage(image, file, max);
 }
@@ -325,7 +343,7 @@ async function $detectFaceFromFile(file: File, max = 1): Promise<FaceDetectionRe
 async function $detectFaceFromVideo(
   video: HTMLVideoElement,
   max = 1,
-): Promise<FaceDetectionResult | null> {
+): Promise<$FaceDetectionResult | null> {
   if (video.readyState < 2 || video.videoWidth < 1 || video.videoHeight < 1) return null;
 
   const canvas = $drawToCanvas(video, video.videoWidth, video.videoHeight);

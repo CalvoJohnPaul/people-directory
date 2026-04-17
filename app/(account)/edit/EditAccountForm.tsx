@@ -10,6 +10,7 @@ import {Controller, useForm} from 'react-hook-form';
 import {useTimeout} from 'usehooks-ts';
 import {DateField} from '~/components/forms/DateField';
 import {MobileNumberField} from '~/components/forms/MobileNumberField';
+import {PasswordField} from '~/components/forms/PasswordField';
 import {PhotoField} from '~/components/forms/PhotoField';
 import {SelectField} from '~/components/forms/SelectField';
 import {Button} from '~/components/ui/Button';
@@ -81,6 +82,7 @@ export function EditAccountForm() {
       lastName: '',
       middleName: '',
       mobileNumber: '',
+      password: '',
     },
   });
 
@@ -95,6 +97,7 @@ export function EditAccountForm() {
         emailAddress: query.data?.emailAddress ?? '',
         mobileNumber: query.data?.mobileNumber ?? '',
         image: query.data?.image ?? '',
+        password: '',
       });
     },
     query.data == null ? null : 0,
@@ -189,6 +192,17 @@ export function EditAccountForm() {
         <Field.Input placeholder="eg. john.doe@example.com" {...form.register('emailAddress')} />
         <Field.ErrorText>{form.formState.errors.emailAddress?.message}</Field.ErrorText>
       </Field.Root>
+      <Controller
+        control={form.control}
+        name="password"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Password</Field.Label>
+            <PasswordField value={ctx.field.value} onChange={ctx.field.onChange} />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
       <Controller
         control={form.control}
         name="image"
