@@ -4,16 +4,13 @@ import {Presence, useFieldContext} from '@ark-ui/react';
 import {useControllableState} from '@radix-ui/react-use-controllable-state';
 import {ArrowBigLeftIcon, ArrowBigRightIcon, CameraOffIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
-import {useEffect, useState} from 'react';
 import {twMerge} from 'tailwind-merge';
 import {cx} from 'tailwind-variants';
-import {useInterval} from 'usehooks-ts';
 import {Button} from '~/components/ui/Button';
-import {useCamera} from '~/hooks/useCamera';
 import {useDisclosure} from '~/hooks/useDisclosure';
+import {useFaceCamera} from '~/hooks/useFaceCamera';
 import {useUploadFileMutation} from '~/hooks/useUploadFileMutation';
 import {dataAttr} from '~/utils/dataAttr';
-import {cropFace, detectFace, detectHeadTurn} from '~/utils/face';
 import {ImagePlaceholderIcon} from '../icons/ImagePlaceholderIcon';
 import {Dialog} from '../ui/Dialog';
 
@@ -144,120 +141,14 @@ function Camera(props: {
   onCompleted?: (photo: File | null, photoAsString: string | null) => void;
 }) {
   const mutation = useUploadFileMutation();
-
-  const camera = useCamera({
-    transformer(file) {
-      return cropFace(file);
-    },
-  });
-
-  const [snapshot, setSnapshot] = useState<File | null>(null);
-  const src = snapshot ? URL.createObjectURL(snapshot) : null;
-
-  const [faceVerified, setFaceVerified] = useState(false);
-  const [faceVerifying, setFaceVerifying] = useState(false);
-  const [livenessLeftVerified, setLivenessLeftVerified] = useState(false);
-  const [livenessLeftVerifying, setLivenessLeftVerifying] = useState(false);
-  const [livenessRightVerified, setLivenessRightVerified] = useState(false);
-  const [livenessRightVerifying, setLivenessRightVerifying] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = camera.subscribe(async (event) => {
-      if (event.type === 'SNAPSHOT') {
-        setSnapshot(event.details.file);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [camera.subscribe]);
-
-  const reset = () => {
-    setSnapshot(null);
-    setFaceVerified(false);
-    setFaceVerifying(false);
-    setLivenessLeftVerified(false);
-    setLivenessLeftVerifying(false);
-    setLivenessRightVerified(false);
-    setLivenessRightVerifying(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      setSnapshot(null);
-      setFaceVerified(false);
-      setFaceVerifying(false);
-      setLivenessLeftVerified(false);
-      setLivenessLeftVerifying(false);
-      setLivenessRightVerified(false);
-      setLivenessRightVerifying(false);
-    };
-  }, []);
-
-  useInterval(
-    async () => {
-      if (!camera.videoRef.current) return;
-
-      try {
-        setLivenessRightVerifying(true);
-        const turn = await detectHeadTurn(camera.videoRef.current, true);
-        setLivenessRightVerified(turn === 'RIGHT');
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLivenessRightVerifying(false);
-      }
-    },
-    src == null && camera.opened && !livenessRightVerified && !livenessRightVerifying ? 1000 : null,
-  );
-
-  useInterval(
-    async () => {
-      if (!camera.videoRef.current) return;
-
-      try {
-        setLivenessLeftVerifying(true);
-        const turn = await detectHeadTurn(camera.videoRef.current, true);
-        setLivenessLeftVerified(turn === 'LEFT');
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLivenessLeftVerifying(false);
-      }
-    },
-    src == null &&
-      camera.opened &&
-      livenessRightVerified &&
-      !livenessLeftVerified &&
-      !livenessLeftVerifying
-      ? 1000
-      : null,
-  );
-
-  useInterval(
-    async () => {
-      if (!camera.videoRef.current) return;
-
-      try {
-        setFaceVerifying(true);
-        const score = await detectFace(camera.videoRef.current);
-        setFaceVerified(score >= 0.8);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setFaceVerifying(false);
-      }
-    },
-    src == null && camera.opened && livenessRightVerified && livenessLeftVerified && !faceVerifying
-      ? 1000
-      : null,
-  );
+  const camera = useFaceCamera();
 
   return (
     <div className="w-full">
-      <div hidden={src == null} className="block aspect-square w-full bg-neutral-100">
-        {!!src && (
+      <div hidden={camera.data == null} className="block aspect-square w-full bg-neutral-100">
+        {!!camera.data && (
           <Image
-            src={src}
+            src={URL.createObjectURL(camera.data)}
             alt=""
             width={300}
             height={300}
@@ -268,13 +159,11 @@ function Camera(props: {
       </div>
 
       <div
-        hidden={src != null}
+        hidden={camera.data != null}
         className={twMerge(
           'relative aspect-square w-full rounded-sm bg-neutral-50',
           camera.opened && 'border-2 border-dashed',
-          faceVerified && livenessLeftVerified && livenessRightVerified
-            ? 'border-emerald-400'
-            : 'border-amber-400',
+          camera.canCapture ? 'border-emerald-400' : 'border-amber-400',
         )}
       >
         <video {...camera.getVideoProps()} />
@@ -285,14 +174,14 @@ function Camera(props: {
           </div>
         )}
 
-        {camera.opened && !livenessRightVerified && (
+        {camera.validatingLivenessRight && (
           <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <span>Turn right</span>
             <ArrowBigRightIcon className="size-4 animate-sway-right" />
           </div>
         )}
 
-        {camera.opened && livenessRightVerified && !livenessLeftVerified && (
+        {camera.validatingLivenessLeft && (
           <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <ArrowBigLeftIcon className="size-4 animate-sway-left" />
             <span>Turn left</span>
@@ -301,23 +190,18 @@ function Camera(props: {
       </div>
 
       <div className="mt-5 flex gap-3">
-        {src != null && (
+        {camera.data != null && (
           <>
-            <Button variant="outline" fullWidth onClick={reset}>
+            <Button variant="outline" fullWidth onClick={camera.reset}>
               Retake
             </Button>
             <Button
               fullWidth
               onClick={async () => {
-                if (snapshot) {
-                  const uploadedFile = await mutation.mutateAsync(snapshot);
-                  props.onCompleted?.(snapshot, uploadedFile.url);
-                } else {
-                  props.onCompleted?.(null, null);
-                }
-
-                reset();
-                await camera.close();
+                if (!camera.data) return;
+                const uploadedFile = await mutation.mutateAsync(camera.data);
+                props.onCompleted?.(camera.data, uploadedFile.url);
+                camera.close();
               }}
               disabled={mutation.isPending}
             >
@@ -326,27 +210,21 @@ function Camera(props: {
           </>
         )}
 
-        {src == null && (
+        {camera.data == null && (
           <>
             {!camera.opened && (
               <>
                 <Button
                   variant="outline"
                   fullWidth
-                  onClick={async () => {
-                    await camera.close();
-                    reset();
+                  onClick={() => {
+                    camera.close();
                     props.onCancelled?.();
                   }}
                 >
                   Cancel
                 </Button>
-                <Button
-                  fullWidth
-                  onClick={async () => {
-                    await camera.open();
-                  }}
-                >
+                <Button fullWidth disabled={camera.opening} onClick={camera.open}>
                   Open
                 </Button>
               </>
@@ -357,24 +235,15 @@ function Camera(props: {
                 <Button
                   variant="outline"
                   fullWidth
-                  onClick={async () => {
-                    await camera.close();
-                    reset();
-                  }}
+                  onClick={camera.close}
+                  disabled={camera.capturing}
                 >
                   Close
                 </Button>
                 <Button
                   fullWidth
-                  onClick={async () => {
-                    await camera.snap();
-                  }}
-                  disabled={
-                    camera.snapping ||
-                    !faceVerified ||
-                    !livenessLeftVerified ||
-                    !livenessRightVerified
-                  }
+                  onClick={camera.capture}
+                  disabled={!camera.canCapture || camera.capturing}
                 >
                   Take photo
                 </Button>

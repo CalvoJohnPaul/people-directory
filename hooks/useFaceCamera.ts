@@ -1,17 +1,11 @@
 import {invariant} from 'es-toolkit';
 import {type ComponentPropsWithRef, useRef, useState} from 'react';
-import {useInterval, useMediaQuery} from 'usehooks-ts';
-import {
-  cropIdDocument,
-  detectIdDocument,
-  explainIdDocumentDetection,
-  type SuccessIdDocumentDetectionData,
-} from '~/utils/idDocument';
+import {useInterval} from 'usehooks-ts';
+import {cropFace, detectFace, detectHeadTurn, type FaceDetectionResult} from '~/utils/face';
 
-export interface UseIdDocumentCameraReturn {
+export interface UseFaceCameraReturn {
   open: () => Promise<void>;
   close: () => void;
-  hint: string | null;
   data: File | null;
   error: string | null;
   opened: boolean;
@@ -21,14 +15,16 @@ export interface UseIdDocumentCameraReturn {
   canCapture: boolean;
   capture: () => void;
   reset: () => void;
+  validatingFace: boolean;
+  validatingLivenessLeft: boolean;
+  validatingLivenessRight: boolean;
 }
 
-export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
+export function useFaceCamera(): UseFaceCameraReturn {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream>(null);
 
-  const desktop = useMediaQuery('(min-width: 1024px)');
-  const aspectRatio = desktop ? 16 / 9 : 4 / 3;
+  const aspectRatio = 1;
   const getVideoProps = (): ComponentPropsWithRef<'video'> => ({
     ref: videoRef,
     muted: true,
@@ -43,34 +39,43 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     },
   });
 
-  const [hint, setHint] = useState<string | null>(null);
   const [data, setData] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
   const [opening, setOpening] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [validated, setValidated] = useState(false);
-  const [validating, setValidating] = useState(false);
 
-  const [result, setResult] = useState<SuccessIdDocumentDetectionData | null>(null);
+  const [faceValidated, setFaceValidated] = useState(false);
+  const [validatingFace, setValidatingFace] = useState(false);
+  const [livenessLeftValidated, setLivenessLeftValidated] = useState(false);
+  const [validatingLivenessLeft, setValidatingLivenessLeft] = useState(false);
+  const [livenessRightValidated, setLivenessRightValidated] = useState(false);
+  const [validatingLivenessRight, setValidatingLivenessRight] = useState(false);
+
+  const [result, setResult] = useState<FaceDetectionResult | null>(null);
 
   const open = async (): Promise<void> => {
     invariant(videoRef.current, 'video element not found');
 
-    setHint(null);
     setData(null);
     setError(null);
     setOpened(false);
     setOpening(true);
-    setValidated(false);
-    setValidating(false);
+    setCapturing(false);
+    setFaceValidated(false);
+    setValidatingFace(false);
+    setLivenessLeftValidated(false);
+    setValidatingLivenessLeft(false);
+    setLivenessRightValidated(false);
+    setValidatingLivenessRight(false);
+    setResult(null);
 
     try {
       const result = await navigator.mediaDevices.getUserMedia({
         audio: false,
         preferCurrentTab: true,
         video: {
-          facingMode: desktop ? 'environment' : 'user',
+          facingMode: 'environment',
           noiseSuppression: true,
           width: {
             ideal: 9999,
@@ -117,13 +122,17 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
   };
 
   const close = () => {
-    setHint(null);
     setData(null);
     setError(null);
     setOpened(false);
     setOpening(false);
-    setValidated(false);
-    setValidating(false);
+    setCapturing(false);
+    setFaceValidated(false);
+    setValidatingFace(false);
+    setLivenessLeftValidated(false);
+    setValidatingLivenessLeft(false);
+    setLivenessRightValidated(false);
+    setValidatingLivenessRight(false);
     setResult(null);
 
     if (streamRef.current) {
@@ -149,6 +158,53 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
         return;
       }
 
+      try {
+        setLivenessRightValidated(true);
+        const turn = await detectHeadTurn(videoRef.current, true);
+        setLivenessRightValidated(turn === 'RIGHT');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLivenessRightValidated(false);
+      }
+    },
+    !opened || livenessRightValidated || validatingLivenessRight || capturing || data ? null : 1000,
+  );
+
+  useInterval(
+    async () => {
+      if (!videoRef.current) {
+        console.warn('video element not found');
+        return;
+      }
+
+      try {
+        setLivenessLeftValidated(true);
+        const turn = await detectHeadTurn(videoRef.current, true);
+        setLivenessLeftValidated(turn === 'LEFT');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLivenessLeftValidated(false);
+      }
+    },
+    !opened ||
+      !livenessRightValidated ||
+      livenessLeftValidated ||
+      validatingLivenessLeft ||
+      capturing ||
+      data
+      ? null
+      : 1000,
+  );
+
+  useInterval(
+    async () => {
+      if (!videoRef.current) {
+        console.warn('video element not found');
+        return;
+      }
+
       const canvas = document.createElement('canvas');
 
       canvas.width = videoRef.current.videoWidth;
@@ -163,55 +219,61 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
 
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const detection = await detectIdDocument(imageData);
-      const result = explainIdDocumentDetection(detection);
+      const result = await detectFace(canvas);
 
-      if (!result.ok) {
-        setHint(result.error.message);
-        setValidated(false);
+      if (!result) {
+        setFaceValidated(false);
         setResult(null);
       } else {
-        setHint(null);
-        setValidated(true);
-        setResult(result.data);
+        setFaceValidated(true);
+        setResult(result);
       }
 
-      setValidating(false);
+      setValidatingFace(false);
     },
-    !opened || validating || capturing || data ? null : result ? 2500 : 1000,
+    !opened ||
+      !livenessLeftValidated ||
+      !livenessRightValidated ||
+      faceValidated ||
+      validatingFace ||
+      capturing ||
+      data
+      ? null
+      : result
+        ? 2500
+        : 1000,
   );
 
   const reset = () => {
-    setHint(null);
     setData(null);
     setError(null);
-    setValidated(false);
-    setValidating(false);
+    setFaceValidated(false);
+    setLivenessLeftValidated(false);
+    setLivenessRightValidated(false);
     setResult(null);
   };
 
-  const canCapture = validated && result != null && data == null && !capturing;
+  const canCapture = result != null && data == null && !capturing;
 
   const capture = async () => {
     if (!canCapture) {
-      console.warn('ID document cannot be captured at this moment. Please wait and try again.');
+      console.warn('Face cannot be captured at this moment. Please wait and try again.');
       return;
     }
 
     setCapturing(true);
-    const cropped = await cropIdDocument(result.file, result.cropPoints);
+    const cropped = await cropFace(result.file, result.cropPoints);
     setCapturing(false);
     setData(cropped);
-    setHint(null);
-    setValidated(false);
-    setResult(null);
+    setLivenessLeftValidated(false);
+    setLivenessRightValidated(false);
+    setFaceValidated(false);
   };
 
   return {
     open,
     close,
-    hint,
+    reset,
     data,
     error,
     opened,
@@ -220,6 +282,8 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     capture,
     canCapture,
     capturing,
-    reset,
+    validatingFace,
+    validatingLivenessLeft,
+    validatingLivenessRight,
   };
 }
