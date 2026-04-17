@@ -18,7 +18,7 @@ interface CropPoint {
   y: number;
 }
 
-export interface CropPoints {
+interface CropPoints {
   topLeft: CropPoint;
   topRight: CropPoint;
   bottomRight: CropPoint;
@@ -95,51 +95,109 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
   return landmarker;
 }
 
+export interface DetectFaceOptions {
+  maxFaces?: number;
+  headTurn?: HeadTurn;
+  mirrored?: boolean;
+}
+
 export async function detectFace(
   subject: HTMLCanvasElement | File,
-  max = 1,
+  options: DetectFaceOptions = {},
 ): Promise<FaceDetectionResult | null> {
+  const {headTurn, mirrored, maxFaces = 1} = options;
+
   try {
     const detector = await $getFaceDetector('IMAGE');
+    let sourceWidth = 0;
+    let sourceHeight = 0;
+    let file: File;
+    let detections: ReturnType<FaceDetector['detect']>['detections'];
+    let landmarkerInput: HTMLImageElement | HTMLCanvasElement;
 
     if (subject instanceof File) {
       const image = await $loadImage(subject);
       const result = detector.detect(image);
-      const detections = result.detections;
-
-      if (detections.length < 1 || detections.length > max) return null;
-
-      const detection = detections[0];
-      const boundingBox = detection.boundingBox;
-
-      if (!boundingBox) return null;
-
-      return {
-        cropPoints: $toCropPoints(
-          $getFaceCropBounds(
-            image.naturalWidth || image.width,
-            image.naturalHeight || image.height,
-            boundingBox,
-          ),
-        ),
-        file: subject,
-        score: detection.categories.at(0)?.score ?? 0,
-      };
+      detections = result.detections;
+      sourceWidth = image.naturalWidth || image.width;
+      sourceHeight = image.naturalHeight || image.height;
+      file = subject;
+      landmarkerInput = image;
+    } else {
+      file = await $canvasToFile(subject);
+      const result = detector.detect(subject);
+      detections = result.detections;
+      sourceWidth = subject.width;
+      sourceHeight = subject.height;
+      landmarkerInput = subject;
     }
 
-    const file = await $canvasToFile(subject);
-    const result = detector.detect(subject);
-    const detections = result.detections;
-    if (detections.length < 1 || detections.length > max) return null;
-    const detection = detections[0];
-    const boundingBox = detection.boundingBox;
+    if (detections.length < 1 || detections.length > maxFaces) return null;
+
+    const firstDetection = detections[0];
+    const boundingBox = firstDetection.boundingBox;
 
     if (!boundingBox) return null;
 
+    const {height, originX, originY, width} = boundingBox;
+    const marginX = width * 0.25;
+    const marginTop = Math.max(height * 0.55, width * 0.35);
+    const marginBottom = height * 1.05;
+
+    const desiredLeft = originX - marginX;
+    const desiredTop = originY - marginTop;
+    const desiredRight = originX + width + marginX;
+    const desiredBottom = originY + height + marginBottom;
+
+    const sourceX = Math.max(0, desiredLeft);
+    const sourceY = Math.max(0, desiredTop);
+    const sourceRight = Math.min(sourceWidth, desiredRight);
+    let sourceBottom = Math.min(sourceHeight, desiredBottom);
+
+    const lostTop = sourceY - desiredTop;
+
+    if (lostTop > 0) {
+      sourceBottom = Math.min(sourceHeight, sourceBottom + lostTop);
+    }
+
+    const sourceCropWidth = Math.max(1, sourceRight - sourceX);
+    const sourceCropHeight = Math.max(1, sourceBottom - sourceY);
+    const squareSize = Math.max(sourceCropWidth, sourceCropHeight);
+    const excessWidth = squareSize - sourceCropWidth;
+    const excessHeight = squareSize - sourceCropHeight;
+
+    let finalSourceX = Math.max(0, sourceX - Math.floor(excessWidth / 2));
+    let finalSourceY = Math.max(0, sourceY - Math.floor(excessHeight / 2));
+
+    finalSourceX = Math.min(finalSourceX, Math.max(0, sourceWidth - squareSize));
+    finalSourceY = Math.min(finalSourceY, Math.max(0, sourceHeight - squareSize));
+
+    const right = finalSourceX + squareSize;
+    const bottom = finalSourceY + squareSize;
+
+    if (headTurn) {
+      const landmarker = await $getFaceLandmarker('IMAGE');
+      const landmarkerResult = landmarker.detect(landmarkerInput);
+      const matrix = landmarkerResult.facialTransformationMatrixes?.[0]?.data;
+
+      if (!matrix) return null;
+
+      const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+      const yaw = mirrored ? -_yaw : _yaw;
+      const detectedHeadTurn: HeadTurn = yaw > 15 ? 'RIGHT' : yaw < -15 ? 'LEFT' : 'CENTER';
+
+      if (detectedHeadTurn !== headTurn) return null;
+    }
+
     return {
-      cropPoints: $toCropPoints($getFaceCropBounds(subject.width, subject.height, boundingBox)),
+      cropPoints: {
+        topLeft: {x: finalSourceX, y: finalSourceY},
+        topRight: {x: right, y: finalSourceY},
+        bottomRight: {x: right, y: bottom},
+        bottomLeft: {x: finalSourceX, y: bottom},
+      },
       file,
-      score: detection.categories.at(0)?.score ?? 0,
+      score: firstDetection.categories.at(0)?.score ?? 0,
     };
   } catch (error) {
     console.error(error);
@@ -158,118 +216,6 @@ async function $canvasToFile(canvas: HTMLCanvasElement): Promise<File> {
     endings: 'native',
     lastModified: Date.now(),
   });
-}
-
-function $drawToCanvas(
-  source: CanvasImageSource,
-  width: number,
-  height: number,
-): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  invariant(context, 'Could not get canvas context');
-
-  canvas.width = width;
-  canvas.height = height;
-  context.drawImage(source, 0, 0, width, height);
-
-  return canvas;
-}
-
-function $getFaceCropBounds(
-  sourceWidth: number,
-  sourceHeight: number,
-  boundingBox: NonNullable<ReturnType<FaceDetector['detect']>['detections'][number]['boundingBox']>,
-) {
-  const {height, originX, originY, width} = boundingBox;
-  const marginX = width * 0.25;
-  const marginTop = Math.max(height * 0.55, width * 0.35);
-  const marginBottom = height * 1.05;
-
-  const desiredLeft = originX - marginX;
-  const desiredTop = originY - marginTop;
-  const desiredRight = originX + width + marginX;
-  const desiredBottom = originY + height + marginBottom;
-
-  const sourceX = Math.max(0, desiredLeft);
-  const sourceY = Math.max(0, desiredTop);
-  const sourceRight = Math.min(sourceWidth, desiredRight);
-  let sourceBottom = Math.min(sourceHeight, desiredBottom);
-
-  const lostTop = sourceY - desiredTop;
-
-  if (lostTop > 0) {
-    sourceBottom = Math.min(sourceHeight, sourceBottom + lostTop);
-  }
-
-  const sourceCropWidth = Math.max(1, sourceRight - sourceX);
-  const sourceCropHeight = Math.max(1, sourceBottom - sourceY);
-  const squareSize = Math.max(sourceCropWidth, sourceCropHeight);
-  const excessWidth = squareSize - sourceCropWidth;
-  const excessHeight = squareSize - sourceCropHeight;
-
-  let finalSourceX = Math.max(0, sourceX - Math.floor(excessWidth / 2));
-  let finalSourceY = Math.max(0, sourceY - Math.floor(excessHeight / 2));
-
-  finalSourceX = Math.min(finalSourceX, Math.max(0, sourceWidth - squareSize));
-  finalSourceY = Math.min(finalSourceY, Math.max(0, sourceHeight - squareSize));
-
-  return {
-    x: finalSourceX,
-    y: finalSourceY,
-    size: squareSize,
-  };
-}
-
-function $toCropPoints(bounds: {x: number; y: number; size: number}): CropPoints {
-  const right = bounds.x + bounds.size;
-  const bottom = bounds.y + bounds.size;
-
-  return {
-    topLeft: {x: bounds.x, y: bounds.y},
-    topRight: {x: right, y: bounds.y},
-    bottomRight: {x: right, y: bottom},
-    bottomLeft: {x: bounds.x, y: bottom},
-  };
-}
-
-function $cropPointsToBounds(cropPoints: CropPoints) {
-  const left = Math.min(cropPoints.topLeft.x, cropPoints.bottomLeft.x);
-  const top = Math.min(cropPoints.topLeft.y, cropPoints.topRight.y);
-  const right = Math.max(cropPoints.topRight.x, cropPoints.bottomRight.x);
-  const bottom = Math.max(cropPoints.bottomLeft.y, cropPoints.bottomRight.y);
-
-  return {
-    x: left,
-    y: top,
-    size: Math.max(1, Math.max(right - left, bottom - top)),
-  };
-}
-
-async function $cropCanvasToFile(source: HTMLCanvasElement, cropPoints: CropPoints): Promise<File> {
-  const bounds = $cropPointsToBounds(cropPoints);
-  const outputSize = 1024;
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  invariant(context, 'Could not get cropped canvas context');
-
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-  context.drawImage(
-    source,
-    bounds.x,
-    bounds.y,
-    bounds.size,
-    bounds.size,
-    0,
-    0,
-    outputSize,
-    outputSize,
-  );
-
-  return $canvasToFile(canvas);
 }
 
 async function $loadImage(file: File): Promise<HTMLImageElement> {
@@ -292,78 +238,38 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
 }
 
 export type HeadTurn = 'LEFT' | 'RIGHT' | 'CENTER';
+export interface DetectHeadTurnOptions {
+  mirrored?: boolean;
+}
 
 export async function detectHeadTurn(
-  subject: HTMLVideoElement | HTMLImageElement | File,
-  mirrored = false,
+  video: HTMLVideoElement,
+  options: DetectHeadTurnOptions = {},
 ): Promise<HeadTurn | null> {
+  const {mirrored = false} = options;
+
   try {
-    if (subject instanceof File) {
-      return $detectHeadTurnFromFile(subject, mirrored);
-    } else if (subject instanceof HTMLImageElement) {
-      return $detectHeadTurnFromImage(subject, mirrored);
-    } else if (subject instanceof HTMLVideoElement) {
-      return $detectHeadTurnFromVideo(subject, mirrored);
-    } else {
-      const error = new Error();
-      error.name = 'InvalidSubjectError';
-      error.message = 'Subject must be an instance of HTMLImageElement, HTMLVideoElement or File.';
-      Error.captureStackTrace?.(error, detectHeadTurn);
-      throw error;
-    }
+    if (video.readyState < 2) return null;
+
+    const landmarker = await $getFaceLandmarker('VIDEO');
+    const result = landmarker.detectForVideo(video, performance.now());
+
+    if (!result.faceLandmarks.length) return null;
+
+    const matrix = result.facialTransformationMatrixes?.[0]?.data;
+
+    if (!matrix) return null;
+
+    const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
+    const yaw = mirrored ? -_yaw : _yaw;
+
+    if (yaw > 15) return 'RIGHT';
+    if (yaw < -15) return 'LEFT';
+    return 'CENTER';
   } catch (error) {
     console.error(error);
     return null;
   }
-}
-
-async function $detectHeadTurnFromImage(
-  image: HTMLImageElement,
-  mirrored?: boolean,
-): Promise<HeadTurn | null> {
-  const landmarker = await $getFaceLandmarker();
-  const result = landmarker.detect(image);
-
-  if (!result.faceLandmarks.length) return null;
-
-  const matrix = result.facialTransformationMatrixes?.[0]?.data;
-
-  if (!matrix) return null;
-
-  const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
-  const yaw = mirrored ? -_yaw : _yaw;
-
-  if (yaw > 15) return 'RIGHT';
-  if (yaw < -15) return 'LEFT';
-  return 'CENTER';
-}
-
-async function $detectHeadTurnFromFile(file: File, mirrored?: boolean): Promise<HeadTurn | null> {
-  const image = await $loadImage(file);
-  return $detectHeadTurnFromImage(image, mirrored);
-}
-
-async function $detectHeadTurnFromVideo(
-  video: HTMLVideoElement,
-  mirrored?: boolean,
-): Promise<HeadTurn | null> {
-  if (video.readyState < 2) return null;
-
-  const landmarker = await $getFaceLandmarker('VIDEO');
-  const result = landmarker.detectForVideo(video, performance.now());
-
-  if (!result.faceLandmarks.length) return null;
-
-  const matrix = result.facialTransformationMatrixes?.[0]?.data;
-
-  if (!matrix) return null;
-
-  const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
-  const yaw = mirrored ? -_yaw : _yaw;
-
-  if (yaw > 15) return 'RIGHT';
-  if (yaw < -15) return 'LEFT';
-  return 'CENTER';
 }
 
 export interface FaceEmbedding {
@@ -383,44 +289,68 @@ export async function getFaceEmbedding(file: File): Promise<FaceEmbedding | null
     canvas.height = image.naturalHeight || image.height;
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    const embedding_0 = await $extractEmbeddingFromCanvas(canvas);
+    const landmarker = await $getFaceLandmarker('IMAGE');
+    const originalResult = landmarker.detect(canvas);
+    const originalBlendshape = originalResult.faceBlendshapes?.at(0);
 
-    if (embedding_0) {
+    const originalEmbedding = originalBlendshape
+      ? (() => {
+          const values = originalBlendshape.categories
+            .map((category) => category.score)
+            .filter((score) => Number.isFinite(score));
+
+          if (!values.length) return null;
+
+          const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+
+          if (norm === 0) return null;
+
+          return values.map((value) => value / norm);
+        })()
+      : null;
+
+    if (originalEmbedding) {
       return {
-        data: embedding_0,
-        vector: $embeddingToVector(embedding_0),
+        data: originalEmbedding,
+        vector: `[${originalEmbedding.join(',')}]`,
       };
     }
 
-    const embedding_1 = await $extractEmbeddingFromCanvas($enhanceCanvas(canvas, 1.35, 1.28));
+    const enhancedCanvas = document.createElement('canvas');
+    const enhancedContext = enhancedCanvas.getContext('2d');
 
-    if (embedding_1) {
+    invariant(enhancedContext, 'Could not get enhancement canvas context');
+
+    enhancedCanvas.width = canvas.width;
+    enhancedCanvas.height = canvas.height;
+    enhancedContext.filter = `brightness(${1.35}) contrast(${1.28})`;
+    enhancedContext.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+    enhancedContext.filter = 'none';
+
+    const enhancedResult = landmarker.detect(enhancedCanvas);
+    const enhancedBlendshape = enhancedResult.faceBlendshapes?.at(0);
+
+    const enhancedEmbedding = enhancedBlendshape
+      ? (() => {
+          const values = enhancedBlendshape.categories
+            .map((category) => category.score)
+            .filter((score) => Number.isFinite(score));
+
+          if (!values.length) return null;
+
+          const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
+
+          if (norm === 0) return null;
+
+          return values.map((value) => value / norm);
+        })()
+      : null;
+
+    if (enhancedEmbedding) {
       return {
-        data: embedding_1,
-        vector: $embeddingToVector(embedding_1),
+        data: enhancedEmbedding,
+        vector: `[${enhancedEmbedding.join(',')}]`,
       };
-    }
-
-    const cropped_0 = await $cropFaceFromCanvas(canvas);
-
-    if (cropped_0) {
-      const embedding_2 = await $extractEmbeddingFromCanvas(cropped_0);
-
-      if (embedding_2) {
-        return {
-          data: embedding_2,
-          vector: $embeddingToVector(embedding_2),
-        };
-      }
-
-      const cropped_1 = $enhanceCanvas(cropped_0, 1.25, 1.22);
-      const embedding_3 = await $extractEmbeddingFromCanvas(cropped_1);
-
-      if (embedding_3)
-        return {
-          data: embedding_3,
-          vector: $embeddingToVector(embedding_3),
-        };
     }
 
     return null;
@@ -430,90 +360,37 @@ export async function getFaceEmbedding(file: File): Promise<FaceEmbedding | null
   }
 }
 
-function $embeddingToVector(value: number[]): string {
-  return `[${value.join(',')}]`;
-}
-
-async function $extractEmbeddingFromCanvas(canvas: HTMLCanvasElement): Promise<number[] | null> {
-  const landmarker = await $getFaceLandmarker('IMAGE');
-  const result = landmarker.detect(canvas);
-  const faceBlendshape = result.faceBlendshapes?.at(0);
-
-  if (!faceBlendshape) return null;
-
-  const values = faceBlendshape.categories
-    .map((category) => category.score)
-    .filter((score) => Number.isFinite(score));
-
-  if (!values.length) return null;
-
-  const norm = Math.sqrt(values.reduce((sum, value) => sum + value * value, 0));
-
-  if (norm === 0) return null;
-
-  return values.map((value) => value / norm);
-}
-
-function $enhanceCanvas(
-  source: HTMLCanvasElement,
-  brightness: number,
-  contrast: number,
-): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  invariant(context, 'Could not get enhancement canvas context');
-
-  canvas.width = source.width;
-  canvas.height = source.height;
-  context.filter = `brightness(${brightness}) contrast(${contrast})`;
-  context.drawImage(source, 0, 0, source.width, source.height);
-  context.filter = 'none';
-
-  return canvas;
-}
-
-async function $cropFaceFromCanvas(source: HTMLCanvasElement): Promise<HTMLCanvasElement | null> {
-  const detector = await $getFaceDetector('IMAGE');
-  const result = detector.detect(source);
-  const detection = result.detections.at(0);
-  const box = detection?.boundingBox;
-
-  if (!box) return null;
-
-  const marginX = box.width * 0.3;
-  const marginY = box.height * 0.45;
-  const left = Math.max(0, Math.floor(box.originX - marginX));
-  const top = Math.max(0, Math.floor(box.originY - marginY));
-  const right = Math.min(source.width, Math.ceil(box.originX + box.width + marginX));
-  const bottom = Math.min(source.height, Math.ceil(box.originY + box.height + marginY));
-  const width = Math.max(1, right - left);
-  const height = Math.max(1, bottom - top);
-
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  invariant(context, 'Could not get crop canvas context');
-
-  canvas.width = 512;
-  canvas.height = 512;
-  context.drawImage(source, left, top, width, height, 0, 0, 512, 512);
-
-  return canvas;
-}
-
 export async function cropFace(file: File, cropPoints?: CropPoints): Promise<File> {
   try {
     if (!cropPoints) return file;
 
     const image = await $loadImage(file);
-    const canvas = $drawToCanvas(
-      image,
-      image.naturalWidth || image.width,
-      image.naturalHeight || image.height,
-    );
+    const canvas = document.createElement('canvas');
+    const sourceContext = canvas.getContext('2d');
 
-    return $cropCanvasToFile(canvas, cropPoints);
+    invariant(sourceContext, 'Could not get canvas context');
+
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    sourceContext.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const left = Math.min(cropPoints.topLeft.x, cropPoints.bottomLeft.x);
+    const top = Math.min(cropPoints.topLeft.y, cropPoints.topRight.y);
+    const right = Math.max(cropPoints.topRight.x, cropPoints.bottomRight.x);
+    const bottom = Math.max(cropPoints.bottomLeft.y, cropPoints.bottomRight.y);
+    const size = Math.max(1, Math.max(right - left, bottom - top));
+
+    const outputSize = 1024;
+    const outputCanvas = document.createElement('canvas');
+    const context = outputCanvas.getContext('2d');
+
+    invariant(context, 'Could not get cropped canvas context');
+
+    outputCanvas.width = outputSize;
+    outputCanvas.height = outputSize;
+    context.drawImage(canvas, left, top, size, size, 0, 0, outputSize, outputSize);
+
+    return $canvasToFile(outputCanvas);
   } catch (error) {
     console.error(error);
     return file;

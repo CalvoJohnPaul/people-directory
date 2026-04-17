@@ -15,9 +15,9 @@ export interface UseFaceCameraReturn {
   canCapture: boolean;
   capture: () => void;
   reset: () => void;
-  validatingFace: boolean;
-  validatingLivenessLeft: boolean;
-  validatingLivenessRight: boolean;
+  verifyingFace: boolean;
+  verifyingLivenessLeft: boolean;
+  verifyingLivenessRight: boolean;
 }
 
 export function useFaceCamera(): UseFaceCameraReturn {
@@ -36,6 +36,7 @@ export function useFaceCamera(): UseFaceCameraReturn {
       width: '100%',
       boxSizing: 'border-box',
       aspectRatio,
+      transform: 'scaleX(-1)',
     },
   });
 
@@ -159,16 +160,18 @@ export function useFaceCamera(): UseFaceCameraReturn {
       }
 
       try {
-        setLivenessRightValidated(true);
-        const turn = await detectHeadTurn(videoRef.current, true);
+        setValidatingLivenessRight(true);
+        const turn = await detectHeadTurn(videoRef.current, {mirrored: true});
         setLivenessRightValidated(turn === 'RIGHT');
       } catch (error) {
         console.error(error);
       } finally {
-        setLivenessRightValidated(false);
+        setValidatingLivenessRight(false);
       }
     },
-    !opened || livenessRightValidated || validatingLivenessRight || capturing || data ? null : 1000,
+    opened && !livenessRightValidated && !validatingLivenessRight && !capturing && data == null
+      ? 1000
+      : null,
   );
 
   useInterval(
@@ -179,23 +182,23 @@ export function useFaceCamera(): UseFaceCameraReturn {
       }
 
       try {
-        setLivenessLeftValidated(true);
-        const turn = await detectHeadTurn(videoRef.current, true);
+        setValidatingLivenessLeft(true);
+        const turn = await detectHeadTurn(videoRef.current, {mirrored: true});
         setLivenessLeftValidated(turn === 'LEFT');
       } catch (error) {
         console.error(error);
       } finally {
-        setLivenessLeftValidated(false);
+        setValidatingLivenessLeft(false);
       }
     },
-    !opened ||
-      !livenessRightValidated ||
-      livenessLeftValidated ||
-      validatingLivenessLeft ||
-      capturing ||
-      data
-      ? null
-      : 1000,
+    opened &&
+      livenessRightValidated &&
+      !livenessLeftValidated &&
+      !validatingLivenessLeft &&
+      !capturing &&
+      data == null
+      ? 1000
+      : null,
   );
 
   useInterval(
@@ -204,6 +207,8 @@ export function useFaceCamera(): UseFaceCameraReturn {
         console.warn('video element not found');
         return;
       }
+
+      setValidatingFace(true);
 
       const canvas = document.createElement('canvas');
 
@@ -217,9 +222,14 @@ export function useFaceCamera(): UseFaceCameraReturn {
         return;
       }
 
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-      const result = await detectFace(canvas);
+      const result = await detectFace(canvas, {
+        headTurn: 'CENTER',
+        mirrored: true,
+      });
 
       if (!result) {
         setFaceValidated(false);
@@ -237,7 +247,7 @@ export function useFaceCamera(): UseFaceCameraReturn {
       faceValidated ||
       validatingFace ||
       capturing ||
-      data
+      data != null
       ? null
       : result
         ? 2500
@@ -282,8 +292,8 @@ export function useFaceCamera(): UseFaceCameraReturn {
     capture,
     canCapture,
     capturing,
-    validatingFace,
-    validatingLivenessLeft,
-    validatingLivenessRight,
+    verifyingFace: opened && !faceValidated && livenessLeftValidated && livenessRightValidated,
+    verifyingLivenessLeft: opened && !livenessLeftValidated && livenessRightValidated,
+    verifyingLivenessRight: opened && !livenessRightValidated,
   };
 }

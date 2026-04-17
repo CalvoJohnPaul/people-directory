@@ -397,7 +397,7 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
         return;
       }
 
-      const detection = await detectFace(file, 3);
+      const detection = await detectFace(file, {maxFaces: 3});
 
       if (!detection) {
         toaster.error({

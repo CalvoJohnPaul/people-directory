@@ -149,6 +149,11 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
         return;
       }
 
+      if (videoRef.current.readyState < videoRef.current.HAVE_ENOUGH_DATA) {
+        console.warn('video not ready');
+        return;
+      }
+
       const canvas = document.createElement('canvas');
 
       canvas.width = videoRef.current.videoWidth;

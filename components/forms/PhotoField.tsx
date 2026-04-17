@@ -163,7 +163,11 @@ function Camera(props: {
         className={twMerge(
           'relative aspect-square w-full rounded-sm bg-neutral-50',
           camera.opened && 'border-2 border-dashed',
-          camera.canCapture ? 'border-emerald-400' : 'border-amber-400',
+          camera.canCapture
+            ? 'border-emerald-400'
+            : camera.verifyingFace
+              ? 'border-amber-400'
+              : 'border-neutral-300',
         )}
       >
         <video {...camera.getVideoProps()} />
@@ -174,14 +178,14 @@ function Camera(props: {
           </div>
         )}
 
-        {camera.validatingLivenessRight && (
+        {camera.verifyingLivenessRight && (
           <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <span>Turn right</span>
             <ArrowBigRightIcon className="size-4 animate-sway-right" />
           </div>
         )}
 
-        {camera.validatingLivenessLeft && (
+        {camera.verifyingLivenessLeft && (
           <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-emerald-800/50 px-2.5 py-1.5 font-mono text-emerald-100 text-xs uppercase leading-none">
             <ArrowBigLeftIcon className="size-4 animate-sway-left" />
             <span>Turn left</span>
