@@ -13,6 +13,24 @@ let $faceLandmarker: FaceLandmarker | null = null;
 let $faceLandmarkerRunningMode: FaceLandmarkerOptions['runningMode'] | null = null;
 let $vision: Awaited<ReturnType<(typeof FilesetResolver)['forVisionTasks']>> | null = null;
 
+interface CropPoint {
+  x: number;
+  y: number;
+}
+
+export interface CropPoints {
+  topLeft: CropPoint;
+  topRight: CropPoint;
+  bottomRight: CropPoint;
+  bottomLeft: CropPoint;
+}
+
+export interface FaceDetectionResult {
+  cropPoints: CropPoints;
+  file: File;
+  score: number;
+}
+
 async function $getVision() {
   if (!$vision) {
     $vision = await FilesetResolver.forVisionTasks(
@@ -78,14 +96,26 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
 }
 
 export async function detectFace(
-  subject: HTMLImageElement | HTMLVideoElement | File,
+  subject: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | File,
   max = 1,
-): Promise<number> {
+): Promise<FaceDetectionResult | null> {
   try {
     if (subject instanceof File) {
       return $detectFaceFromFile(subject, max);
     } else if (subject instanceof HTMLImageElement) {
-      return $detectFaceFromImage(subject, max);
+      const canvas = $drawToCanvas(
+        subject,
+        subject.naturalWidth || subject.width,
+        subject.naturalHeight || subject.height,
+      );
+
+      return $detectFaceFromCanvas(canvas, await $canvasToFile(canvas, 'face-detection.jpg'), max);
+    } else if (subject instanceof HTMLCanvasElement) {
+      return $detectFaceFromCanvas(
+        subject,
+        await $canvasToFile(subject, 'face-detection.jpg'),
+        max,
+      );
     } else if (subject instanceof HTMLVideoElement) {
       return $detectFaceFromVideo(subject, max);
     } else {
@@ -97,18 +127,175 @@ export async function detectFace(
     }
   } catch (error) {
     console.error(error);
-    return 0;
+    return null;
   }
 }
 
-async function $detectFaceFromImage(image: HTMLImageElement, max = 1): Promise<number> {
+async function $canvasToFile(
+  canvas: HTMLCanvasElement,
+  name: string,
+  type = 'image/jpeg',
+): Promise<File> {
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 1));
+
+  invariant(blob, 'Could not create a file from the source canvas');
+
+  return new File([blob], name, {
+    type,
+    endings: 'native',
+    lastModified: Date.now(),
+  });
+}
+
+function $drawToCanvas(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  invariant(context, 'Could not get canvas context');
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(source, 0, 0, width, height);
+
+  return canvas;
+}
+
+function $getFaceCropBounds(
+  sourceWidth: number,
+  sourceHeight: number,
+  boundingBox: NonNullable<ReturnType<FaceDetector['detect']>['detections'][number]['boundingBox']>,
+) {
+  const {height, originX, originY, width} = boundingBox;
+  const marginX = width * 0.25;
+  const marginTop = Math.max(height * 0.55, width * 0.35);
+  const marginBottom = height * 1.05;
+
+  const desiredLeft = originX - marginX;
+  const desiredTop = originY - marginTop;
+  const desiredRight = originX + width + marginX;
+  const desiredBottom = originY + height + marginBottom;
+
+  const sourceX = Math.max(0, desiredLeft);
+  const sourceY = Math.max(0, desiredTop);
+  const sourceRight = Math.min(sourceWidth, desiredRight);
+  let sourceBottom = Math.min(sourceHeight, desiredBottom);
+
+  const lostTop = sourceY - desiredTop;
+
+  if (lostTop > 0) {
+    sourceBottom = Math.min(sourceHeight, sourceBottom + lostTop);
+  }
+
+  const sourceCropWidth = Math.max(1, sourceRight - sourceX);
+  const sourceCropHeight = Math.max(1, sourceBottom - sourceY);
+  const squareSize = Math.max(sourceCropWidth, sourceCropHeight);
+  const excessWidth = squareSize - sourceCropWidth;
+  const excessHeight = squareSize - sourceCropHeight;
+
+  let finalSourceX = Math.max(0, sourceX - Math.floor(excessWidth / 2));
+  let finalSourceY = Math.max(0, sourceY - Math.floor(excessHeight / 2));
+
+  finalSourceX = Math.min(finalSourceX, Math.max(0, sourceWidth - squareSize));
+  finalSourceY = Math.min(finalSourceY, Math.max(0, sourceHeight - squareSize));
+
+  return {
+    x: finalSourceX,
+    y: finalSourceY,
+    size: squareSize,
+  };
+}
+
+function $toCropPoints(bounds: {x: number; y: number; size: number}): CropPoints {
+  const right = bounds.x + bounds.size;
+  const bottom = bounds.y + bounds.size;
+
+  return {
+    topLeft: {x: bounds.x, y: bounds.y},
+    topRight: {x: right, y: bounds.y},
+    bottomRight: {x: right, y: bottom},
+    bottomLeft: {x: bounds.x, y: bottom},
+  };
+}
+
+function $cropPointsToBounds(cropPoints: CropPoints) {
+  const left = Math.min(cropPoints.topLeft.x, cropPoints.bottomLeft.x);
+  const top = Math.min(cropPoints.topLeft.y, cropPoints.topRight.y);
+  const right = Math.max(cropPoints.topRight.x, cropPoints.bottomRight.x);
+  const bottom = Math.max(cropPoints.bottomLeft.y, cropPoints.bottomRight.y);
+
+  return {
+    x: left,
+    y: top,
+    size: Math.max(1, Math.max(right - left, bottom - top)),
+  };
+}
+
+async function $cropCanvasToFile(
+  source: HTMLCanvasElement,
+  cropPoints: CropPoints,
+  type: string,
+  name: string,
+): Promise<File> {
+  const bounds = $cropPointsToBounds(cropPoints);
+  const outputSize = 1024;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+
+  invariant(context, 'Could not get cropped canvas context');
+
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+  context.drawImage(
+    source,
+    bounds.x,
+    bounds.y,
+    bounds.size,
+    bounds.size,
+    0,
+    0,
+    outputSize,
+    outputSize,
+  );
+
+  return $canvasToFile(canvas, name, type || 'image/jpeg');
+}
+
+async function $detectFaceFromCanvas(
+  canvas: HTMLCanvasElement,
+  file: File,
+  max = 1,
+): Promise<FaceDetectionResult | null> {
   const detector = await $getFaceDetector('IMAGE');
-  const result = detector.detect(image);
+  const result = detector.detect(canvas);
   const detections = result.detections;
-  if (detections.length < 1 || detections.length > max) return 0;
+  if (detections.length < 1 || detections.length > max) return null;
   const detection = detections[0];
-  const score = detection.categories.at(0)?.score;
-  return score ?? 0;
+  const boundingBox = detection.boundingBox;
+
+  if (!boundingBox) return null;
+
+  return {
+    cropPoints: $toCropPoints($getFaceCropBounds(canvas.width, canvas.height, boundingBox)),
+    file,
+    score: detection.categories.at(0)?.score ?? 0,
+  };
+}
+
+async function $detectFaceFromImage(
+  image: HTMLImageElement,
+  file: File,
+  max = 1,
+): Promise<FaceDetectionResult | null> {
+  const canvas = $drawToCanvas(
+    image,
+    image.naturalWidth || image.width,
+    image.naturalHeight || image.height,
+  );
+  return $detectFaceFromCanvas(canvas, file, max);
 }
 
 async function $loadImage(file: File): Promise<HTMLImageElement> {
@@ -130,19 +317,21 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
   });
 }
 
-async function $detectFaceFromFile(file: File, max = 1): Promise<number> {
+async function $detectFaceFromFile(file: File, max = 1): Promise<FaceDetectionResult | null> {
   const image = await $loadImage(file);
-  return $detectFaceFromImage(image, max);
+  return $detectFaceFromImage(image, file, max);
 }
 
-async function $detectFaceFromVideo(video: HTMLVideoElement, max = 1): Promise<number> {
-  const detector = await $getFaceDetector('VIDEO');
-  const result = detector.detectForVideo(video, performance.now());
-  const detections = result.detections;
-  if (detections.length < 1 || detections.length > max) return 0;
-  const detection = detections[0];
-  const score = detection.categories.at(0)?.score;
-  return score ?? 0;
+async function $detectFaceFromVideo(
+  video: HTMLVideoElement,
+  max = 1,
+): Promise<FaceDetectionResult | null> {
+  if (video.readyState < 2 || video.videoWidth < 1 || video.videoHeight < 1) return null;
+
+  const canvas = $drawToCanvas(video, video.videoWidth, video.videoHeight);
+  const file = await $canvasToFile(canvas, 'face-detection.jpg');
+
+  return $detectFaceFromCanvas(canvas, file, max);
 }
 
 export type HeadTurn = 'LEFT' | 'RIGHT' | 'CENTER';
@@ -356,92 +545,24 @@ async function $cropFaceFromCanvas(source: HTMLCanvasElement): Promise<HTMLCanva
   return canvas;
 }
 
-export async function cropFace(file: File): Promise<File> {
+export async function cropFace(file: File, cropPoints?: CropPoints): Promise<File> {
   try {
-    const detector = await $getFaceDetector('IMAGE');
-    const bitmap = await createImageBitmap(file);
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    const image = await $loadImage(file);
+    const canvas = $drawToCanvas(
+      image,
+      image.naturalWidth || image.width,
+      image.naturalHeight || image.height,
+    );
 
-    invariant(context, 'Could not get canvas context');
-
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    context.drawImage(bitmap, 0, 0);
-    const result = detector.detect(canvas);
-
-    invariant(result.detections.length > 0, 'No faces detected in the image');
-
-    const detection = result.detections[0];
-    const boundingBox = detection.boundingBox;
-
-    invariant(boundingBox, 'No bounding box found for detected face');
-
-    const {height, originX, originY, width} = boundingBox;
-
-    const marginX = width * 0.25;
-    const marginTop = Math.max(height * 0.55, width * 0.35);
-    const marginBottom = height * 1.05;
-
-    const desiredLeft = originX - marginX;
-    const desiredTop = originY - marginTop;
-    const desiredRight = originX + width + marginX;
-    const desiredBottom = originY + height + marginBottom;
-
-    const sourceX = Math.max(0, desiredLeft);
-    const sourceY = Math.max(0, desiredTop);
-    const sourceRight = Math.min(canvas.width, desiredRight);
-    let sourceBottom = Math.min(canvas.height, desiredBottom);
-
-    const lostTop = sourceY - desiredTop;
-
-    if (lostTop > 0) {
-      sourceBottom = Math.min(canvas.height, sourceBottom + lostTop);
+    if (cropPoints) {
+      return $cropCanvasToFile(canvas, cropPoints, file.type, file.name);
     }
 
-    const sourceWidth = Math.max(1, sourceRight - sourceX);
-    const sourceHeight = Math.max(1, sourceBottom - sourceY);
-    const squareSize = Math.max(sourceWidth, sourceHeight);
-    const excessWidth = squareSize - sourceWidth;
-    const excessHeight = squareSize - sourceHeight;
+    const detection = await $detectFaceFromCanvas(canvas, file);
 
-    let finalSourceX = Math.max(0, sourceX - Math.floor(excessWidth / 2));
-    let finalSourceY = Math.max(0, sourceY - Math.floor(excessHeight / 2));
+    invariant(detection, 'No faces detected in the image');
 
-    finalSourceX = Math.min(finalSourceX, Math.max(0, canvas.width - squareSize));
-    finalSourceY = Math.min(finalSourceY, Math.max(0, canvas.height - squareSize));
-
-    const outputSize = 1024;
-    const croppedCanvas = document.createElement('canvas');
-    const croppedContext = croppedCanvas.getContext('2d');
-
-    invariant(croppedContext, 'Could not get cropped canvas context');
-
-    croppedCanvas.width = outputSize;
-    croppedCanvas.height = outputSize;
-    croppedContext.drawImage(
-      canvas,
-      finalSourceX,
-      finalSourceY,
-      squareSize,
-      squareSize,
-      0,
-      0,
-      outputSize,
-      outputSize,
-    );
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      croppedCanvas.toBlob(resolve, file.type, 1),
-    );
-
-    invariant(blob, 'Could not create blob from cropped canvas');
-
-    return new File([blob], file.name, {
-      type: file.type,
-      endings: 'native',
-      lastModified: Date.now(),
-    });
+    return $cropCanvasToFile(canvas, detection.cropPoints, file.type, file.name);
   } catch (error) {
     console.error(error);
     return file;

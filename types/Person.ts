@@ -83,13 +83,6 @@ export const UpdatePersonDataInputDefinition = z.object({
   currentAddress: z.string().optional().or(z.literal('')),
   permanentAddress: z.string().optional().or(z.literal('')),
   idDocument: z.url().optional().or(z.literal('')),
-  password: z
-    .string()
-    .trim()
-    .min(8, 'Password must be at least 8 characters')
-    .max(100, 'Password must be at most 100 characters')
-    .optional()
-    .or(z.literal('')),
 });
 
 export const UpdatePersonInputDefinition = z.object({
@@ -122,9 +115,15 @@ export const PeopleInputDefinition = z
   })
   .partial();
 
+export const UpdatePasswordInputDefinition = z.object({
+  oldPassword: z.string().trim().min(1, 'Current password is required'),
+  newPassword: z.string().trim().min(8, 'New password must be at least 8 characters'),
+});
+
 export type Gender = z.infer<typeof GenderDefinition>;
 export type Person = z.infer<typeof PersonDefinition>;
 export type CreatePersonInput = z.infer<typeof CreatePersonInputDefinition>;
 export type UpdatePersonDataInput = z.infer<typeof UpdatePersonDataInputDefinition>;
 export type UpdatePersonInput = z.infer<typeof UpdatePersonInputDefinition>;
 export type PeopleInput = z.infer<typeof PeopleInputDefinition>;
+export type UpdatePasswordInput = z.infer<typeof UpdatePasswordInputDefinition>;

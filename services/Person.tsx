@@ -1,11 +1,17 @@
 import {render} from '@react-email/components';
-import {hash} from 'bcrypt';
+import {compare, hash} from 'bcrypt';
 import {clamp, isNil, omitBy} from 'es-toolkit';
 import {cache} from 'react';
 import {prisma} from '~/config/prisma';
 import Welcome from '~/emails/Welcome';
 import type {Prisma} from '~/prisma/generated/prisma/client';
-import type {CreatePersonInput, PeopleInput, Person, UpdatePersonDataInput} from '~/types/Person';
+import type {
+  CreatePersonInput,
+  PeopleInput,
+  Person,
+  UpdatePasswordInput,
+  UpdatePersonDataInput,
+} from '~/types/Person';
 import {mailto} from '~/utils/mailto';
 
 export const getPerson = cache(async (id: number): Promise<Person | null> => {
@@ -197,8 +203,6 @@ export async function updatePerson(
   const id = args[0];
   const data = omitBy(args[1], (v) => isNil(v) || v === '');
 
-  if (data.password) data.password = await hash(data.password, 10);
-
   return await prisma.person
     .update({
       data,
@@ -227,4 +231,27 @@ export async function updatePerson(
       ...person,
       fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
     }));
+}
+
+export async function updateAccountPassword(id: number, data: UpdatePasswordInput) {
+  const person = await prisma.person.findUnique({
+    where: {id},
+    select: {
+      password: true,
+    },
+  });
+
+  if (!person) {
+    throw new Error('Person not found');
+  }
+
+  const matches = await compare(data.oldPassword, person.password);
+
+  if (!matches) {
+    throw new Error('Current password is incorrect');
+  }
+
+  const password = await hash(data.newPassword, 8);
+
+  await prisma.person.update({where: {id}, data: {password}});
 }

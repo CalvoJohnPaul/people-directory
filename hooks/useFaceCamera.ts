@@ -1,12 +1,6 @@
 import {invariant} from 'es-toolkit';
 import {type ComponentPropsWithRef, type RefObject, useEffect, useRef, useState} from 'react';
-import {useMediaQuery} from 'usehooks-ts';
-import {
-  cropIdDocument,
-  detectIdDocument,
-  explainIdDocumentDetection,
-  type SuccessIdDocumentDetectionData,
-} from '~/utils/idDocument';
+import {cropFace, detectFace, type FaceDetectionResult} from '~/utils/face';
 
 export interface UseIdDocumentCameraReturn {
   open: () => Promise<void>;
@@ -18,9 +12,9 @@ export interface UseIdDocumentCameraReturn {
   opening: boolean;
   videoRef: RefObject<HTMLVideoElement | null>;
   getVideoProps: () => ComponentPropsWithRef<'video'>;
-  canCapture: boolean;
   capturing: boolean;
-  capture: () => Promise<void>;
+  canCapture: boolean;
+  capture: () => void;
   reset: () => void;
 }
 
@@ -37,11 +31,9 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     style: {
       width: '100%',
       boxSizing: 'border-box',
-      aspectRatio: desktop ? 16 / 9 : 4 / 3,
+      aspectRatio: 4 / 3,
     },
   });
-
-  const desktop = useMediaQuery('(min-width: 1024px)');
 
   const [hint, setHint] = useState<string | null>(null);
   const [data, setData] = useState<File | null>(null);
@@ -51,9 +43,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
   const [capturing, setCapturing] = useState(false);
   const [validated, setValidated] = useState(false);
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<SuccessIdDocumentDetectionData | null>(
-    null,
-  );
+  const [validationResult, setValidationResult] = useState<FaceDetectionResult | null>(null);
 
   const open = async (): Promise<void> => {
     invariant(videoRef.current, 'video element not found');
@@ -63,15 +53,17 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     setError(null);
     setOpened(false);
     setOpening(true);
+    setCapturing(false);
     setValidated(false);
     setValidating(false);
+    setValidationResult(null);
 
     try {
       const result = await navigator.mediaDevices.getUserMedia({
         audio: false,
         preferCurrentTab: true,
         video: {
-          facingMode: desktop ? 'environment' : 'user',
+          facingMode: 'environment',
           noiseSuppression: true,
           width: {
             ideal: 9999,
@@ -80,7 +72,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
             ideal: 9999,
           },
           aspectRatio: {
-            exact: desktop ? 16 / 9 : 4 / 3,
+            exact: 4 / 3,
           },
           frameRate: {
             max: 120,
@@ -166,18 +158,16 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
 
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const detection = await detectIdDocument(imageData);
-        const result = explainIdDocumentDetection(detection);
+        const result = await detectFace(canvas);
 
-        if (!result.ok) {
-          setHint(result.error.message);
+        if (!result) {
+          setHint('Please make sure your face is fully visible and clear');
           setValidated(false);
           setValidationResult(null);
         } else {
           setHint(null);
           setValidated(true);
-          setValidationResult(result.data);
+          setValidationResult(result);
         }
 
         setValidating(false);
@@ -188,14 +178,20 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     return () => {
       clearInterval(interval);
     };
-  }, [data, opened, capturing, validating, validationResult]);
+  }, [
+    /**/
+    data,
+    opened,
+    capturing,
+    validating,
+    validationResult,
+  ]);
 
   const reset = () => {
     setHint(null);
     setData(null);
     setError(null);
     setValidated(false);
-    setValidating(false);
     setValidationResult(null);
   };
 
@@ -203,12 +199,12 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
 
   const capture = async () => {
     if (!canCapture) {
-      console.warn('ID document cannot be captured at this moment. Please wait and try again.');
+      console.warn('Face cannot be captured at this moment. Please wait and try again.');
       return;
     }
 
     setCapturing(true);
-    const cropped = await cropIdDocument(validationResult.file, validationResult.cropPoints);
+    const cropped = await cropFace(validationResult.file, validationResult.cropPoints);
     setData(cropped);
     setHint(null);
     setCapturing(false);
@@ -219,6 +215,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
   return {
     open,
     close,
+    reset,
     hint,
     data,
     error,
@@ -229,6 +226,5 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     capture,
     canCapture,
     capturing,
-    reset,
   };
 }

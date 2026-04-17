@@ -397,9 +397,9 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
         return;
       }
 
-      const faceFound = await detectFace(file, 5);
+      const detection = await detectFace(file, 5);
 
-      if (!faceFound) {
+      if (!detection) {
         toaster.error({
           title: 'No face detected',
           description: 'The uploaded image does not contain a detectable face.',
@@ -408,8 +408,8 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
         return;
       }
 
-      const face = await cropFace(file);
-      const embedding = await getFaceEmbedding(file);
+      const face = await cropFace(detection.file, detection.cropPoints);
+      const embedding = await getFaceEmbedding(face);
 
       if (embedding) {
         setPhoto(face);
