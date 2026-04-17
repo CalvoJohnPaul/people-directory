@@ -1,90 +1,109 @@
 'use client';
 
 import Image from 'next/image';
-import {useRef, useState} from 'react';
+import React, {useEffect} from 'react';
 import {Button} from '~/components/ui/Button';
-import {cropIdDocument, detectIdDocument, explainIdDocumentDetection} from '~/utils/idDocument';
+import {useIdDocumentCamera} from '~/hooks/useIdDocumentCamera';
 
 export default function Page() {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const camera = useIdDocumentCamera();
+  const [photo, setPhoto] = React.useState<string | null>(null);
 
-  const [data, setData] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.clear();
-
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    setData(null);
-    setError(null);
-    setLoading(true);
-
-    try {
-      const detection = await detectIdDocument(file);
-      const result = explainIdDocumentDetection(detection);
-
-      console.log(detection);
-
-      if (!result.ok) {
-        setData(URL.createObjectURL(file));
-        setError(result.error.message);
-        return;
+  useEffect(() => {
+    const unsubscribe = camera.subscribe((event) => {
+      if (event.type === 'ID_DOCUMENT_CAPTURED') {
+        setPhoto(URL.createObjectURL(event.data.file));
       }
+    });
 
-      const cropped = result.data.cropPoints
-        ? await cropIdDocument(result.data.file, result.data.cropPoints)
-        : result.data.file;
-
-      setData(URL.createObjectURL(cropped));
-    } catch (error) {
-      console.warn(error);
-      setError('Failed to process the selected file.');
-    } finally {
-      setLoading(false);
-
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
-    }
-  };
+    return () => {
+      unsubscribe();
+    };
+  }, [camera.subscribe]);
 
   return (
     <div className="p-4">
-      <Button
-        variant="outline"
-        disabled={loading}
-        onClick={() => {
-          inputRef.current?.click();
-        }}
+      <div
+        className="aspect-4/3 w-full border lg:aspect-video lg:w-100 lg:max-w-full"
+        hidden={!!camera.error}
       >
-        {loading ? 'Processing...' : 'Upload'}
-      </Button>
+        <video {...camera.getVideoProps()} hidden={!camera.opened || !!camera.data} />
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleChange}
-        className="hidden"
-      />
+        {!!photo && (
+          <Image src={photo} alt="" width={200} height={200} className="mx-auto h-auto w-80" />
+        )}
+      </div>
 
-      {error && <p className="mt-4 text-red-500 text-sm">{error}</p>}
-      {data && (
-        <div className="mt-4 w-fit border">
-          <Image
-            src={data}
-            alt=""
-            width={250}
-            height={250}
-            className="block h-auto w-40"
-            unoptimized
-          />
-        </div>
-      )}
+      {!!camera.error && <p>{camera.error}</p>}
+
+      <div className="mt-4 flex gap-3">
+        {!camera.data && !camera.error && (
+          <>
+            {!camera.opened && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  camera.open();
+                }}
+                disabled={camera.opening}
+              >
+                Open
+              </Button>
+            )}
+
+            {camera.opened && (
+              <>
+                <Button variant="outline" onClick={() => camera.close()}>
+                  Close
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!camera.canCapture}
+                  onClick={() => {
+                    camera.capture();
+                  }}
+                >
+                  Take photo
+                </Button>
+              </>
+            )}
+          </>
+        )}
+
+        {!!camera.data && (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                camera.reset();
+              }}
+            >
+              Retake
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                /* TODO: upload */
+
+                camera.close();
+              }}
+            >
+              Use photo
+            </Button>
+          </>
+        )}
+
+        {!!camera.error && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              camera.open();
+            }}
+          >
+            Retry
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
