@@ -1,7 +1,7 @@
-import {invariant} from 'es-toolkit';
-import {type ComponentPropsWithRef, type RefObject, useEffect, useRef, useState} from 'react';
-import {useMediaQuery} from 'usehooks-ts';
-import {cropIdDocument, detectIdDocument, explainIdDocumentDetection} from '~/utils/idDocument';
+import { invariant } from 'es-toolkit';
+import { type ComponentPropsWithRef, type RefObject, useEffect, useRef, useState } from 'react';
+import { useMediaQuery } from 'usehooks-ts';
+import { cropIdDocument, detectIdDocument, explainIdDocumentDetection } from '~/utils/idDocument';
 
 export interface UseIdDocumentCameraReturn {
   open: () => Promise<void>;
