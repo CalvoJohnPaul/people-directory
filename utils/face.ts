@@ -26,14 +26,9 @@ export interface CropPoints {
 }
 
 export interface FaceDetectionResult {
-  cropPoints?: CropPoints;
-  score: number;
-}
-
-interface $FaceDetectionResult {
-  cropPoints: CropPoints;
   file: File;
   score: number;
+  cropPoints?: CropPoints;
 }
 
 async function $getVision() {
@@ -101,64 +96,64 @@ async function $getFaceLandmarker(runningMode: 'IMAGE' | 'VIDEO' = 'IMAGE') {
 }
 
 export async function detectFace(
-  subject: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement | File,
+  subject: HTMLCanvasElement | File,
   max = 1,
-): Promise<FaceDetectionResult> {
+): Promise<FaceDetectionResult | null> {
   try {
-    let result: $FaceDetectionResult | null = null;
+    const detector = await $getFaceDetector('IMAGE');
 
     if (subject instanceof File) {
-      result = await $detectFaceFromFile(subject, max);
-    } else if (subject instanceof HTMLImageElement) {
-      const canvas = $drawToCanvas(
-        subject,
-        subject.naturalWidth || subject.width,
-        subject.naturalHeight || subject.height,
-      );
+      const image = await $loadImage(subject);
+      const result = detector.detect(image);
+      const detections = result.detections;
 
-      result = await $detectFaceFromCanvas(
-        canvas,
-        await $canvasToFile(canvas, 'face-detection.jpg'),
-        max,
-      );
-    } else if (subject instanceof HTMLCanvasElement) {
-      result = await $detectFaceFromCanvas(
-        subject,
-        await $canvasToFile(subject, 'face-detection.jpg'),
-        max,
-      );
-    } else if (subject instanceof HTMLVideoElement) {
-      result = await $detectFaceFromVideo(subject, max);
-    } else {
-      const error = new Error();
-      error.name = 'InvalidSubjectError';
-      error.message = 'Subject must be an instance of HTMLImageElement, HTMLVideoElement or File.';
-      Error.captureStackTrace?.(error, detectFace);
-      throw error;
+      if (detections.length < 1 || detections.length > max) return null;
+
+      const detection = detections[0];
+      const boundingBox = detection.boundingBox;
+
+      if (!boundingBox) return null;
+
+      return {
+        cropPoints: $toCropPoints(
+          $getFaceCropBounds(
+            image.naturalWidth || image.width,
+            image.naturalHeight || image.height,
+            boundingBox,
+          ),
+        ),
+        file: subject,
+        score: detection.categories.at(0)?.score ?? 0,
+      };
     }
 
-    if (!result) return {score: 0};
+    const file = await $canvasToFile(subject);
+    const result = detector.detect(subject);
+    const detections = result.detections;
+    if (detections.length < 1 || detections.length > max) return null;
+    const detection = detections[0];
+    const boundingBox = detection.boundingBox;
+
+    if (!boundingBox) return null;
 
     return {
-      cropPoints: result.cropPoints,
-      score: result.score,
+      cropPoints: $toCropPoints($getFaceCropBounds(subject.width, subject.height, boundingBox)),
+      file,
+      score: detection.categories.at(0)?.score ?? 0,
     };
   } catch (error) {
     console.error(error);
-    return {score: 0};
+    return null;
   }
 }
 
-async function $canvasToFile(
-  canvas: HTMLCanvasElement,
-  name: string,
-  type = 'image/jpeg',
-): Promise<File> {
+async function $canvasToFile(canvas: HTMLCanvasElement): Promise<File> {
+  const type = 'image/jpg';
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 1));
 
   invariant(blob, 'Could not create a file from the source canvas');
 
-  return new File([blob], name, {
+  return new File([blob], `${Date.now()}`, {
     type,
     endings: 'native',
     lastModified: Date.now(),
@@ -252,12 +247,7 @@ function $cropPointsToBounds(cropPoints: CropPoints) {
   };
 }
 
-async function $cropCanvasToFile(
-  source: HTMLCanvasElement,
-  cropPoints: CropPoints,
-  type: string,
-  name: string,
-): Promise<File> {
+async function $cropCanvasToFile(source: HTMLCanvasElement, cropPoints: CropPoints): Promise<File> {
   const bounds = $cropPointsToBounds(cropPoints);
   const outputSize = 1024;
   const canvas = document.createElement('canvas');
@@ -279,41 +269,7 @@ async function $cropCanvasToFile(
     outputSize,
   );
 
-  return $canvasToFile(canvas, name, type || 'image/jpeg');
-}
-
-async function $detectFaceFromCanvas(
-  canvas: HTMLCanvasElement,
-  file: File,
-  max = 1,
-): Promise<$FaceDetectionResult | null> {
-  const detector = await $getFaceDetector('IMAGE');
-  const result = detector.detect(canvas);
-  const detections = result.detections;
-  if (detections.length < 1 || detections.length > max) return null;
-  const detection = detections[0];
-  const boundingBox = detection.boundingBox;
-
-  if (!boundingBox) return null;
-
-  return {
-    cropPoints: $toCropPoints($getFaceCropBounds(canvas.width, canvas.height, boundingBox)),
-    file,
-    score: detection.categories.at(0)?.score ?? 0,
-  };
-}
-
-async function $detectFaceFromImage(
-  image: HTMLImageElement,
-  file: File,
-  max = 1,
-): Promise<$FaceDetectionResult | null> {
-  const canvas = $drawToCanvas(
-    image,
-    image.naturalWidth || image.width,
-    image.naturalHeight || image.height,
-  );
-  return $detectFaceFromCanvas(canvas, file, max);
+  return $canvasToFile(canvas);
 }
 
 async function $loadImage(file: File): Promise<HTMLImageElement> {
@@ -333,23 +289,6 @@ async function $loadImage(file: File): Promise<HTMLImageElement> {
 
     image.src = url;
   });
-}
-
-async function $detectFaceFromFile(file: File, max = 1): Promise<$FaceDetectionResult | null> {
-  const image = await $loadImage(file);
-  return $detectFaceFromImage(image, file, max);
-}
-
-async function $detectFaceFromVideo(
-  video: HTMLVideoElement,
-  max = 1,
-): Promise<$FaceDetectionResult | null> {
-  if (video.readyState < 2 || video.videoWidth < 1 || video.videoHeight < 1) return null;
-
-  const canvas = $drawToCanvas(video, video.videoWidth, video.videoHeight);
-  const file = await $canvasToFile(canvas, 'face-detection.jpg');
-
-  return $detectFaceFromCanvas(canvas, file, max);
 }
 
 export type HeadTurn = 'LEFT' | 'RIGHT' | 'CENTER';
@@ -565,6 +504,8 @@ async function $cropFaceFromCanvas(source: HTMLCanvasElement): Promise<HTMLCanva
 
 export async function cropFace(file: File, cropPoints?: CropPoints): Promise<File> {
   try {
+    if (!cropPoints) return file;
+
     const image = await $loadImage(file);
     const canvas = $drawToCanvas(
       image,
@@ -572,15 +513,7 @@ export async function cropFace(file: File, cropPoints?: CropPoints): Promise<Fil
       image.naturalHeight || image.height,
     );
 
-    if (cropPoints) {
-      return $cropCanvasToFile(canvas, cropPoints, file.type, file.name);
-    }
-
-    const detection = await $detectFaceFromCanvas(canvas, file);
-
-    invariant(detection, 'No faces detected in the image');
-
-    return $cropCanvasToFile(canvas, detection.cropPoints, file.type, file.name);
+    return $cropCanvasToFile(canvas, cropPoints);
   } catch (error) {
     console.error(error);
     return file;
