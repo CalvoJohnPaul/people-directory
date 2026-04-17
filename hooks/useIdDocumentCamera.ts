@@ -1,23 +1,12 @@
 import {invariant} from 'es-toolkit';
+import {type ComponentPropsWithRef, useRef, useState} from 'react';
+import {useInterval, useMediaQuery} from 'usehooks-ts';
 import {
-  type ComponentPropsWithRef,
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import {useMediaQuery} from 'usehooks-ts';
-import {cropIdDocument, detectIdDocument, explainIdDocumentDetection} from '~/utils/idDocument';
-
-export type IdDocumentCameraEvent =
-  | {type: 'OPENED'}
-  | {type: 'CLOSED'}
-  | {type: 'ERROR'; data: {error: string}}
-  | {type: 'ID_DOCUMENT_DETECTED'; data: {file: File}}
-  | {type: 'ID_DOCUMENT_CAPTURED'; data: {file: File}};
-
-export type IdDocumentCameraSubscribeFn = (event: IdDocumentCameraEvent) => void;
+  cropIdDocument,
+  detectIdDocument,
+  explainIdDocumentDetection,
+  type SuccessIdDocumentDetectionData,
+} from '~/utils/idDocument';
 
 export interface UseIdDocumentCameraReturn {
   open: () => Promise<void>;
@@ -27,9 +16,8 @@ export interface UseIdDocumentCameraReturn {
   error: string | null;
   opened: boolean;
   opening: boolean;
-  videoRef: RefObject<HTMLVideoElement | null>;
   getVideoProps: () => ComponentPropsWithRef<'video'>;
-  subscribe: (fn: IdDocumentCameraSubscribeFn) => () => void;
+  capturing: boolean;
   canCapture: boolean;
   capture: () => void;
   reset: () => void;
@@ -39,53 +27,37 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream>(null);
 
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  const aspectRatio = desktop ? 16 / 9 : 4 / 3;
   const getVideoProps = (): ComponentPropsWithRef<'video'> => ({
     ref: videoRef,
     muted: true,
-    preload: 'none',
+    autoPlay: true,
     playsInline: true,
+    preload: 'none',
     disablePictureInPicture: true,
     style: {
       width: '100%',
-      height: '100%',
-      display: 'block',
       boxSizing: 'border-box',
-      pointerEvents: 'none',
+      aspectRatio,
     },
   });
 
-  const desktop = useMediaQuery('(min-width: 1024px)');
-
   const [hint, setHint] = useState<string | null>(null);
-  const [test, setTest] = useState<File | null>(null);
   const [data, setData] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const [validated, setValidated] = useState(false);
   const [validating, setValidating] = useState(false);
 
-  const subscribers = useRef<IdDocumentCameraSubscribeFn[]>([]);
-
-  const subscribe = (fn: IdDocumentCameraSubscribeFn) => {
-    subscribers.current = [...subscribers.current, fn];
-
-    return () => {
-      subscribers.current = subscribers.current.filter((subscriber) => subscriber !== fn);
-    };
-  };
-
-  const triggerEvent = useCallback((event: IdDocumentCameraEvent) => {
-    subscribers.current.forEach((subscriber) => {
-      subscriber(event);
-    });
-  }, []);
+  const [result, setResult] = useState<SuccessIdDocumentDetectionData | null>(null);
 
   const open = async (): Promise<void> => {
     invariant(videoRef.current, 'video element not found');
 
     setHint(null);
-    setTest(null);
     setData(null);
     setError(null);
     setOpened(false);
@@ -107,7 +79,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
             ideal: 9999,
           },
           aspectRatio: {
-            exact: desktop ? 16 / 9 : 4 / 3,
+            exact: aspectRatio,
           },
           frameRate: {
             max: 120,
@@ -119,7 +91,6 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       videoRef.current.srcObject = result;
       streamRef.current = result;
 
-      triggerEvent({type: 'OPENED'});
       setOpened(true);
     } catch (e) {
       console.warn(e);
@@ -140,7 +111,6 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       }
 
       setError(error);
-      triggerEvent({type: 'ERROR', data: {error}});
     } finally {
       setOpening(false);
     }
@@ -148,13 +118,13 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
 
   const close = () => {
     setHint(null);
-    setTest(null);
     setData(null);
     setError(null);
     setOpened(false);
     setOpening(false);
     setValidated(false);
     setValidating(false);
+    setResult(null);
 
     if (streamRef.current) {
       const tracks = streamRef.current.getTracks();
@@ -170,18 +140,19 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       videoRef.current.srcObject = null;
       videoRef.current.pause();
     }
-
-    triggerEvent({type: 'CLOSED'});
   };
 
-  useEffect(() => {
-    if (!opened) return;
-    if (!videoRef.current) return;
-    if (validating) return;
-    if (data) return;
+  useInterval(
+    async () => {
+      if (!videoRef.current) {
+        console.warn('video element not found');
+        return;
+      }
 
-    const interval = setInterval(async () => {
-      invariant(videoRef.current, 'video element not found');
+      if (videoRef.current.readyState < videoRef.current.HAVE_ENOUGH_DATA) {
+        console.warn('video not ready');
+        return;
+      }
 
       const canvas = document.createElement('canvas');
 
@@ -190,7 +161,10 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
 
       const context = canvas.getContext('2d');
 
-      invariant(context, 'canvas context not found');
+      if (!context) {
+        console.warn('could not get canvas context');
+        return;
+      }
 
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
@@ -199,50 +173,44 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       const result = explainIdDocumentDetection(detection);
 
       if (!result.ok) {
-        setTest(null);
         setHint(result.error.message);
         setValidated(false);
+        setResult(null);
       } else {
-        const cropped = result.data.cropPoints
-          ? await cropIdDocument(result.data.file, result.data.cropPoints)
-          : result.data.file;
-
-        setTest(cropped);
         setHint(null);
         setValidated(true);
-        triggerEvent({type: 'ID_DOCUMENT_DETECTED', data: {file: cropped}});
+        setResult(result.data);
       }
 
       setValidating(false);
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [data, opened, validating, triggerEvent]);
+    },
+    !opened || validating || capturing || data ? null : result ? 2500 : 1000,
+  );
 
   const reset = () => {
     setHint(null);
-    setTest(null);
     setData(null);
     setError(null);
     setValidated(false);
+    setValidating(false);
+    setResult(null);
   };
 
-  const canCapture = validated && test != null && data == null;
-  const capture = () => {
-    if (data != null) {
-      console.warn('ID document already captured. Please reset to capture again.');
+  const canCapture = validated && result != null && data == null && !capturing;
+
+  const capture = async () => {
+    if (!canCapture) {
+      console.warn('ID document cannot be captured at this moment. Please wait and try again.');
       return;
     }
 
-    if (test == null) {
-      console.warn('No ID document detected yet. Please wait and try again.');
-      return;
-    }
-
-    setData(test);
-    setTest(null);
+    setCapturing(true);
+    const cropped = await cropIdDocument(result.file, result.cropPoints);
+    setCapturing(false);
+    setData(cropped);
+    setHint(null);
+    setValidated(false);
+    setResult(null);
   };
 
   return {
@@ -253,11 +221,10 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     error,
     opened,
     opening,
-    videoRef,
     getVideoProps,
-    subscribe,
     capture,
     canCapture,
+    capturing,
     reset,
   };
 }

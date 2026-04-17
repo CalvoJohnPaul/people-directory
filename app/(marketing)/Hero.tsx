@@ -74,6 +74,7 @@ export function Hero() {
             alt=""
             width={720}
             height={420}
+            priority
             className="mt-5 block h-auto w-full rounded-sm"
           />
 
