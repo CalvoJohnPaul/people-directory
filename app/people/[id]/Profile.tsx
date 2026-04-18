@@ -125,7 +125,7 @@ export function Profile({id}: ProfileProps) {
 
   return (
     <PersonProvider value={person}>
-      <section className="gap-3 lg:flex">
+      <section className="relative gap-3 lg:flex">
         <ViewProfilePhoto />
         <div className="hidden grow lg:block"></div>
         <div className="mt-4 flex gap-3 self-start lg:mt-0">
