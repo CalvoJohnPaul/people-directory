@@ -9,7 +9,6 @@ import {capitalize} from 'es-toolkit';
 import {QrCodeIcon, XIcon} from 'lucide-react';
 import Image from 'next/image';
 import {useCallback, useRef, useState} from 'react';
-import {cx} from 'tailwind-variants';
 import {useDebouncedCallback} from 'use-debounce';
 import {useInterval, useTimeout} from 'usehooks-ts';
 import z from 'zod';
@@ -46,6 +45,7 @@ export interface FilterProps {
   value?: FilterValue;
   onChange?: (value: FilterValue) => void;
   defaultValue?: FilterValue;
+  onClose?: () => void;
   className?: string;
 }
 
@@ -63,9 +63,15 @@ export function Filter(props: FilterProps) {
   const setValue__debounced = useDebouncedCallback(setValue, 350);
 
   return (
-    <div className={cx('rounded-sm border', props.className)}>
-      <div className="flex h-11 items-center gap-2 border-b px-4">
+    <div className={props.className}>
+      <div className="flex items-center gap-2 px-4 pt-4 lg:border-b lg:pb-4">
         <h2 className="font-medium">Filters</h2>
+        <div className="grow"></div>
+        {props.onClose && (
+          <button type="button" className="text-neutral-400" onClick={props.onClose}>
+            <XIcon className="size-5" />
+          </button>
+        )}
       </div>
       <div className="space-y-3 p-4">
         <Field.Root className="rounded-sm bg-neutral-100/75 p-3">

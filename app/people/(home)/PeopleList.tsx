@@ -9,7 +9,7 @@ export function PeopleList() {
   const people = usePeopleContext();
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-3 gap-y-5">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-5 space-y-4 lg:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] lg:space-y-0">
       {people.map((person) => (
         <PersonProvider key={person.id} value={person}>
           <Person />

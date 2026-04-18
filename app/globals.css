@@ -54,6 +54,10 @@
   --animate-drawer-out-left: drawer-out-left 250ms cubic-bezier(0.3, 0, 0.8, 0.15);
   --animate-drawer-in-right: drawer-in-right 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
   --animate-drawer-out-right: drawer-out-right 250ms cubic-bezier(0.3, 0, 0.8, 0.15);
+  --animate-drawer-in-top: drawer-in-top 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
+  --animate-drawer-out-top: drawer-out-top 250ms cubic-bezier(0.3, 0, 0.8, 0.15);
+  --animate-drawer-in-bottom: drawer-in-bottom 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
+  --animate-drawer-out-bottom: drawer-out-bottom 250ms cubic-bezier(0.3, 0, 0.8, 0.15);
   --animate-popover-in-bottom: popover-in-bottom 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
   --animate-popover-out-bottom: popover-out-bottom 250ms cubic-bezier(0.3, 0, 0.8, 0.15);
   --animate-popover-in-top: popover-in-top 400ms cubic-bezier(0.05, 0.7, 0.1, 1);
@@ -170,6 +174,42 @@
     }
     to {
       transform: translateX(100%);
+    }
+  }
+
+  @keyframes drawer-in-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes drawer-out-top {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
+    }
+  }
+
+  @keyframes drawer-in-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes drawer-out-bottom {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
     }
   }
 

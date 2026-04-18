@@ -1,13 +1,13 @@
 'use client';
 
-import {Portal, Presence} from '@ark-ui/react';
+import {Dialog, Portal, Presence} from '@ark-ui/react';
 import {useIsFetching} from '@tanstack/react-query';
 import {isNil, omit, omitBy} from 'es-toolkit';
 import {size} from 'es-toolkit/compat';
 import {RefreshCcwIcon, Settings2Icon, XIcon} from 'lucide-react';
 import {useMemo, useReducer, useState} from 'react';
 import {cx} from 'tailwind-variants';
-import {useTimeout} from 'usehooks-ts';
+import {useMediaQuery, useTimeout} from 'usehooks-ts';
 import {SearchField} from '~/components/forms/SearchField';
 import {SpinnerIcon} from '~/components/icons/SpinnerIcon';
 import {IconButton} from '~/components/ui/IconButton';
@@ -98,15 +98,17 @@ export function People() {
   const people = query.data ?? [];
   const filtered = useMemo(() => size(omit(input, ['q'])) > 0, [input]);
   const searched = useMemo(() => size(input) > 0, [input]);
+  const desktop = useMediaQuery('(min-width: 1024px)');
 
   return (
     <PeopleProvider value={query.data ?? []}>
       <div className="flex items-start gap-4">
         <Presence
-          present={disclosure.open}
-          className="shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem]"
+          present={desktop && disclosure.open}
+          unmountOnExit
+          className="hidden shrink-0 ui-closed:animate-collapse-x-out ui-open:animate-collapse-x-in overflow-hidden [--width:22rem] lg:block"
         >
-          <Filter value={state} onChange={setState} className="w-(--width)" />
+          <Filter value={state} onChange={setState} className="w-(--width) rounded-sm border" />
         </Presence>
         <div className="grow space-y-8">
           <div className="flex gap-3">
@@ -114,7 +116,7 @@ export function People() {
               variant="outline"
               onClick={() => disclosure.setOpen((open) => !open)}
               className={cx(
-                'relative transition-colors duration-300',
+                'relative shrink-0 transition-colors duration-300',
                 filtered && 'border-amber-400',
               )}
             >
@@ -131,8 +133,8 @@ export function People() {
                 className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none"
               />
             </IconButton>
-            <SearchField value={state.q} onChange={(q) => setState({q})} className="w-64" />
-            <div className="grow" />
+            <SearchField value={state.q} onChange={(q) => setState({q})} className="lg:w-64" />
+            <div className="hidden grow lg:block" />
             <ExportPeople />
             <Reload />
           </div>
@@ -156,6 +158,23 @@ export function People() {
           </div>
         </div>
       </div>
+      <Dialog.Root
+        open={!desktop && disclosure.open}
+        onOpenChange={(details) => disclosure.setOpen(details.open)}
+        lazyMount
+        unmountOnExit
+        closeOnEscape
+        closeOnInteractOutside
+      >
+        <Dialog.Positioner>
+          <Dialog.Content className="fixed top-16 left-0 z-drawer h-[calc(100%---spacing(16))] w-full ui-closed:animate-drawer-out-bottom ui-open:animate-drawer-in-bottom bg-white">
+            <Filter
+              onClose={() => disclosure.setOpen(false)}
+              className="size-full overflow-y-auto"
+            />
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </PeopleProvider>
   );
 }
@@ -194,6 +213,7 @@ function Reload() {
               type: 'all',
             });
           }}
+          className="shrink-0"
           disabled={loading}
         >
           <RefreshCcwIcon

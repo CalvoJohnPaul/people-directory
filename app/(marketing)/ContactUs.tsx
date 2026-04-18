@@ -25,7 +25,7 @@ export function ContactUs() {
   });
 
   return (
-    <section id="contact-us" className="bg-neutral-50 py-20">
+    <section id="contact-us" className="bg-neutral-50 px-4 py-20">
       <p className="font-semibold text-neutral-700 text-xs uppercase tracking-[0.14em] lg:text-center">
         Contact Us
       </p>
@@ -71,7 +71,7 @@ export function ContactUs() {
           </Field.Root>
         </div>
         <div className="mt-6">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" className="w-full lg:w-auto" disabled={form.formState.isSubmitting}>
             Send message
           </Button>
         </div>

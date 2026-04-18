@@ -65,7 +65,7 @@ export function Footer() {
           </ul>
         </div>
 
-        <div className="w-80 shrink-0">
+        <div className="w-full shrink-0 lg:w-80">
           <p className="font-semibold text-neutral-200 text-sm uppercase">Newsletter</p>
           <form
             onSubmit={(e) => {

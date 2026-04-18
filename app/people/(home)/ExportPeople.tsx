@@ -112,6 +112,7 @@ export function ExportPeople() {
           variant="outline"
           onClick={handleExport}
           disabled={people.length <= 0 || exporting}
+          className="shrink-0"
           aria-label="Export people"
         >
           <DownloadIcon />

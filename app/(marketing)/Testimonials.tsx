@@ -87,8 +87,9 @@ export function Testimonials() {
         slideCount={testimonials.length}
         slidesPerPage={desktop ? 2 : 1}
         spacing={desktop ? '24px' : '16px'}
-        className="mt-12"
         suppressHydrationWarning
+        autoplay
+        className="mt-12"
       >
         <div className="flex items-center lg:gap-6">
           <Carousel.PrevTrigger className="hidden shrink-0 text-neutral-500 disabled:text-neutral-300 lg:block">
