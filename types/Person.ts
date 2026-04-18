@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import {isValidMobileNumber} from '~/utils/mobileNumber';
 import {DateDefinition} from './common';
 
 export const GenderDefinition = z.enum(['MALE', 'FEMALE', 'OTHER'], 'Invalid gender');
@@ -79,7 +80,11 @@ export const UpdatePersonDataInputDefinition = z.object({
   dateOfBirth: DateDefinition.optional().nullable(),
   image: z.url('Image must be a url').optional().or(z.literal('')),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
-  mobileNumber: z.string().optional().or(z.literal('')),
+  mobileNumber: z
+    .string()
+    .optional()
+    .refine((v) => (!v ? true : isValidMobileNumber(v)), 'Invalid mobile number')
+    .or(z.literal('')),
   currentAddress: z.string().optional().or(z.literal('')),
   permanentAddress: z.string().optional().or(z.literal('')),
   idDocument: z.url().optional().or(z.literal('')),

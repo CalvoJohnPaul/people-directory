@@ -1,7 +1,7 @@
 import {addDays} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {createPerson, getPeople} from '~/services/Person';
+import {createPerson, getPeople, isEmailAddressAvailable} from '~/services/Person';
 import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
@@ -45,6 +45,21 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
         error: {
           name: 'BadRequest',
           message: result.error.issues[0].message,
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  const emailAddressAvailable = await isEmailAddressAvailable(result.data.emailAddress);
+
+  if (!emailAddressAvailable) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'EmailAddressAlreadyInUse',
+          message: 'Email address is already in use',
         },
       },
       {status: 400},

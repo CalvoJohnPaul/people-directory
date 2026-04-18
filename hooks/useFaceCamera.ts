@@ -244,14 +244,11 @@ export function useFaceCamera(): UseFaceCameraReturn {
     !opened ||
       !livenessLeftValidated ||
       !livenessRightValidated ||
-      faceValidated ||
       validatingFace ||
       capturing ||
       data != null
       ? null
-      : result
-        ? 2500
-        : 1000,
+      : 1000,
   );
 
   const reset = () => {

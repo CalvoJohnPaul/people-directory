@@ -24,6 +24,7 @@ import {usePersonQuery} from '~/hooks/usePersonQuery';
 import {useUpdatePersonMutation} from '~/hooks/useUpdatePersonMutation';
 import {GenderDefinition, type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
 import {getFaceEmbedding} from '~/utils/face';
+import {normalizeMobileNumber} from '~/utils/mobileNumber';
 
 export function EditAccountForm() {
   const router = useRouter();
@@ -34,6 +35,11 @@ export function EditAccountForm() {
   const updatePersonMutation = useUpdatePersonMutation({
     onSuccess(data) {
       toaster.dismiss();
+      toaster.success({
+        title: 'Success',
+        description: 'Your account has been updated.',
+      });
+
       client.setQueryData<Person>(useMeQuery.getQueryKey(), data);
       client.setQueryData<Person>(usePersonQuery.getQueryKey(data.id), data);
       client.setQueriesData<Person[]>(
@@ -122,6 +128,7 @@ export function EditAccountForm() {
         const id = query.data?.id;
         invariant(id, "'id' is undefined");
         const data = omitBy(values, (v) => isNil(v) || v === '');
+        if (data.mobileNumber) data.mobileNumber = normalizeMobileNumber(data.mobileNumber);
         updatePersonMutation.mutate({
           id,
           data,

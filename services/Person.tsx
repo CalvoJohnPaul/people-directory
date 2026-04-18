@@ -228,3 +228,35 @@ export async function updatePerson(
       fullName: [person.firstName, person.lastName].filter(Boolean).join(' '),
     }));
 }
+
+export async function isEmailAddressAvailable(emailAddress: string, id?: number | null) {
+  const count = await prisma.person.count({
+    where: {
+      emailAddress: {
+        equals: emailAddress,
+        mode: 'insensitive',
+      },
+      ...(id != null && {
+        id: {not: id},
+      }),
+    },
+  });
+
+  return count <= 0;
+}
+
+export async function isMobileNumberAvailable(mobileNumber: string, id?: number | null) {
+  const count = await prisma.person.count({
+    where: {
+      mobileNumber: {
+        equals: mobileNumber,
+        mode: 'insensitive',
+      },
+      ...(id != null && {
+        id: {not: id},
+      }),
+    },
+  });
+
+  return count <= 0;
+}

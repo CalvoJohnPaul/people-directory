@@ -1,5 +1,10 @@
 import {type NextRequest, NextResponse} from 'next/server';
-import {getPerson, updatePerson} from '~/services/Person';
+import {
+  getPerson,
+  isEmailAddressAvailable,
+  isMobileNumberAvailable,
+  updatePerson,
+} from '~/services/Person';
 import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
@@ -81,6 +86,41 @@ export async function PATCH(
         error: {
           name: 'BadRequest',
           message: result.error.issues[0].message,
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  const [emailAddressAvailable, mobileNumberAvailable] = await Promise.all([
+    result.data.emailAddress
+      ? await isEmailAddressAvailable(result.data.emailAddress, me.id)
+      : Promise.resolve(true),
+    result.data.mobileNumber
+      ? await isMobileNumberAvailable(result.data.mobileNumber, me.id)
+      : Promise.resolve(true),
+  ]);
+
+  if (!emailAddressAvailable) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'EmailAddressAlreadyInUse',
+          message: 'Email address is already in use',
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  if (!mobileNumberAvailable) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'MobileNumberAlreadyInUse',
+          message: 'Mobile number is already in use',
         },
       },
       {status: 400},

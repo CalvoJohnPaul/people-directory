@@ -1,25 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {Button} from '~/components/ui/Button';
 import {useIdDocumentCamera} from '~/hooks/useIdDocumentCamera';
 
 export default function Page() {
   const camera = useIdDocumentCamera();
   const [photo, setPhoto] = React.useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = camera.subscribe((event) => {
-      if (event.type === 'ID_DOCUMENT_CAPTURED') {
-        setPhoto(URL.createObjectURL(event.data.file));
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [camera.subscribe]);
 
   return (
     <div className="p-4">
