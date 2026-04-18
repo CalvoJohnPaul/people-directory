@@ -80,14 +80,15 @@ export function EditAccountForm() {
   const form = useForm({
     resolver: zodResolver(UpdatePersonDataInputDefinition),
     defaultValues: {
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      image: '',
+      gender: null,
       dateOfBirth: null,
       emailAddress: '',
-      firstName: '',
-      gender: null,
-      image: '',
-      lastName: '',
-      middleName: '',
       mobileNumber: '',
+      address: '',
       password: '',
     },
   });
@@ -153,20 +154,6 @@ export function EditAccountForm() {
       </Field.Root>
       <Controller
         control={form.control}
-        name="dateOfBirth"
-        render={(ctx) => (
-          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
-            <Field.Label>Date of birth</Field.Label>
-            <DateField
-              value={ctx.field.value || null}
-              onChange={(v) => ctx.field.onChange(v || null)}
-            />
-            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
-          </Field.Root>
-        )}
-      />
-      <Controller
-        control={form.control}
         name="gender"
         render={(ctx) => (
           <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
@@ -183,6 +170,25 @@ export function EditAccountForm() {
           </Field.Root>
         )}
       />
+      <Controller
+        control={form.control}
+        name="dateOfBirth"
+        render={(ctx) => (
+          <Field.Root className="mt-4" invalid={ctx.fieldState.invalid}>
+            <Field.Label>Date of birth</Field.Label>
+            <DateField
+              value={ctx.field.value || null}
+              onChange={(v) => ctx.field.onChange(v || null)}
+            />
+            <Field.ErrorText>{ctx.fieldState.error?.message}</Field.ErrorText>
+          </Field.Root>
+        )}
+      />
+      <Field.Root className="mt-4" invalid={!!form.formState.errors.address}>
+        <Field.Label>Address</Field.Label>
+        <Field.Textarea autoresize placeholder="Enter your address" {...form.register('address')} />
+        <Field.ErrorText>{form.formState.errors.address?.message}</Field.ErrorText>
+      </Field.Root>
       <Controller
         control={form.control}
         name="mobileNumber"

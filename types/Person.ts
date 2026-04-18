@@ -1,3 +1,4 @@
+import {differenceInYears} from 'date-fns';
 import * as z from 'zod';
 import {isValidMobileNumber} from '~/utils/mobileNumber';
 import {DateDefinition} from './common';
@@ -15,10 +16,8 @@ export const PersonDefinition = z.object({
   mobileNumberVerifiedAt: DateDefinition.optional().nullable(),
   gender: GenderDefinition.optional().nullable(),
   dateOfBirth: DateDefinition.optional().nullable(),
-  currentAddress: z.string().optional().nullable(),
-  permanentAddress: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
   image: z.url(),
-  idDocument: z.string().optional().nullable(),
   verifiedAt: DateDefinition.optional().nullable(),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
@@ -77,7 +76,13 @@ export const UpdatePersonDataInputDefinition = z.object({
     .optional()
     .or(z.literal('')),
   gender: GenderDefinition.optional().nullable(),
-  dateOfBirth: DateDefinition.optional().nullable(),
+  dateOfBirth: DateDefinition.optional()
+    .nullable()
+    .refine((v) => {
+      if (!v) return true;
+      const age = differenceInYears(new Date(), v);
+      return age > 0;
+    }, 'Invalid date of birth'),
   image: z.url('Image must be a url').optional().or(z.literal('')),
   emailAddress: z.email('Invalid email address').optional().or(z.literal('')),
   mobileNumber: z
@@ -85,9 +90,12 @@ export const UpdatePersonDataInputDefinition = z.object({
     .optional()
     .refine((v) => (!v ? true : isValidMobileNumber(v)), 'Invalid mobile number')
     .or(z.literal('')),
-  currentAddress: z.string().optional().or(z.literal('')),
-  permanentAddress: z.string().optional().or(z.literal('')),
-  idDocument: z.url().optional().or(z.literal('')),
+  address: z
+    .string()
+    .trim()
+    .max(250, 'Address must be at most 250 characters')
+    .optional()
+    .or(z.literal('')),
   password: z
     .string()
     .trim()

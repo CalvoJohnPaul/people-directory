@@ -11,6 +11,7 @@ import {SadFaceIcon} from '~/components/icons/SadFace';
 import {Toast} from '~/components/ui/Toast';
 import {getClient} from '~/config/client';
 import {toaster} from '~/config/toaster';
+import {FutureFlagProvider} from '../providers/FutureFlagProvider/FutureFlagProvider';
 
 export interface ProvidersProps {
   children: ReactNode;
@@ -23,7 +24,9 @@ export function Providers({children}: ProvidersProps) {
     <>
       <QueryClientProvider client={client}>
         <NuqsAdapter>
-          <NavigationGuardProvider>{children}</NavigationGuardProvider>
+          <NavigationGuardProvider>
+            <FutureFlagProvider>{children}</FutureFlagProvider>
+          </NavigationGuardProvider>
         </NuqsAdapter>
       </QueryClientProvider>
       <Toaster toaster={toaster}>

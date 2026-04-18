@@ -25,6 +25,7 @@
       "~/hooks/*": ["./hooks/*"],
       "~/layouts/*": ["./layouts/*"],
       "~/prisma/*": ["./prisma/*"],
+      "~/providers/*": ["./providers/*"],
       "~/services/*": ["./services/*"],
       "~/types/*": ["./types/*"],
       "~/utils/*": ["./utils/*"]
