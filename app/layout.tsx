@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import {IBM_Plex_Sans, JetBrains_Mono} from 'next/font/google';
 import './globals.css';
 import {dehydrate, HydrationBoundary} from '@tanstack/react-query';
-import type {PropsWithChildren} from 'react';
+import {type PropsWithChildren, Suspense} from 'react';
 import {cx} from 'tailwind-variants';
 import {getClient} from '~/config/client';
 import {useMeQuery} from '~/hooks/useMeQuery';
@@ -45,9 +45,11 @@ export default async function Layout({children}: PropsWithChildren) {
       data-scroll-behavior="smooth"
     >
       <body className="min-h-dvh bg-white font-sans text-neutral-800">
-        <Providers>
-          <HydrationBoundary state={dehydrate(client)}>{children}</HydrationBoundary>
-        </Providers>
+        <Suspense>
+          <Providers>
+            <HydrationBoundary state={dehydrate(client)}>{children}</HydrationBoundary>
+          </Providers>
+        </Suspense>
       </body>
     </html>
   );
