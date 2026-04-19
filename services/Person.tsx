@@ -177,7 +177,7 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
       html: await render(
         <Welcome
           name={input.firstName}
-          redirectUrl={process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}
+          redirectUrl={process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'}
         />,
       ),
     }),

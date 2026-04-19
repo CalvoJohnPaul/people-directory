@@ -11,7 +11,7 @@ import {usePersonContext} from './ProfileContext';
 
 export function ViewQrCode() {
   const person = usePersonContext();
-  const value = `${process.env.NEXT_PUBLIC_URL}/${person.id}`;
+  const value = `${process.env.NEXT_PUBLIC_URL}/people/${person.id}`;
 
   return (
     <Dialog.Root closeOnInteractOutside closeOnEscape>
