@@ -30,10 +30,13 @@ import {usePersonQuery} from '~/hooks/usePersonQuery';
 import type {DateRange, NumberRange} from '~/types/common';
 import {type Gender, GenderDefinition} from '~/types/Person';
 import {cropFace, detectFace, getFaceEmbedding} from '~/utils/face';
+import {isValidMobileNumber, normalizeMobileNumber} from '~/utils/mobileNumber';
 import {parseQrCode} from '~/utils/qrCode';
 
 export interface FilterValue {
   id?: number[] | null;
+  mobileNumber?: number[] | null;
+  emailAddress?: number[] | null;
   gender?: Gender[] | null;
   age?: NumberRange | null;
   image?: number[] | null;
@@ -77,8 +80,24 @@ export function Filter(props: FilterProps) {
         <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Email address</Field.Label>
           <AsyncComboboxField
-            options={async (emailAddress) => {
-              if (emailAddress.trim().length < 1) return [];
+            options={async (emailAddress, value) => {
+              if (emailAddress.trim().length < 1) {
+                if (value.length < 1) {
+                  return [];
+                }
+
+                const id = value.map((id) => Number.parseInt(id, 10));
+
+                const data = await client.fetchQuery({
+                  queryKey: usePeopleQuery.getQueryKey({id}),
+                  queryFn: usePeopleQuery.getQueryFn({id}),
+                });
+
+                return data.map((person) => ({
+                  value: `${person.id}`,
+                  label: `${person.emailAddress}`,
+                }));
+              }
 
               const data = await client.fetchQuery({
                 queryKey: usePeopleQuery.getQueryKey({emailAddress, limit: 5}),
@@ -87,14 +106,14 @@ export function Filter(props: FilterProps) {
 
               return data.map((person) => ({
                 value: `${person.id}`,
-                label: `${person.fullName}`,
+                label: `${person.emailAddress}`,
               }));
             }}
-            value={value__internal.id?.map((v) => v.toString()) ?? []}
+            value={value__internal.emailAddress?.map((v) => v.toString()) ?? []}
             onChange={(newValue) => {
-              const id = newValue.map((v) => Number.parseInt(v, 10));
-              setValue__internal((prev) => ({...prev, id}));
-              setValue__debounced((prev) => ({...prev, id}));
+              const emailAddress = newValue.map((id) => Number.parseInt(id, 10));
+              setValue__internal((prev) => ({...prev, emailAddress}));
+              setValue__debounced((prev) => ({...prev, emailAddress}));
             }}
             multiple
             placeholder="Search email address"
@@ -103,8 +122,28 @@ export function Filter(props: FilterProps) {
         <Field.Root className="rounded-sm bg-neutral-100/75 p-3">
           <Field.Label>Mobile number</Field.Label>
           <AsyncComboboxField
-            options={async (mobileNumber) => {
-              if (mobileNumber.trim().length < 1) return [];
+            options={async (emailAddress_, value) => {
+              if (emailAddress_.trim().length < 1) {
+                if (emailAddress_.length < 1) {
+                  return [];
+                }
+
+                const id = value.map((id) => Number.parseInt(id, 10));
+
+                const data = await client.fetchQuery({
+                  queryKey: usePeopleQuery.getQueryKey({id}),
+                  queryFn: usePeopleQuery.getQueryFn({id}),
+                });
+
+                return data.map((person) => ({
+                  value: `${person.id}`,
+                  label: `${person.mobileNumber ?? person.fullName}`,
+                }));
+              }
+
+              const mobileNumber = isValidMobileNumber(emailAddress_)
+                ? normalizeMobileNumber(emailAddress_)
+                : emailAddress_;
 
               const data = await client.fetchQuery({
                 queryKey: usePeopleQuery.getQueryKey({mobileNumber, limit: 5}),
@@ -113,14 +152,14 @@ export function Filter(props: FilterProps) {
 
               return data.map((person) => ({
                 value: `${person.id}`,
-                label: `${person.fullName}`,
+                label: `${person.mobileNumber ?? person.fullName}`,
               }));
             }}
-            value={value__internal.id?.map((v) => v.toString()) ?? []}
+            value={value__internal.mobileNumber?.map((v) => v.toString()) ?? []}
             onChange={(newValue) => {
-              const id = newValue.map((v) => Number.parseInt(v, 10));
-              setValue__internal((prev) => ({...prev, id}));
-              setValue__debounced((prev) => ({...prev, id}));
+              const mobileNumber = newValue.map((id) => Number.parseInt(id, 10));
+              setValue__internal((prev) => ({...prev, mobileNumber}));
+              setValue__debounced((prev) => ({...prev, mobileNumber}));
             }}
             multiple
             placeholder="Search mobile number"
@@ -395,23 +434,19 @@ function SearchByPhoto({onChange}: {onChange?: (value: number[] | null) => void}
   const processFile = useCallback(
     async (file: File) => {
       if (!file.type.startsWith('image/')) {
-        toaster.error({
+        return toaster.error({
           title: 'Invalid image',
           description: 'Only image files can be used for photo search.',
         });
-
-        return;
       }
 
       const detection = await detectFace(file, {maxFaces: 3});
 
       if (!detection) {
-        toaster.error({
+        return toaster.error({
           title: 'No face detected',
           description: 'The uploaded image does not contain a detectable face.',
         });
-
-        return;
       }
 
       const cropped = await cropFace(detection.file, detection?.cropPoints);

@@ -66,8 +66,16 @@ export function People() {
       l.push(state.qrCode);
     }
 
+    if (state.emailAddress?.length) {
+      l.push(...state.emailAddress);
+    }
+
+    if (state.mobileNumber?.length) {
+      l.push(...state.mobileNumber);
+    }
+
     return l.length > 0 ? l : null;
-  }, [state.id, state.image, state.qrCode]);
+  }, [state.id, state.image, state.qrCode, state.emailAddress, state.mobileNumber]);
 
   const input: PeopleInput = useMemo(
     () =>
@@ -169,6 +177,8 @@ export function People() {
         <Dialog.Positioner>
           <Dialog.Content className="fixed top-16 left-0 z-drawer h-[calc(100%---spacing(16))] w-full ui-closed:animate-drawer-out-bottom ui-open:animate-drawer-in-bottom bg-white">
             <Filter
+              value={state}
+              onChange={setState}
               onClose={() => disclosure.setOpen(false)}
               className="size-full overflow-y-auto"
             />
