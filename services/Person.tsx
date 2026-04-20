@@ -221,6 +221,10 @@ export async function updatePerson(
     }));
 }
 
+export async function deletePerson(id: number): Promise<void> {
+  await prisma.person.delete({where: {id}});
+}
+
 export async function isEmailAddressAvailable(emailAddress: string, id?: number | null) {
   const count = await prisma.person.count({
     where: {

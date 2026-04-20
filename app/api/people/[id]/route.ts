@@ -1,12 +1,13 @@
 import {type NextRequest, NextResponse} from 'next/server';
 import {
+  deletePerson,
   getPerson,
   isEmailAddressAvailable,
   isMobileNumberAvailable,
   updatePerson,
 } from '~/services/Person';
-import {getMe} from '~/services/Session';
-import type {HttpResponse} from '~/types/common';
+import {destroySession, getMe} from '~/services/Session';
+import type {HttpResponse, HttpVoidResponse} from '~/types/common';
 import {type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
 import {obfuscateEmail, obfuscateMobileNumber} from '~/utils/obfuscate';
 
@@ -130,4 +131,44 @@ export async function PATCH(
   const data = await updatePerson(me.id, result.data);
 
   return NextResponse.json({ok: true, data}, {status: 200});
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  ctx: RouteContext<'/api/people/[id]'>,
+): Promise<NextResponse<HttpVoidResponse>> {
+  const params = await ctx.params;
+  const id = Number.parseInt(params.id, 10);
+
+  if (Number.isNaN(id) || id < 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'BadRequest',
+          message: 'Bad Request',
+        },
+      },
+      {status: 400},
+    );
+  }
+
+  const me = await getMe();
+
+  if (!me || me.id !== id) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: {
+          name: 'Unauthorized',
+          message: 'Unauthorized',
+        },
+      },
+      {status: 401},
+    );
+  }
+
+  await Promise.all([deletePerson(me.id), destroySession()]);
+
+  return NextResponse.json({ok: true});
 }

@@ -9,6 +9,7 @@ import {usePersonQuery} from '~/hooks/usePersonQuery';
 import {useFutureFlag} from '~/providers/FutureFlagProvider';
 import {formatMobileNumber} from '~/utils/mobileNumber';
 import {CopyProfileLink} from './CopyProfileLink';
+import {DeleteAccount} from './DeleteAccount';
 import {EditProfile} from './EditProfile';
 import {PersonProvider} from './ProfileContext';
 import {ViewProfilePhoto} from './ViewProfilePhoto';
@@ -129,6 +130,7 @@ export function Profile({id}: ProfileProps) {
         <ViewProfilePhoto />
         <div className="hidden grow lg:block"></div>
         <div className="mt-4 flex gap-3 self-start lg:mt-0">
+          {future && <DeleteAccount />}
           <ViewQrCode />
           <CopyProfileLink />
           <EditProfile />

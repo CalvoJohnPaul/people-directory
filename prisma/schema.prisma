@@ -37,9 +37,9 @@ model Person {
 
 model FaceEmbedding {
   id        Int                   @id @default(autoincrement())
-  person    Person                @relation(fields: [personId], references: [id])
-  embedding Unsupported("vector")
+  person    Person                @relation(fields: [personId], references: [id], onDelete: Cascade)
   personId  Int
+  embedding Unsupported("vector")
 
   @@map("face_embeddings")
 }
