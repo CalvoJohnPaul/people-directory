@@ -160,7 +160,6 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
           mobileNumber: true,
           mobileNumberVerifiedAt: true,
           address: true,
-          permanentAddress: true,
           image: true,
           verifiedAt: true,
           createdAt: true,
