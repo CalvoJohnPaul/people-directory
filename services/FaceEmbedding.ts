@@ -1,5 +1,6 @@
 import {prisma} from '~/config/prisma';
 import type {AddFaceEmbeddingInput} from '~/types/FaceEmbedding';
+import {InvalidFaceEmbeddingVectorError} from './errors';
 
 export async function addFaceEmbedding(input: AddFaceEmbeddingInput): Promise<void> {
   const {person, vector} = input;
@@ -14,13 +15,6 @@ const FACE_EMBEDDING_PERSON_CANDIDATE_LIMIT = 3;
 const FACE_EMBEDDING_MAX_BEST_DISTANCE = 0.28;
 const FACE_EMBEDDING_MAX_AVERAGE_DISTANCE = 0.33;
 const FACE_EMBEDDING_RESULT_LIMIT = 25;
-
-export class InvalidFaceEmbeddingVectorError extends Error {
-  constructor(message = 'Invalid face embedding vector') {
-    super(message);
-    this.name = 'BadRequest';
-  }
-}
 
 export async function getPeopleByFaceEmbedding(vector: string): Promise<
   {

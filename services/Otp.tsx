@@ -19,7 +19,7 @@ export async function sendOtp(emailAddress: string): Promise<boolean> {
       recipient: emailAddress,
       subject: 'Your OTP Code',
       html: emailContent,
-    }),
+    }).catch(console.warn),
     prisma.otp.upsert({
       where: {
         emailAddress,

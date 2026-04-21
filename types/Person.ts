@@ -96,13 +96,6 @@ export const UpdatePersonDataInputDefinition = z.object({
     .max(250, 'Address must be at most 250 characters')
     .optional()
     .or(z.literal('')),
-  password: z
-    .string()
-    .trim()
-    .min(8, 'Password must be at least 8 characters')
-    .max(100, 'Password must be at most 100 characters')
-    .optional()
-    .or(z.literal('')),
 });
 
 export const UpdatePersonInputDefinition = z.object({
@@ -135,9 +128,30 @@ export const PeopleInputDefinition = z
   })
   .partial();
 
+export const ChangePasswordInputDefinition = z.object({
+  oldPassword: z.string().min(1, 'Please enter your current password').trim(),
+  newPassword: z
+    .string()
+    .trim()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be at most 100 characters'),
+});
+
+export const ResetPasswordInputDefinition = z.object({
+  otpCode: z.string().trim().min(6, 'Invalid OTP code').max(6, 'Invalid OTP code'),
+  emailAddress: z.email('Invalid email address'),
+  password: z
+    .string()
+    .trim()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be at most 100 characters'),
+});
+
 export type Gender = z.infer<typeof GenderDefinition>;
 export type Person = z.infer<typeof PersonDefinition>;
 export type CreatePersonInput = z.infer<typeof CreatePersonInputDefinition>;
 export type UpdatePersonDataInput = z.infer<typeof UpdatePersonDataInputDefinition>;
 export type UpdatePersonInput = z.infer<typeof UpdatePersonInputDefinition>;
 export type PeopleInput = z.infer<typeof PeopleInputDefinition>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordInputDefinition>;
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInputDefinition>;

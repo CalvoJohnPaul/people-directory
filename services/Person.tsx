@@ -1,12 +1,25 @@
 import {render} from '@react-email/components';
-import {hash} from 'bcrypt';
+import {compare, hash} from 'bcrypt';
 import {clamp, isNil, omitBy} from 'es-toolkit';
 import {cache} from 'react';
 import {prisma} from '~/config/prisma';
 import Welcome from '~/emails/Welcome';
 import type {Prisma} from '~/prisma/generated/prisma/client';
-import type {CreatePersonInput, PeopleInput, Person, UpdatePersonDataInput} from '~/types/Person';
+import type {
+  ChangePasswordInput,
+  CreatePersonInput,
+  PeopleInput,
+  Person,
+  ResetPasswordInput,
+  UpdatePersonDataInput,
+} from '~/types/Person';
 import {mailto} from '~/utils/mailto';
+import {
+  AccountNotFoundError,
+  IncorrectPasswordError,
+  InvalidOtpError,
+  OtpAlreadyExpiredError,
+} from './errors';
 
 export const getPerson = cache(async (id: number): Promise<Person | null> => {
   return await prisma.person
@@ -179,7 +192,7 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
           redirectUrl={process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'}
         />,
       ),
-    }),
+    }).catch(console.warn),
   ]);
 
   return person;
@@ -190,8 +203,6 @@ export async function updatePerson(
 ): Promise<Person> {
   const id = args[0];
   const data = omitBy(args[1], (v) => isNil(v) || v === '');
-
-  if (data.password) data.password = await hash(data.password, 10);
 
   return await prisma.person
     .update({
@@ -255,4 +266,68 @@ export async function isMobileNumberAvailable(mobileNumber: string, id?: number 
   });
 
   return count <= 0;
+}
+
+export async function changePassword(id: number, data: ChangePasswordInput): Promise<void> {
+  const {newPassword, oldPassword} = data;
+
+  const person = await prisma.person.findUnique({
+    where: {id},
+    select: {password: true},
+  });
+
+  if (!person) {
+    throw new AccountNotFoundError();
+  }
+
+  const matches = await compare(oldPassword, person.password);
+
+  if (!matches) {
+    throw new IncorrectPasswordError();
+  }
+
+  await prisma.person.update({
+    where: {id},
+    data: {password: await hash(newPassword, 8)},
+  });
+}
+
+export async function resetPassword(data: ResetPasswordInput): Promise<void> {
+  const {emailAddress, password, otpCode} = data;
+
+  const person = await prisma.person.findUnique({
+    where: {emailAddress},
+    select: {id: true},
+  });
+
+  if (!person) {
+    throw new AccountNotFoundError();
+  }
+
+  const otp = await prisma.otp.findUnique({
+    where: {
+      code: otpCode,
+      emailAddress,
+    },
+    select: {
+      code: true,
+      expiresAt: true,
+    },
+  });
+
+  if (!otp || otp.code !== otpCode) {
+    throw new InvalidOtpError();
+  }
+
+  if (otp.expiresAt < new Date()) {
+    throw new OtpAlreadyExpiredError();
+  }
+
+  await prisma.$transaction([
+    prisma.otp.deleteMany({where: {code: otpCode, emailAddress}}),
+    prisma.person.update({
+      where: {emailAddress},
+      data: {password: await hash(password, 8)},
+    }),
+  ]);
 }

@@ -137,12 +137,7 @@ export function RegisterForm() {
           size="lg"
           type="submit"
           fullWidth
-          disabled={
-            form.formState.isSubmitting ||
-            query.isLoading ||
-            query.data != null ||
-            createPersonMutation.isPending
-          }
+          disabled={query.isLoading || query.data != null || createPersonMutation.isPending}
         >
           Submit
         </Button>

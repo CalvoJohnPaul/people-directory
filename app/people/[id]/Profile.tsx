@@ -130,7 +130,7 @@ export function Profile({id}: ProfileProps) {
         <ViewProfilePhoto />
         <div className="hidden grow lg:block"></div>
         <div className="mt-4 flex gap-3 self-start lg:mt-0">
-          {future && <DeleteAccount />}
+          <DeleteAccount />
           <ViewQrCode />
           <CopyProfileLink />
           <EditProfile />
