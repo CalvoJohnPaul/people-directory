@@ -141,7 +141,11 @@ export function People() {
                 className="absolute -top-1.5 -right-1.5 aspect-square h-3 ui-closed:animate-fade-out ui-open:animate-fade-in rounded-full bg-amber-500 leading-none"
               />
             </IconButton>
-            <SearchField value={state.q} onChange={(q) => setState({q})} className="lg:w-64" />
+            <SearchField
+              value={state.q}
+              onChange={(q) => setState({q})}
+              className="w-full lg:w-64"
+            />
             <div className="hidden grow lg:block" />
             <ExportPeople />
             <Reload />
