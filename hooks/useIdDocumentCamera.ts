@@ -8,6 +8,21 @@ import {
   type SuccessIdDocumentDetectionData,
 } from '~/utils/idDocument';
 
+let canvas: HTMLCanvasElement | null = null;
+let context: CanvasRenderingContext2D | null = null;
+
+function getCanvas() {
+  if (!canvas) canvas = document.createElement('canvas');
+  return canvas;
+}
+
+function getContext() {
+  const canvas = getCanvas();
+  if (!context) context = canvas.getContext('2d', {willReadFrequently: true});
+  invariant(context, 'failed to get canvas context');
+  return context;
+}
+
 export interface UseIdDocumentCameraReturn {
   open: () => Promise<void>;
   close: () => void;
@@ -40,6 +55,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       width: '100%',
       boxSizing: 'border-box',
       aspectRatio,
+      transform: desktop ? 'scaleX(-1)' : undefined,
     },
   });
 
@@ -65,12 +81,14 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     setValidated(false);
     setValidating(false);
 
+    const started = performance.now();
+
     try {
       const result = await navigator.mediaDevices.getUserMedia({
         audio: false,
         preferCurrentTab: true,
         video: {
-          facingMode: desktop ? 'environment' : 'user',
+          facingMode: desktop ? 'user' : 'environment',
           noiseSuppression: true,
           width: {
             ideal: 9999,
@@ -113,6 +131,11 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
       setError(error);
     } finally {
       setOpening(false);
+
+      const elapsed = performance.now() - started;
+      const seconds = (elapsed / 1000).toFixed(2);
+
+      console.log(`[ID Document Camera] Validation took ${elapsed.toFixed(2)}ms (${seconds}s)`);
     }
   };
 
@@ -154,16 +177,16 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
         return;
       }
 
-      const canvas = document.createElement('canvas');
+      const canvas = getCanvas();
 
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
 
-      const context = canvas.getContext('2d');
+      const context = getContext();
 
-      if (!context) {
-        console.warn('could not get canvas context');
-        return;
+      if (desktop) {
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
       }
 
       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -205,7 +228,7 @@ export function useIdDocumentCamera(): UseIdDocumentCameraReturn {
     }
 
     setCapturing(true);
-    const cropped = await cropIdDocument(result.file, result.cropPoints);
+    const cropped = await cropIdDocument(result.imageData, result.cropPoints);
     setCapturing(false);
     setData(cropped);
     setHint(null);

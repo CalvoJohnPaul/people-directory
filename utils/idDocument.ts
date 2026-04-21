@@ -1,29 +1,32 @@
 import {loadOpenCV, type OpenCV} from '@opencvjs/web';
 
-const BLUR_THRESHOLD = 120;
-const GLARE_THRESHOLD = 2.8;
-const GLARE_VALUE_THRESHOLD = 240;
-const GLARE_EXTREME_VALUE_THRESHOLD = 250;
-const GLARE_SATURATION_THRESHOLD = 75;
-const GLARE_STD_MULTIPLIER = 1.1;
+const BLUR_THRESHOLD = 60;
+const GLARE_THRESHOLD = 8;
+const GLARE_VALUE_THRESHOLD = 252;
+const GLARE_EXTREME_VALUE_THRESHOLD = 254;
+const GLARE_SATURATION_THRESHOLD = 60;
+const GLARE_STD_MULTIPLIER = 2.0;
 const BRIGHTNESS_MIN = 40;
 const BRIGHTNESS_MAX = 230;
 const CARD_ASPECT_RATIO = 1.586;
 const CARD_ASPECT_TOLERANCE = 0.32;
 const CONFIDENCE_THRESHOLD = 0.48;
-const TOO_FAR_AREA_RATIO = 0.25;
-const TOO_CLOSE_AREA_RATIO = 0.85;
 const MAX_SKEW_ANGLE = 5;
 const OUTPUT_IMAGE_QUALITY = 0.92;
 const PROCESS_SCALE = 0.5;
+const GUIDE_TOO_FAR_COVERAGE_RATIO = 0.65;
 
 function $logPerformance(label: string, startedAt: number): void {
   const elapsed = performance.now() - startedAt;
-  console.log(`[ID Document] ${label} took ${elapsed.toFixed(2)}ms`);
+  const seconds = (elapsed / 1000).toFixed(2);
+  console.log(`[ID Document] ${label} took ${elapsed.toFixed(2)}ms (${seconds}s)`);
 }
 
 function $createPoint(x: number, y: number): OpenCV.Point {
-  return {x, y} as OpenCV.Point;
+  return {
+    x,
+    y,
+  };
 }
 
 function $sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
@@ -47,7 +50,8 @@ function $sortPoints(points: Array<{x: number; y: number}>): QuadPoints {
 type QuadPoints = [OpenCV.Point, OpenCV.Point, OpenCV.Point, OpenCV.Point];
 
 function $pointsFromQuadMat(quad: OpenCV.Mat): QuadPoints {
-  const pts = quad.data32S as Int32Array;
+  const pts = quad.data32S;
+
   return [
     $createPoint(pts[0], pts[1]),
     $createPoint(pts[2], pts[3]),
@@ -95,7 +99,20 @@ function $normalizeCardAngle(angle: number, width: number, height: number): numb
   return normalized;
 }
 
-async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: number) {
+type DetectCardResult =
+  | {detected: false; corners: null; bounds: null; angle: 0}
+  | {
+      detected: true;
+      corners: QuadPoints;
+      bounds: {x: number; y: number; width: number; height: number};
+      angle: number;
+    };
+
+async function $detectCard(
+  gray: OpenCV.Mat,
+  sourceWidth: number,
+  sourceHeight: number,
+): Promise<DetectCardResult> {
   const cv = await loadOpenCV();
   const blurred = new cv.Mat();
   const edges = new cv.Mat();
@@ -196,7 +213,10 @@ async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: 
     }
 
     consumeContours(contoursEdges);
-    consumeContours(contoursBinary);
+
+    if (bestConfidence < 0.85) {
+      consumeContours(contoursBinary);
+    }
 
     if (!bestPoints || !bestRect || bestConfidence < CONFIDENCE_THRESHOLD) {
       return {
@@ -225,36 +245,10 @@ async function $detectCard(gray: OpenCV.Mat, sourceWidth: number, sourceHeight: 
   }
 }
 
-async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
+async function $detectBlur(warpedGray: OpenCV.Mat): Promise<number> {
   const cv = await loadOpenCV();
-  const cardWidth = 320;
-  const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
-
-  const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-    corners[0].x,
-    corners[0].y,
-    corners[1].x,
-    corners[1].y,
-    corners[2].x,
-    corners[2].y,
-    corners[3].x,
-    corners[3].y,
-  ]);
-
-  const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-    0,
-    0,
-    cardWidth,
-    0,
-    cardWidth,
-    cardHeight,
-    0,
-    cardHeight,
-  ]);
-
-  const transform = cv.getPerspectiveTransform(srcPts, dstPts);
-  const warped = new cv.Mat();
-
+  const cardWidth = warpedGray.cols;
+  const cardHeight = warpedGray.rows;
   const marginX = Math.round(cardWidth * 0.2);
   const marginY = Math.round(cardHeight * 0.2);
 
@@ -263,17 +257,7 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
   const stddev = new cv.Mat();
 
   try {
-    cv.warpPerspective(
-      gray,
-      warped,
-      transform,
-      new cv.Size(cardWidth, cardHeight),
-      cv.INTER_LINEAR,
-      cv.BORDER_CONSTANT,
-      new cv.Scalar(),
-    );
-
-    const textRegion = warped.roi(
+    const textRegion = warpedGray.roi(
       new cv.Rect(marginX, marginY, cardWidth - 2 * marginX, cardHeight - 2 * marginY),
     );
 
@@ -284,10 +268,6 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
     textRegion.delete();
     return score;
   } finally {
-    srcPts.delete();
-    dstPts.delete();
-    transform.delete();
-    warped.delete();
     laplacian.delete();
     mean.delete();
     stddev.delete();
@@ -295,11 +275,10 @@ async function $detectBlur(gray: OpenCV.Mat, corners: QuadPoints) {
 }
 
 async function $detectGlareAndBrightness(
-  hsv: OpenCV.Mat,
-  corners: QuadPoints | null,
+  hsvMat: OpenCV.Mat,
+  detectGlare: boolean,
 ): Promise<{glare: boolean; brightnessStatus: 'DARK' | 'BRIGHT' | null}> {
   const cv = await loadOpenCV();
-  const region = new cv.Mat();
   const channels = new cv.MatVector();
   const brightMask = new cv.Mat();
   const lowSatMask = new cv.Mat();
@@ -310,53 +289,10 @@ async function $detectGlareAndBrightness(
   const meanS = new cv.Mat();
   const stddevS = new cv.Mat();
 
-  let srcPts: OpenCV.Mat | null = null;
-  let dstPts: OpenCV.Mat | null = null;
-  let transform: OpenCV.Mat | null = null;
   let kernel: OpenCV.Mat | null = null;
 
   try {
-    if (corners) {
-      const cardWidth = 320;
-      const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
-
-      srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-        corners[0].x,
-        corners[0].y,
-        corners[1].x,
-        corners[1].y,
-        corners[2].x,
-        corners[2].y,
-        corners[3].x,
-        corners[3].y,
-      ]);
-
-      dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-        0,
-        0,
-        cardWidth,
-        0,
-        cardWidth,
-        cardHeight,
-        0,
-        cardHeight,
-      ]);
-
-      transform = cv.getPerspectiveTransform(srcPts, dstPts);
-      cv.warpPerspective(
-        hsv,
-        region,
-        transform,
-        new cv.Size(cardWidth, cardHeight),
-        cv.INTER_LINEAR,
-        cv.BORDER_REPLICATE,
-        new cv.Scalar(),
-      );
-    } else {
-      hsv.copyTo(region);
-    }
-
-    cv.split(region, channels);
+    cv.split(hsvMat, channels);
     const saturationChannel = channels.get(1);
     const valueChannel = channels.get(2);
 
@@ -394,7 +330,7 @@ async function $detectGlareAndBrightness(
     const totalPixels = Math.max(1, valueChannel.rows * valueChannel.cols);
     const specularRatio = (cv.countNonZero(specularMask) / totalPixels) * 100;
     const extremeRatio = (cv.countNonZero(extremeMask) / totalPixels) * 100;
-    const glareScore = specularRatio * 0.8 + extremeRatio * 0.2;
+    const glareScore = detectGlare ? specularRatio * 0.8 + extremeRatio * 0.2 : 0;
 
     let brightnessStatus: 'DARK' | 'BRIGHT' | null = null;
     if (valueMean < BRIGHTNESS_MIN) {
@@ -412,12 +348,8 @@ async function $detectGlareAndBrightness(
       channels.get(i).delete();
     }
 
-    if (srcPts) srcPts.delete();
-    if (dstPts) dstPts.delete();
-    if (transform) transform.delete();
     if (kernel) kernel.delete();
 
-    region.delete();
     channels.delete();
     brightMask.delete();
     lowSatMask.delete();
@@ -460,8 +392,13 @@ async function $canvasToFile(canvas: HTMLCanvasElement, filename: string): Promi
   }
 
   const dataUrl = canvas.toDataURL('image/jpeg', OUTPUT_IMAGE_QUALITY);
-  const response = await fetch(dataUrl);
-  const fallbackBlob = await response.blob();
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  const fallbackBlob = new Blob([bytes], {type: 'image/jpeg'});
 
   return new File([fallbackBlob], filename, {
     type: 'image/jpeg',
@@ -547,11 +484,23 @@ export interface IdDocumentDetectionResult {
   glare: boolean;
   cropPoints: IdDocumentCropPoints | null;
   tilted: boolean;
-  file: File;
+  imageData: ImageData;
+}
+
+export interface IdDocumentGuide {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface DetectIdDocumentConfig {
+  guide?: IdDocumentGuide | null;
 }
 
 export async function detectIdDocument(
   subject: ImageData | File,
+  config?: DetectIdDocumentConfig,
 ): Promise<IdDocumentDetectionResult> {
   const startedAt = performance.now();
 
@@ -566,6 +515,8 @@ export async function detectIdDocument(
     const gray = new cv.Mat();
     const rgb = new cv.Mat();
     const hsv = new cv.Mat();
+    let warpedGray: OpenCV.Mat | null = null;
+    let warpedHsv: OpenCV.Mat | null = null;
 
     try {
       cv.resize(src, scaled, new cv.Size(scaledWidth, scaledHeight));
@@ -574,7 +525,9 @@ export async function detectIdDocument(
       outputCanvas.width = scaledWidth;
       outputCanvas.height = scaledHeight;
       cv.imshow(outputCanvas, scaled);
-      const filePromise = $canvasToFile(outputCanvas, `id-document-${Date.now()}.jpg`);
+      const outputCtx = outputCanvas.getContext('2d');
+      if (!outputCtx) throw new Error('Failed to get canvas context.');
+      const scaledImageData = outputCtx.getImageData(0, 0, scaledWidth, scaledHeight);
 
       cv.cvtColor(scaled, gray, cv.COLOR_RGBA2GRAY);
       cv.cvtColor(scaled, rgb, cv.COLOR_RGBA2RGB);
@@ -583,26 +536,109 @@ export async function detectIdDocument(
       const card = await $detectCard(gray, scaledWidth, scaledHeight);
       const cropPoints = card.detected && card.corners ? $toCropPoints(card.corners) : null;
 
-      let blurry = true;
-
       if (card.detected && card.corners) {
-        const blurScore = await $detectBlur(gray, card.corners);
+        const cardWidth = 320;
+        const cardHeight = Math.round(cardWidth / CARD_ASPECT_RATIO);
+        const cardSize = new cv.Size(cardWidth, cardHeight);
+        const corners = card.corners;
+
+        const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+          corners[0].x,
+          corners[0].y,
+          corners[1].x,
+          corners[1].y,
+          corners[2].x,
+          corners[2].y,
+          corners[3].x,
+          corners[3].y,
+        ]);
+        const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+          0,
+          0,
+          cardWidth,
+          0,
+          cardWidth,
+          cardHeight,
+          0,
+          cardHeight,
+        ]);
+        const transform = cv.getPerspectiveTransform(srcPts, dstPts);
+
+        warpedGray = new cv.Mat();
+        cv.warpPerspective(
+          gray,
+          warpedGray,
+          transform,
+          cardSize,
+          cv.INTER_LINEAR,
+          cv.BORDER_CONSTANT,
+          new cv.Scalar(),
+        );
+
+        warpedHsv = new cv.Mat();
+        cv.warpPerspective(
+          hsv,
+          warpedHsv,
+          transform,
+          cardSize,
+          cv.INTER_LINEAR,
+          cv.BORDER_REPLICATE,
+          new cv.Scalar(),
+        );
+
+        srcPts.delete();
+        dstPts.delete();
+        transform.delete();
+      }
+
+      let blurry = false;
+
+      if (warpedGray) {
+        const blurScore = await $detectBlur(warpedGray);
         blurry = blurScore < BLUR_THRESHOLD;
       }
 
-      const glareAndBrightness = await $detectGlareAndBrightness(hsv, card.corners);
+      const glareAndBrightness = await $detectGlareAndBrightness(
+        warpedHsv ?? hsv,
+        warpedHsv !== null,
+      );
       const glare = glareAndBrightness.glare;
       const tooDark = glareAndBrightness.brightnessStatus === 'DARK';
       const tooBright = glareAndBrightness.brightnessStatus === 'BRIGHT';
 
       const cardArea = $getBoundsArea(card.bounds);
-      const frameArea = Math.max(1, scaledWidth * scaledHeight);
-      const areaRatio = card.detected ? cardArea / frameArea : 0;
+
+      let tooFar = false;
+      let tooClose = false;
+
+      if (config?.guide && card.detected && card.bounds) {
+        const guide = {
+          x: config.guide.x * PROCESS_SCALE,
+          y: config.guide.y * PROCESS_SCALE,
+          width: config.guide.width * PROCESS_SCALE,
+          height: config.guide.height * PROCESS_SCALE,
+        };
+        const cardBounds = card.bounds;
+        const intersectX = Math.max(
+          0,
+          Math.min(cardBounds.x + cardBounds.width, guide.x + guide.width) -
+            Math.max(cardBounds.x, guide.x),
+        );
+        const intersectY = Math.max(
+          0,
+          Math.min(cardBounds.y + cardBounds.height, guide.y + guide.height) -
+            Math.max(cardBounds.y, guide.y),
+        );
+        const intersectArea = intersectX * intersectY;
+        const guideArea = guide.width * guide.height;
+
+        // tooClose: more than 25% of the card is outside the guide
+        tooClose = cardArea > 0 && intersectArea / cardArea < 0.75;
+        // tooFar: card covers less than 65% of the guide
+        tooFar = guideArea > 0 && intersectArea / guideArea < GUIDE_TOO_FAR_COVERAGE_RATIO;
+      }
 
       const tilted = card.detected && $isTilted(card.angle);
-      const tooFar = card.detected && areaRatio < TOO_FAR_AREA_RATIO;
-      const tooClose = card.detected && areaRatio > TOO_CLOSE_AREA_RATIO;
-      const file = await filePromise;
 
       return {
         detected: card.detected,
@@ -614,7 +650,7 @@ export async function detectIdDocument(
         glare,
         cropPoints,
         tilted,
-        file,
+        imageData: scaledImageData,
       };
     } finally {
       src.delete();
@@ -622,6 +658,8 @@ export async function detectIdDocument(
       gray.delete();
       rgb.delete();
       hsv.delete();
+      warpedGray?.delete();
+      warpedHsv?.delete();
     }
   } finally {
     $logPerformance('detectIdDocument', startedAt);
@@ -629,18 +667,24 @@ export async function detectIdDocument(
 }
 
 export async function cropIdDocument(
-  file: File,
+  imageData: ImageData,
   cropPoints?: IdDocumentCropPoints | null,
 ): Promise<File> {
-  if (!cropPoints) {
-    return file;
-  }
-
   const startedAt = performance.now();
 
   try {
     const cv = await loadOpenCV();
-    const imageData = await $fileToImageData(file);
+
+    if (!cropPoints) {
+      const canvas = document.createElement('canvas');
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      const ctx = canvas.getContext('2d');
+      ctx?.putImageData(imageData, 0, 0);
+      const normalizedCanvas = $toLandscapeCanvas(canvas);
+      return await $canvasToFile(normalizedCanvas, 'id-document.jpg');
+    }
+
     const src = cv.matFromImageData(imageData);
 
     const topWidth = $pointDistance(cropPoints.topLeft, cropPoints.topRight);
@@ -702,105 +746,114 @@ export async function cropIdDocument(
       src.delete();
     }
   } catch {
-    return file;
+    const canvas = document.createElement('canvas');
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    ctx?.putImageData(imageData, 0, 0);
+    return $canvasToFile(canvas, 'id-document.jpg');
   } finally {
     $logPerformance('cropIdDocument', startedAt);
   }
 }
 
 export interface SuccessIdDocumentDetectionData {
-  file: File;
+  imageData: ImageData;
   cropPoints: IdDocumentCropPoints | null;
 }
 
-export interface FailedIdDocumentDetectionError {
-  name: string;
-  message: string;
-}
-
 export type IdDocumentDetectionExplanation =
-  | {ok: false; data?: never; error: FailedIdDocumentDetectionError}
-  | {ok: true; data: SuccessIdDocumentDetectionData; error?: never};
+  | {
+      ok: false;
+      error: {
+        name: string;
+        message: string;
+      };
+    }
+  | {
+      ok: true;
+      data: SuccessIdDocumentDetectionData;
+    };
 
 export function explainIdDocumentDetection(
   result: IdDocumentDetectionResult,
 ): IdDocumentDetectionExplanation {
+  if (result.tooDark) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTooDarkError',
+        message: 'The photo is too dark. Please take the photo in a brighter place.',
+      },
+    };
+  }
+
+  if (result.tooBright) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTooBrightError',
+        message: 'The photo is too bright. Please avoid strong light and try again.',
+      },
+    };
+  }
+
+  if (result.glare) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageGlareError',
+        message: 'There is light reflection on the ID. Please tilt the ID or move the light.',
+      },
+    };
+  }
+
+  if (result.blurry) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTooBlurredError',
+        message: 'The photo is blurry. Please hold your camera steady and try again.',
+      },
+    };
+  }
+
   if (!result.detected) {
-    if (result.tooDark) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTooDarkError',
-          message: 'The photo is too dark. Please take the photo in a brighter place.',
-        },
-      };
-    }
-
-    if (result.tooBright) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTooBrightError',
-          message: 'The photo is too bright. Please avoid strong light.',
-        },
-      };
-    }
-
-    if (result.glare) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageGlareError',
-          message: 'There is light reflection on the ID.',
-        },
-      };
-    }
-
-    if (result.blurry) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTooBlurredError',
-          message: 'The photo is blurry. Please hold your camera steady.',
-        },
-      };
-    }
-
-    if (result.tooFar) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTooSmallError',
-          message: 'The ID is too far. Please move your camera closer.',
-        },
-      };
-    }
-
-    if (result.tooClose) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTooLargeError',
-          message: 'The ID is too close. Please move your camera a little farther.',
-        },
-      };
-    }
-
-    if (result.tilted) {
-      return {
-        ok: false,
-        error: {
-          name: 'ImageTiltedError',
-          message: 'The ID is not straight. Please hold it level.',
-        },
-      };
-    }
-
     return {
       ok: false,
       error: {
         name: 'NoIdDocumentDetectedError',
-        message: 'Could not detect your ID. Please make sure your ID is fully visible',
+        message: 'No ID found. Please make sure your ID is clear and fully visible in the photo.',
+      },
+    };
+  }
+
+  if (result.tooFar) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTooSmallError',
+        message: 'The ID is too far. Please move your camera closer.',
+      },
+    };
+  }
+
+  if (result.tooClose) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTooLargeError',
+        message: 'The ID is too close. Please move your camera a little farther.',
+      },
+    };
+  }
+
+  if (result.tilted) {
+    return {
+      ok: false,
+      error: {
+        name: 'ImageTiltedError',
+        message: 'The ID is not straight. Please hold it level.',
       },
     };
   }
@@ -808,7 +861,7 @@ export function explainIdDocumentDetection(
   return {
     ok: true,
     data: {
-      file: result.file,
+      imageData: result.imageData,
       cropPoints: result.cropPoints,
     },
   };
