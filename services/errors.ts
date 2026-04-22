@@ -47,6 +47,20 @@ export class IncorrectPasswordError extends ServiceError {
   }
 }
 
+export class EmailAddressNotAvailableError extends ServiceError {
+  constructor(message = 'Email address is already in use') {
+    super(message);
+    this.name = 'EmailAddressNotAvailableError';
+  }
+}
+
+export class MobileNumberNotAvailableError extends ServiceError {
+  constructor(message = 'Mobile number is already in use') {
+    super(message);
+    this.name = 'MobileNumberNotAvailableError';
+  }
+}
+
 export function isServiceError(
   error: unknown,
 ): error is
@@ -54,12 +68,16 @@ export function isServiceError(
   | InvalidOtpError
   | OtpAlreadyExpiredError
   | InvalidFaceEmbeddingVectorError
-  | IncorrectPasswordError {
+  | IncorrectPasswordError
+  | EmailAddressNotAvailableError
+  | MobileNumberNotAvailableError {
   return (
     error instanceof AccountNotFoundError ||
     error instanceof InvalidOtpError ||
     error instanceof OtpAlreadyExpiredError ||
     error instanceof InvalidFaceEmbeddingVectorError ||
-    error instanceof IncorrectPasswordError
+    error instanceof IncorrectPasswordError ||
+    error instanceof EmailAddressNotAvailableError ||
+    error instanceof MobileNumberNotAvailableError
   );
 }

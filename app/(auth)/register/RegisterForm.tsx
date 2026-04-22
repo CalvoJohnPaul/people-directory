@@ -15,7 +15,7 @@ import {toaster} from '~/config/toaster';
 import {useAddFaceEmbeddingMutation} from '~/hooks/useAddFaceEmbeddingMutation';
 import {useCreatePersonMutation} from '~/hooks/useCreatePersonMutation';
 import {useMeQuery} from '~/hooks/useMeQuery';
-import {CreatePersonInputDefinition} from '~/types/Person';
+import {CreatePersonInputDefinition, type Person} from '~/types/Person';
 import {getFaceEmbedding} from '~/utils/face';
 
 export function RegisterForm() {
@@ -34,7 +34,7 @@ export function RegisterForm() {
       client.clear();
 
       setTimeout(() => {
-        client.invalidateQueries({queryKey: useMeQuery.getQueryKey()});
+        client.setQueryData<Person>(useMeQuery.getQueryKey(), person);
 
         if (photoRef.current) {
           getFaceEmbedding(photoRef.current)

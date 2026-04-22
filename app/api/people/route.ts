@@ -1,7 +1,8 @@
 import {addDays} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
-import {createPerson, getPeople, isEmailAddressAvailable} from '~/services/Person';
+import {isServiceError} from '~/services/errors';
+import {createPerson, getPeople} from '~/services/Person';
 import {getMe} from '~/services/Session';
 import type {HttpResponse} from '~/types/common';
 import {CreatePersonInputDefinition, PeopleInputDefinition, type Person} from '~/types/Person';
@@ -51,30 +52,32 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
     );
   }
 
-  const emailAddressAvailable = await isEmailAddressAvailable(result.data.emailAddress);
+  try {
+    const data = await createPerson(result.data);
+    const store = await cookies();
 
-  if (!emailAddressAvailable) {
+    store.set('user', data.id.toString(), {
+      httpOnly: true,
+      expires: addDays(new Date(), 30),
+      sameSite: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    return NextResponse.json({ok: true, data}, {status: 201});
+  } catch (error) {
+    if (isServiceError(error)) {
+      return NextResponse.json({ok: false, error: error.toJSON()}, {status: 400});
+    }
+
     return NextResponse.json(
       {
         ok: false,
         error: {
-          name: 'EmailAddressAlreadyInUse',
-          message: 'Email address is already in use',
+          name: 'InternalServerError',
+          message: 'Internal Server Error',
         },
       },
-      {status: 400},
+      {status: 500},
     );
   }
-
-  const data = await createPerson(result.data);
-  const store = await cookies();
-
-  store.set('user', data.id.toString(), {
-    httpOnly: true,
-    expires: addDays(new Date(), 30),
-    sameSite: true,
-    secure: process.env.NODE_ENV === 'production',
-  });
-
-  return NextResponse.json({ok: true, data}, {status: 201});
 }

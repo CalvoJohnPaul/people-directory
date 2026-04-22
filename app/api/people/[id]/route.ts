@@ -1,11 +1,6 @@
 import {type NextRequest, NextResponse} from 'next/server';
-import {
-  deletePerson,
-  getPerson,
-  isEmailAddressAvailable,
-  isMobileNumberAvailable,
-  updatePerson,
-} from '~/services/Person';
+import {isServiceError} from '~/services/errors';
+import {deletePerson, getPerson, updatePerson} from '~/services/Person';
 import {destroySession, getMe} from '~/services/Session';
 import type {HttpResponse, HttpVoidResponse} from '~/types/common';
 import {type Person, UpdatePersonDataInputDefinition} from '~/types/Person';
@@ -93,44 +88,32 @@ export async function PATCH(
     );
   }
 
-  const [emailAddressAvailable, mobileNumberAvailable] = await Promise.all([
-    result.data.emailAddress
-      ? await isEmailAddressAvailable(result.data.emailAddress, me.id)
-      : Promise.resolve(true),
-    result.data.mobileNumber
-      ? await isMobileNumberAvailable(result.data.mobileNumber, me.id)
-      : Promise.resolve(true),
-  ]);
+  try {
+    const data = await updatePerson(me.id, result.data);
 
-  if (!emailAddressAvailable) {
+    return NextResponse.json({ok: true, data}, {status: 200});
+  } catch (error) {
+    if (isServiceError(error)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: error.toJSON(),
+        },
+        {status: 400},
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,
         error: {
-          name: 'EmailAddressAlreadyInUse',
-          message: 'Email address is already in use',
+          name: 'InternalServerError',
+          message: 'Internal Server Error',
         },
       },
-      {status: 400},
+      {status: 500},
     );
   }
-
-  if (!mobileNumberAvailable) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: {
-          name: 'MobileNumberAlreadyInUse',
-          message: 'Mobile number is already in use',
-        },
-      },
-      {status: 400},
-    );
-  }
-
-  const data = await updatePerson(me.id, result.data);
-
-  return NextResponse.json({ok: true, data}, {status: 200});
 }
 
 export async function DELETE(

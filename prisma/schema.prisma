@@ -28,6 +28,7 @@ model Person {
   address                String?         @map("address")
   password               String
   verifiedAt             DateTime?       @map("verified_at")
+  lastLoggedInAt         DateTime?       @map("last_logged_in_at")
   createdAt              DateTime        @default(now()) @map("created_at")
   updatedAt              DateTime        @updatedAt @map("updated_at")
   faceEmbeddings         FaceEmbedding[]

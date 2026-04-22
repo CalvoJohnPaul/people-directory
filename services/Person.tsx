@@ -16,8 +16,10 @@ import type {
 import {mailto} from '~/utils/mailto';
 import {
   AccountNotFoundError,
+  EmailAddressNotAvailableError,
   IncorrectPasswordError,
   InvalidOtpError,
+  MobileNumberNotAvailableError,
   OtpAlreadyExpiredError,
 } from './errors';
 
@@ -39,6 +41,7 @@ export const getPerson = cache(async (id: number): Promise<Person | null> => {
         address: true,
         image: true,
         verifiedAt: true,
+        lastLoggedInAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -140,6 +143,7 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
         address: true,
         image: true,
         verifiedAt: true,
+        lastLoggedInAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -154,6 +158,14 @@ export const getPeople = cache(async (input?: PeopleInput): Promise<Person[]> =>
 
 export async function createPerson(input: CreatePersonInput): Promise<Person> {
   const data = {...input};
+
+  const unavailableEmailAddress = await prisma.person
+    .count({where: {emailAddress: data.emailAddress}})
+    .then((c) => c > 0);
+
+  if (unavailableEmailAddress) {
+    throw new EmailAddressNotAvailableError();
+  }
 
   data.password = await hash(input.password, 8);
 
@@ -175,6 +187,7 @@ export async function createPerson(input: CreatePersonInput): Promise<Person> {
           address: true,
           image: true,
           verifiedAt: true,
+          lastLoggedInAt: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -204,6 +217,31 @@ export async function updatePerson(
   const id = args[0];
   const data = omitBy(args[1], (v) => isNil(v) || v === '');
 
+  const [unavailableEmailAddress, unavailableMobileNumber] = await (async () => {
+    const l = [
+      data.emailAddress
+        ? prisma.person.count({where: {emailAddress: data.emailAddress, id: {not: id}}})
+        : null,
+      data.mobileNumber
+        ? prisma.person.count({where: {mobileNumber: data.mobileNumber, id: {not: id}}})
+        : null,
+    ].filter(Boolean);
+
+    if (l.length <= 0) {
+      return [false, false];
+    }
+
+    const r = await prisma.$transaction(l);
+
+    return [
+      !!data.emailAddress && r[0] > 0,
+      !!data.mobileNumber && r[data.emailAddress ? 1 : 0] > 0,
+    ];
+  })();
+
+  if (unavailableEmailAddress) throw new EmailAddressNotAvailableError();
+  if (unavailableMobileNumber) throw new MobileNumberNotAvailableError();
+
   return await prisma.person
     .update({
       data,
@@ -222,6 +260,7 @@ export async function updatePerson(
         address: true,
         image: true,
         verifiedAt: true,
+        lastLoggedInAt: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -234,38 +273,6 @@ export async function updatePerson(
 
 export async function deletePerson(id: number): Promise<void> {
   await prisma.person.delete({where: {id}});
-}
-
-export async function isEmailAddressAvailable(emailAddress: string, id?: number | null) {
-  const count = await prisma.person.count({
-    where: {
-      emailAddress: {
-        equals: emailAddress,
-        mode: 'insensitive',
-      },
-      ...(id != null && {
-        id: {not: id},
-      }),
-    },
-  });
-
-  return count <= 0;
-}
-
-export async function isMobileNumberAvailable(mobileNumber: string, id?: number | null) {
-  const count = await prisma.person.count({
-    where: {
-      mobileNumber: {
-        equals: mobileNumber,
-        mode: 'insensitive',
-      },
-      ...(id != null && {
-        id: {not: id},
-      }),
-    },
-  });
-
-  return count <= 0;
 }
 
 export async function changePassword(id: number, data: ChangePasswordInput): Promise<void> {

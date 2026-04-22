@@ -119,8 +119,20 @@ export function Profile({id}: ProfileProps) {
       value: format(person.createdAt, "MMM dd, yyyy 'at' h:mm a"),
     },
     {
+      label: 'Date verified',
+      value: person.verifiedAt ? format(person.verifiedAt, "MMM dd, yyyy 'at' h:mm a") : null,
+      hidden: !future,
+    },
+    {
       label: 'Last updated',
       value: format(person.updatedAt, "MMM dd, yyyy 'at' h:mm a"),
+    },
+    {
+      label: 'Date last logged in',
+      value: person.lastLoggedInAt
+        ? format(person.lastLoggedInAt, "MMM dd, yyyy 'at' h:mm a")
+        : null,
+      hidden: !future,
     },
   ];
 

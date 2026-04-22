@@ -19,6 +19,7 @@ export const PersonDefinition = z.object({
   address: z.string().optional().nullable(),
   image: z.url(),
   verifiedAt: DateDefinition.optional().nullable(),
+  lastLoggedInAt: DateDefinition.optional().nullable(),
   createdAt: DateDefinition,
   updatedAt: DateDefinition,
 });
