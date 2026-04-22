@@ -1,9 +1,9 @@
 'use client';
 
-import {Carousel} from '@ark-ui/react';
 import {ChevronLeftIcon, ChevronRightIcon, QuoteIcon} from 'lucide-react';
 import {useMediaQuery} from 'usehooks-ts';
 import {Avatar} from '~/components/ui/Avatar';
+import {Carousel} from '~/components/ui/Carousel';
 
 interface Testimonial {
   author: {

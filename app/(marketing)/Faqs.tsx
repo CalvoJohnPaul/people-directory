@@ -1,5 +1,5 @@
-import {Accordion} from '@ark-ui/react';
 import {ChevronDownIcon} from 'lucide-react';
+import {Accordion} from '~/components/ui/Accordion';
 
 const faqs = [
   {
