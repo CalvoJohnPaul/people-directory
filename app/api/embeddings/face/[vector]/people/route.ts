@@ -1,5 +1,6 @@
 import {type NextRequest, NextResponse} from 'next/server';
-import {getPeopleByFaceEmbedding, InvalidFaceEmbeddingVectorError} from '~/services/FaceEmbedding';
+import {isServiceError} from '~/services/errors';
+import {getPeopleByFaceEmbedding} from '~/services/FaceEmbedding';
 import type {HttpResponse} from '~/types/common';
 import type {Person} from '~/types/Person';
 
@@ -16,14 +17,8 @@ export async function GET(
       data,
     });
   } catch (error) {
-    if (error instanceof InvalidFaceEmbeddingVectorError) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error,
-        },
-        {status: 400},
-      );
+    if (isServiceError(error)) {
+      return NextResponse.json({ok: false, error: error.toJSON()}, {status: 400});
     }
 
     throw error;
