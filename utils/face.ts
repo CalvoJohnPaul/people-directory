@@ -261,8 +261,8 @@ export async function detectHeadTurn(
     const _yaw = Math.atan2(matrix[8], matrix[10]) * (180 / Math.PI);
     const yaw = mirrored ? -_yaw : _yaw;
 
-    if (yaw > 15) return 'RIGHT';
-    if (yaw < -15) return 'LEFT';
+    if (yaw > 11) return 'RIGHT';
+    if (yaw < -11) return 'LEFT';
     return 'CENTER';
   } catch (error) {
     console.error(error);
