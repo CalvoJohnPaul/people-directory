@@ -231,7 +231,7 @@ export function useFaceCamera(): UseFaceCameraReturn {
         mirrored: true,
       });
 
-      if (!result) {
+      if (!result || result.score < 0.8) {
         setFaceValidated(false);
         setResult(null);
       } else {
