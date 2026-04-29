@@ -1,6 +1,7 @@
 import {addDays} from 'date-fns';
 import {cookies} from 'next/headers';
 import {type NextRequest, NextResponse} from 'next/server';
+import {prisma} from '~/config/prisma';
 import {isServiceError} from '~/services/errors';
 import {createPerson, getPeople} from '~/services/Person';
 import {getMe} from '~/services/Session';
@@ -54,7 +55,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<HttpResponse<
 
   try {
     const data = await createPerson(result.data);
-    const store = await cookies();
+    const [store] = await Promise.all([
+      cookies(),
+      prisma.person.update({
+        where: {id: data.id},
+        data: {lastLoggedInAt: new Date()},
+      }),
+    ]);
 
     store.set('user', data.id.toString(), {
       httpOnly: true,

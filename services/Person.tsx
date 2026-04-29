@@ -244,7 +244,11 @@ export async function updatePerson(
 
   return await prisma.person
     .update({
-      data,
+      data: {
+        ...data,
+        emailAddressVerifiedAt: data.emailAddress ? null : undefined,
+        mobileNumberVerifiedAt: data.mobileNumber ? null : undefined,
+      },
       where: {id},
       select: {
         id: true,

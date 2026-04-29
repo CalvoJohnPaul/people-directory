@@ -34,12 +34,23 @@ export async function createSession(data: CreateSessionInput): Promise<boolean> 
 
     const person = await prisma.person.findUnique({
       where: {emailAddress},
-      select: {id: true},
+      select: {
+        id: true,
+        emailAddressVerifiedAt: true,
+      },
     });
 
     if (person == null) {
       return false;
     }
+
+    await prisma.person.update({
+      where: {id: person.id},
+      data: {
+        lastLoggedInAt: new Date(),
+        emailAddressVerifiedAt: person.emailAddressVerifiedAt == null ? new Date() : undefined,
+      },
+    });
 
     const store = await cookies();
 
@@ -63,6 +74,13 @@ export async function createSession(data: CreateSessionInput): Promise<boolean> 
     if (person == null || !(await compare(password, person.password))) {
       return false;
     }
+
+    await prisma.person.update({
+      where: {id: person.id},
+      data: {
+        lastLoggedInAt: new Date(),
+      },
+    });
 
     const store = await cookies();
 
